@@ -152,6 +152,34 @@ document.addEventListener('DOMContentLoaded',()=>{
   setTimeout(()=>{const p=document.getElementById('portal-screen');if(p&&!p.classList.contains('fade-out'))p.classList.add('fade-out');},3200);
 });
 </script>
+<!-- ══ MODAL DE HABILIDADES ══ -->
+<div id="skill-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">Habilidade</div>
+      <button class="modal-close" id="modal-close-btn" title="Fechar">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<script>
+// Fechar modal ao clicar fora ou no X
+document.getElementById('modal-close-btn').addEventListener('click', () => {
+  document.getElementById('skill-modal').classList.add('hidden');
+});
+document.getElementById('skill-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('skill-modal')) {
+    document.getElementById('skill-modal').classList.add('hidden');
+  }
+});
+// ESC fecha o modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('skill-modal').classList.add('hidden');
+});
+</script>
+
 <script src="assets/ficha.js"></script>
 </body>
 </html>
