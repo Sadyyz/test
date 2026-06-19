@@ -163,6 +163,42 @@ body::before {
 }
 @keyframes sealPulse { 0%,100%{filter:drop-shadow(0 0 5px rgba(200,146,42,.3))} 50%{filter:drop-shadow(0 0 14px rgba(242,208,120,.7))} }
 
+/* ── Avatar Slot ── */
+.avatar-slot {
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 50%;
+  transition: filter .3s, transform .2s;
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px;
+}
+.avatar-slot:hover {
+  filter: brightness(1.15) drop-shadow(0 0 10px rgba(242,208,120,.7));
+  transform: scale(1.06);
+}
+.avatar-slot:hover::after {
+  content: '📷';
+  position: absolute;
+  font-size: .9rem;
+  bottom: 2px; right: 2px;
+  background: rgba(0,0,0,.55);
+  border-radius: 50%;
+  padding: 2px 4px;
+  pointer-events: none;
+  z-index: 10;
+}
+.avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.avatar-placeholder {
+  font-size: 1.6rem; line-height: 1;
+  background: linear-gradient(135deg, var(--gold-lt), var(--gold-hot));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
 /* Info do personagem */
 .header-body {
   flex: 1;

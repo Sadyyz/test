@@ -5,6 +5,111 @@ const FICHA_ID = params.get('id');
 let state      = null;
 let activeTab  = 'principal';
 
+// ══════════════════════════════════════════════════
+//  SISTEMA DE AVATAR
+// ══════════════════════════════════════════════════
+
+// Avatar é carregado da API e cacheado aqui durante a sessão
+let _avatarCache = null;
+
+async function loadAvatar() {
+  if (!FICHA_ID) return;
+  try {
+    const r = await fetch(`/api/avatar?id=${FICHA_ID}`);
+    if (r.ok) {
+      const d = await r.json();
+      _avatarCache = d.avatar || null;
+    }
+  } catch {}
+  updateAvatarSlot();
+}
+
+function getAvatarHTML() {
+  if (_avatarCache) {
+    return `<img src="${_avatarCache}" class="avatar-img" alt="Avatar">`;
+  }
+  return `<span class="avatar-placeholder">⚔</span>`;
+}
+
+function updateAvatarSlot() {
+  const slot = document.getElementById('avatar-slot');
+  if (slot) slot.innerHTML = getAvatarHTML();
+}
+
+function openAvatarPicker(event) {
+  // Clique direito ou ctrl+clique = remover avatar
+  if (event && (event.button === 2 || event.ctrlKey)) {
+    if (_avatarCache) {
+      if (confirm('Remover imagem do personagem?')) {
+        removeAvatar();
+      }
+    }
+    return;
+  }
+  const input = document.getElementById('avatar-input');
+  if (input) input.click();
+}
+
+async function removeAvatar() {
+  try {
+    await fetch(`/api/avatar?id=${FICHA_ID}`, { method: 'DELETE' });
+    _avatarCache = null;
+    updateAvatarSlot();
+  } catch {
+    alert('Erro ao remover avatar. Tente novamente.');
+  }
+}
+
+function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Comprime a imagem antes de enviar
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      // Redimensiona para no máximo 256x256 mantendo proporção
+      const MAX = 256;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+      else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      saveAvatar(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveAvatar(dataUrl) {
+  const slot = document.getElementById('avatar-slot');
+  if (slot) slot.innerHTML = '<span class="avatar-placeholder" style="font-size:.8rem;opacity:.6">⟳</span>';
+
+  try {
+    const r = await fetch(`/api/avatar?id=${FICHA_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar: dataUrl })
+    });
+    if (r.ok) {
+      _avatarCache = dataUrl;
+      updateAvatarSlot();
+    } else {
+      const err = await r.json();
+      alert('Erro ao salvar avatar: ' + (err.error || r.status));
+      updateAvatarSlot(); // restaura o que tinha
+    }
+  } catch {
+    alert('Erro de conexão ao salvar avatar.');
+    updateAvatarSlot();
+  }
+}
+
+
 const MODS    = s => Math.floor((s - 10) / 2);
 const fmtMod  = m => (m >= 0 ? '+' + m : String(m));
 const ATTR_FULL  = { forca:'Força', destreza:'Destreza', constituicao:'Constituição', inteligencia:'Inteligência', sabedoria:'Sabedoria', carisma:'Carisma' };
@@ -320,8 +425,11 @@ function render() {
             </linearGradient>
           </defs>
         </svg>
-        <div class="seal-core">⚔</div>
+        <div class="seal-core avatar-slot" id="avatar-slot" title="Clique para mudar imagem • Ctrl+Clique para remover" onclick="openAvatarPicker(event)" oncontextmenu="openAvatarPicker(event);return false;">
+          ${getAvatarHTML()}
+        </div>
       </div>
+      <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
       <div class="header-body">
         <div class="char-name">${s.nome}</div>
         ${s.subtitulo ? `<div class="char-subtitle">${s.subtitulo}</div>` : ''}
@@ -874,6 +982,7 @@ async function saveState() {
     return;
   }
   render();
+  loadAvatar(); // carrega avatar da API de forma assíncrona
   const btn = document.getElementById('save-btn');
   btn.style.display = 'block';
   btn.addEventListener('click', saveState);
