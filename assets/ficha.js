@@ -589,10 +589,28 @@ function render() {
                 <span class="die-sub">rolar</span>
               </button>`).join('')}
           </div>
+
+          <div class="section-label" style="margin-top:18px">Modo de Rolagem</div>
+          <div class="roll-mode-group">
+            <button class="roll-mode-btn active" data-mode="normal">
+              <span class="roll-mode-icon">⛀</span>
+              <span class="roll-mode-label">Normal</span>
+            </button>
+            <button class="roll-mode-btn vantagem" data-mode="vantagem">
+              <span class="roll-mode-icon">↑↑</span>
+              <span class="roll-mode-label">Vantagem</span>
+            </button>
+            <button class="roll-mode-btn desvantagem" data-mode="desvantagem">
+              <span class="roll-mode-icon">↓↓</span>
+              <span class="roll-mode-label">Desvantagem</span>
+            </button>
+          </div>
+          <div id="roll-mode-hint" class="roll-mode-hint">Role normalmente</div>
         </div>
         <div>
           <div class="section-label">Resultado</div>
           <div id="dice-result">—</div>
+          <div id="dice-detail"></div>
           <div id="dice-log"></div>
         </div>
       </div>
@@ -693,16 +711,56 @@ function attachEvents() {
   if (notes) notes.addEventListener('input', e => { state.notas = e.target.value; scheduleSave(); });
 
   // Dados
+  let rollMode = 'normal';
+
+  // Modo de rolagem
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rollMode = btn.dataset.mode;
+      document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const hints = { normal: 'Role normalmente', vantagem: 'Rola 2 dados — usa o maior', desvantagem: 'Rola 2 dados — usa o menor' };
+      const hint = document.getElementById('roll-mode-hint');
+      if (hint) { hint.textContent = hints[rollMode]; hint.className = 'roll-mode-hint ' + rollMode; }
+    });
+  });
+
   document.querySelectorAll('[data-die]').forEach(el => el.addEventListener('click', () => {
     const d = parseInt(el.dataset.die);
-    const result = Math.floor(Math.random() * d) + 1;
     el.classList.remove('roll'); void el.offsetWidth; el.classList.add('roll');
+
+    const r1 = Math.floor(Math.random() * d) + 1;
+    let result, detail = '';
+
+    if (rollMode === 'vantagem') {
+      const r2 = Math.floor(Math.random() * d) + 1;
+      result = Math.max(r1, r2);
+      const lo = Math.min(r1, r2);
+      detail = `<span class="dice-roll-detail vantagem">↑ [${result} <s>${lo}</s>] d${d} com vantagem</span>`;
+    } else if (rollMode === 'desvantagem') {
+      const r2 = Math.floor(Math.random() * d) + 1;
+      result = Math.min(r1, r2);
+      const hi = Math.max(r1, r2);
+      detail = `<span class="dice-roll-detail desvantagem">↓ [${result} <s>${hi}</s>] d${d} com desvantagem</span>`;
+    } else {
+      result = r1;
+      detail = `<span class="dice-roll-detail">d${d} normal</span>`;
+    }
+
     const res = document.getElementById('dice-result');
     res.textContent = `${result}`;
-    res.classList.remove('rolling'); void res.offsetWidth; res.classList.add('rolling');
+    res.className = rollMode === 'vantagem' ? 'rolling vantagem-result' : rollMode === 'desvantagem' ? 'rolling desvantagem-result' : 'rolling';
+    void res.offsetWidth; res.classList.add('rolling');
+
+    const det = document.getElementById('dice-detail');
+    if (det) det.innerHTML = detail;
+
     const log = document.getElementById('dice-log');
     const entry = document.createElement('div');
-    entry.textContent = `d${d} → ${result}`;
+    const modeTag = rollMode !== 'normal' ? ` (${rollMode})` : '';
+    entry.textContent = `d${d}${modeTag} → ${result}`;
+    if (rollMode === 'vantagem') entry.style.color = 'var(--teal-lt)';
+    if (rollMode === 'desvantagem') entry.style.color = 'var(--crimson-lt)';
     log.prepend(entry);
   }));
 

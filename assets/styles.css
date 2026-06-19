@@ -865,3 +865,48 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
   flex-shrink: 0;
 }
 .spell-row:hover .spell-actions { opacity: 1; }
+
+/* =========================================================
+   DADOS — VANTAGEM / DESVANTAGEM
+   ========================================================= */
+.roll-mode-group {
+  display: flex; gap: 6px; margin-bottom: 6px;
+}
+.roll-mode-btn {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  color: var(--ink-dim); cursor: pointer; padding: 10px 6px;
+  font-family: 'Cinzel', serif; font-size: .52rem; letter-spacing: .12em;
+  text-transform: uppercase; text-align: center;
+  transition: all .22s; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+}
+.roll-mode-btn:hover { border-color: var(--border-hi); color: var(--ink); }
+
+.roll-mode-icon { font-size: 1rem; line-height: 1; }
+.roll-mode-label { font-size: .48rem; letter-spacing: .14em; }
+
+.roll-mode-btn.active                        { border-color: var(--gold);       color: var(--gold-lt);    box-shadow: 0 0 10px var(--glow-g); background: var(--surface2); }
+.roll-mode-btn.vantagem.active               { border-color: var(--teal-lt);    color: var(--teal-lt);    box-shadow: 0 0 10px var(--glow-t); }
+.roll-mode-btn.desvantagem.active            { border-color: var(--crimson-lt); color: var(--crimson-lt); box-shadow: 0 0 10px var(--glow-r); }
+
+.roll-mode-hint {
+  font-family: 'Cinzel', serif; font-size: .54rem; letter-spacing: .14em;
+  color: var(--ink-dim); text-align: center; padding: 4px 0 2px;
+  transition: color .2s;
+}
+.roll-mode-hint.vantagem    { color: var(--teal-lt); }
+.roll-mode-hint.desvantagem { color: var(--crimson-lt); }
+
+/* Resultado colorido por modo */
+#dice-result.vantagem-result    { background: linear-gradient(135deg, var(--teal), var(--teal-lt)); -webkit-background-clip: text; background-clip: text; }
+#dice-result.desvantagem-result { background: linear-gradient(135deg, var(--crimson), var(--crimson-lt)); -webkit-background-clip: text; background-clip: text; }
+
+/* Detalhe do roll */
+#dice-detail {
+  font-family: 'Cinzel', serif; font-size: .62rem; letter-spacing: .08em;
+  min-height: 1.4em; margin-bottom: 8px;
+}
+.dice-roll-detail         { color: var(--ink-dim); }
+.dice-roll-detail.vantagem    { color: var(--teal-lt); }
+.dice-roll-detail.desvantagem { color: var(--crimson-lt); }
+.dice-roll-detail s { opacity: .45; text-decoration-color: currentColor; }
