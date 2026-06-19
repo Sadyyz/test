@@ -6,413 +6,415 @@
 <title>Ficha de Personagem</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --ink:#0a0a0a; --paper:#f0ece4; --ash:#c8c0b4; --accent:#4a3f35; --red:#8b1a1a; --green:#2a7a2a;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--paper);color:var(--ink);font-family:'IM Fell English',serif;min-height:100vh}
-  .page{max-width:900px;margin:0 auto;padding:48px 32px}
-  .loading,.error{text-align:center;padding:80px 20px;font-family:'Cinzel',serif;letter-spacing:.2em;opacity:.6}
-  .error{color:var(--red)}
+:root{
+  --ink:#0a0a0a; --paper:#f0ece4; --ash:#c8c0b4; --shadow:#2a2520;
+  --frost:#8ab4c8; --red:#8b1a1a; --green:#2a7a2a; --accent:#4a3f35;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink); font-family:'IM Fell English',serif;
+  min-height:100vh; overflow-x:hidden; position:relative;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:900; opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+body::after{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:899;
+  background:
+    radial-gradient(ellipse 120px 80px at 0% 0%, rgba(10,10,10,.12) 0%, transparent 70%),
+    radial-gradient(ellipse 80px 120px at 100% 0%, rgba(10,10,10,.08) 0%, transparent 70%),
+    radial-gradient(ellipse 100px 60px at 0% 100%, rgba(10,10,10,.1) 0%, transparent 70%),
+    radial-gradient(ellipse 60px 100px at 100% 100%, rgba(10,10,10,.12) 0%, transparent 70%);
+}
+.page{max-width:900px;margin:0 auto;padding:48px 32px;position:relative}
+.loading,.error{text-align:center;padding:100px 20px;font-family:'Cinzel',serif;letter-spacing:.3em;opacity:.6;text-transform:uppercase;font-size:.85rem}
+.error{color:var(--red)}
 
-  .header{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:32px}
-  .char-name{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.6rem);font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-  .char-subtitle{font-size:.95rem;opacity:.7;font-style:italic;margin-top:6px}
-  .char-meta{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.25em;text-transform:uppercase;opacity:.55;margin-top:10px;display:flex;gap:14px;flex-wrap:wrap}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes roll{0%{transform:rotate(-5deg) scale(.9)}50%{transform:rotate(3deg) scale(1.1)}100%{transform:rotate(0) scale(1)}}
+.roll{animation:roll .4s ease}
 
-  .section-label{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.4em;text-transform:uppercase;color:var(--accent);margin:32px 0 14px;display:flex;align-items:center;gap:10px}
-  .section-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--ink),transparent);opacity:.3}
+.header{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;margin-bottom:40px;border-bottom:2px solid var(--ink);padding-bottom:28px;animation:fadeDown .8s ease both}
+.char-name{font-family:'Cinzel',serif;font-size:clamp(1.8rem,5vw,3rem);font-weight:900;letter-spacing:.1em;line-height:1;text-transform:uppercase}
+.char-name::after{content:'';display:block;width:55%;height:1px;background:var(--ink);margin-top:10px;opacity:.4}
+.char-subtitle{font-size:.95rem;opacity:.7;font-style:italic;margin-top:10px}
+.char-meta{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.3em;color:var(--accent);text-transform:uppercase;display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
+.char-meta span::before{content:'◆ ';opacity:.5}
+.char-meta span:first-child::before{content:''}
+.char-art{width:120px;height:150px;background:linear-gradient(160deg,#1a1612,#2d2520 40%,#0f0d0b);position:relative;flex-shrink:0;overflow:hidden}
+.char-art::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(85deg,transparent,transparent 2px,rgba(255,255,255,.02) 2px,rgba(255,255,255,.02) 4px)}
 
-  .abilities-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
-  .ability{border:1px solid var(--ink);padding:10px 6px;text-align:center}
-  .ability-name{font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;opacity:.6}
-  .ability-score{font-size:1.5rem;margin:4px 0}
-  .ability-score input{width:100%;text-align:center;border:none;background:transparent;font-family:inherit;font-size:inherit;color:inherit;outline:none}
-  .ability-mod{font-family:'Cinzel',serif;font-size:.7rem;color:var(--red);font-weight:600}
+.section-label{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.5em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--ink),transparent);opacity:.3}
 
-  .core-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .stat-box{border:1px solid var(--ink);padding:12px;text-align:center}
-  .stat-label{font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.25em;text-transform:uppercase;opacity:.55;display:block;margin-bottom:4px}
-  .stat-value{font-size:1.3rem}
-  .stat-value input{width:100%;text-align:center;border:none;background:transparent;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+.tab-nav{display:flex;border-bottom:2px solid var(--ink);margin-bottom:36px;position:sticky;top:0;background:var(--paper);z-index:50;padding-top:8px}
+.tab-btn{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.35em;text-transform:uppercase;border:none;background:none;padding:12px 20px;cursor:pointer;color:var(--ink);opacity:.4;border-bottom:2px solid transparent;margin-bottom:-2px;transition:opacity .2s,border-color .2s}
+.tab-btn:hover{opacity:.7}
+.tab-btn.active{opacity:1;border-bottom-color:var(--ink)}
+.tab-panel{display:none;animation:fadeUp .5s ease both}
+.tab-panel.active{display:block}
 
-  .hp-row{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:4px}
-  .hp-row input{width:50px}
+.abilities-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:32px}
+.ability{display:flex;flex-direction:column;align-items:center;border:1px solid var(--ink);padding:12px 8px}
+.ability-name{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;opacity:.7;margin-bottom:6px}
+.ability-score{font-size:1.7rem;line-height:1;margin-bottom:4px;width:100%}
+.ability-score input{width:100%;text-align:center;border:none;background:transparent;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+.ability-mod{font-family:'Cinzel',serif;font-size:.75rem;color:var(--red);font-weight:600}
+.ability-ctrl{display:flex;gap:4px;margin-top:6px}
+.ability-ctrl button{width:18px;height:18px;border:1px solid currentColor;background:none;font-size:.7rem;cursor:pointer;opacity:.6;line-height:1}
+.ability-ctrl button:hover{background:var(--ink);color:var(--paper);opacity:1}
 
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-  .skill-row,.save-row{display:flex;align-items:center;gap:8px;padding:4px 6px;font-size:.85rem}
-  .skill-row:hover{background:rgba(10,10,10,0.05)}
-  .chk{width:13px;height:13px;border:1px solid var(--ink);flex-shrink:0;cursor:pointer}
-  .chk.on{background:var(--ink)}
-  .skill-name{flex:1}
-  .skill-bonus{font-family:'Cinzel',serif;font-size:.78rem;font-weight:600;min-width:26px;text-align:right}
+.core-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+.stat-box{border:1px solid var(--ink);padding:14px;text-align:center;position:relative}
+.stat-box::before{content:'';position:absolute;top:3px;left:3px;right:3px;bottom:3px;border:1px solid rgba(10,10,10,.1);pointer-events:none}
+.stat-label{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;opacity:.6;display:block;margin-bottom:6px}
+.stat-value{font-size:1.5rem}
+.stat-value input{width:100%;text-align:center;border:none;background:transparent;font-family:inherit;font-size:inherit;color:inherit;outline:none}
+.hp-box{border:2px solid var(--ink);padding:16px;text-align:center;margin-bottom:36px}
+.hp-row{display:flex;gap:8px;justify-content:center;align-items:baseline;font-size:1.8rem;margin-top:6px}
+.hp-row input{width:60px;text-align:center;border:none;background:transparent;font-family:'IM Fell English',serif;font-size:inherit;color:var(--ink);outline:none}
+.hp-sep{opacity:.4}
+.hp-temp{font-size:.95rem;opacity:.6;display:flex;align-items:center;gap:6px;margin-left:14px}
+.hp-temp input{width:36px}
 
-  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .card{border:1px solid rgba(10,10,10,0.35);padding:14px}
-  .card-title{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
-  .card-text{font-size:.82rem;line-height:1.55;opacity:.85;font-style:italic}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:36px}
+.skill-row,.save-row{display:flex;align-items:center;gap:10px;padding:5px 8px;font-size:.88rem;transition:background .2s}
+.skill-row:hover{background:rgba(10,10,10,.05)}
+.chk{width:14px;height:14px;border:1px solid var(--ink);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chk.on{background:var(--ink)}
+.skill-name{flex:1}
+.skill-bonus{font-family:'Cinzel',serif;font-size:.8rem;font-weight:600;min-width:28px;text-align:right}
 
-  .spell-slots{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-  .spell-level{border:1px solid var(--ink);padding:8px 12px;text-align:center;min-width:70px}
-  .spell-level-label{font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.2em;opacity:.6;margin-bottom:4px}
-  .slot-circles{display:flex;gap:4px;justify-content:center;margin-top:4px}
-  .slot-circle{width:11px;height:11px;border-radius:50%;border:1px solid var(--ink);cursor:pointer}
-  .slot-circle.used{background:var(--ink)}
-  .spell-entry{font-size:.82rem;padding:5px 8px;border-left:2px solid transparent;cursor:default}
-  .spell-entry:hover{border-left-color:var(--ink);background:rgba(10,10,10,0.05)}
-  .spell-school{font-size:.65rem;opacity:.5;font-style:italic;margin-left:4px}
+.features-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:36px}
+.feature-card{border:1px solid rgba(10,10,10,.4);padding:16px;position:relative}
+.feature-card::after{content:'';position:absolute;bottom:0;right:0;width:18px;height:18px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+.feature-title{font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.feature-title .dot{width:5px;height:5px;background:var(--ink);flex-shrink:0}
+.feature-text{font-size:.85rem;line-height:1.6;opacity:.85;font-style:italic}
 
-  .equip-item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(10,10,10,0.12);font-size:.85rem}
-  .equip-info{opacity:.65;font-style:italic;font-size:.78rem}
+.spell-slots-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.spell-level{display:flex;flex-direction:column;align-items:center;border:1px solid var(--ink);padding:8px 14px;min-width:64px}
+.spell-level-num{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.25em;opacity:.6;margin-bottom:4px}
+.spell-level-slots{font-size:1rem}
+.slot-circles{display:flex;gap:4px;margin-top:6px}
+.slot-circle{width:10px;height:10px;border-radius:50%;border:1px solid var(--ink);cursor:pointer;transition:background .2s}
+.slot-circle.used{background:var(--ink)}
+.spells-known{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:36px}
+.spell-entry{font-size:.85rem;padding:5px 8px;border-left:2px solid transparent;transition:border-color .2s,background .2s;cursor:default}
+.spell-entry:hover{border-left-color:var(--ink);background:rgba(10,10,10,.05)}
+.spell-school{font-size:.68rem;opacity:.5;font-style:italic;margin-left:4px}
 
-  .death-section{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-  .death-box{border:1px solid var(--ink);padding:14px;text-align:center}
-  .death-label{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;margin-bottom:10px}
-  .death-circles{display:flex;justify-content:center;gap:8px}
-  .death-circle{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink);cursor:pointer}
-  .death-success.filled{background:var(--green)}
-  .death-fail.filled{background:var(--red)}
+.equip-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(10,10,10,.12)}
+.equip-name{font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase}
+.equip-info{font-size:.78rem;opacity:.65;font-style:italic;text-align:right}
 
-  .notes-area{width:100%;min-height:120px;border:1px solid rgba(10,10,10,0.3);padding:14px;font-family:'IM Fell English',serif;font-size:.9rem;background:transparent;resize:vertical;outline:none;line-height:1.7}
+.gold-row{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+.gold-ctrl{display:flex;align-items:center;gap:6px;border:1px solid var(--ink);padding:8px 14px}
+.gold-ctrl button{width:22px;height:22px;border:1px solid var(--ink);background:none;cursor:pointer;font-size:.85rem;line-height:1}
+.gold-ctrl button:hover{background:var(--ink);color:var(--paper)}
+.gold-val{font-weight:700;min-width:28px;text-align:center;font-family:'Cinzel',serif;font-size:.95rem}
+.gold-label{font-size:.65rem;text-transform:uppercase;opacity:.5;font-family:'Cinzel',serif;letter-spacing:.15em}
 
-  .gold-row{display:flex;gap:18px;flex-wrap:wrap}
-  .gold-ctrl{display:flex;align-items:center;gap:8px;border:1px solid var(--ink);padding:8px 12px}
-  .gold-ctrl button{width:22px;height:22px;border:1px solid var(--ink);background:none;cursor:pointer}
-  .gold-ctrl button:hover{background:var(--ink);color:var(--paper)}
-  .gold-val{min-width:30px;text-align:center;font-family:'Cinzel',serif}
+.death-section{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:36px}
+.death-box{border:1px solid var(--ink);padding:16px;text-align:center}
+.death-label{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;margin-bottom:12px}
+.death-circles{display:flex;justify-content:center;gap:8px}
+.death-circle{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--ink);cursor:pointer;transition:background .2s}
+.death-success.filled{background:var(--green)}
+.death-fail.filled{background:var(--red)}
 
-  /* Dados */
-  .dice-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
-  .die-btn{border:1px solid rgba(10,10,10,0.4);background:none;cursor:pointer;padding:10px 4px;font-family:'Cinzel',serif;font-weight:700;transition:transform .15s,background .2s}
-  .die-btn:hover{background:rgba(10,10,10,0.06);transform:translateY(-2px)}
-  .die-btn:active{transform:scale(.95)}
-  #dice-result{font-family:'Cinzel',serif;font-size:1.4rem;text-align:center;padding:14px;border:1px solid var(--ink);margin-bottom:10px;min-height:1.4rem}
-  #dice-log{font-size:.78rem;opacity:.6;max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.notes-area{width:100%;min-height:140px;border:1px solid rgba(10,10,10,.3);padding:16px;font-family:'IM Fell English',serif;font-size:.9rem;background:transparent;resize:vertical;outline:none;line-height:1.7;color:var(--ink);transition:border-color .3s}
+.notes-area:focus{border-color:var(--ink)}
+.notes-area::placeholder{opacity:.4;font-style:italic}
 
-  #save-btn{position:fixed;bottom:24px;right:24px;z-index:800;background:var(--ink);color:var(--paper);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;border:none;padding:12px 18px;cursor:pointer;box-shadow:0 4px 16px rgba(10,10,10,.3)}
-  #save-btn.saved{background:var(--green)}
-  #save-btn.saving{background:#7a6a00}
-  #save-btn.error{background:var(--red)}
-  #sync-status{position:fixed;bottom:66px;right:24px;font-size:.72rem;opacity:.55}
+.bg-box{border:1px solid rgba(10,10,10,.3);padding:18px;font-size:.9rem;line-height:1.7;margin-bottom:36px}
 
-  @media(max-width:640px){
-    .page{padding:24px 16px}
-    .header{grid-template-columns:1fr}
-    .abilities-grid{grid-template-columns:repeat(3,1fr)}
-    .core-stats{grid-template-columns:repeat(2,1fr)}
-    .two-col,.card-grid,.death-section{grid-template-columns:1fr}
-    .dice-grid{grid-template-columns:repeat(3,1fr)}
-  }
+.dice-layout{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.dice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+.die-btn{border:1px solid rgba(10,10,10,.35);background:none;cursor:pointer;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:border-color .25s,background .2s,transform .15s;color:var(--ink);font-family:'IM Fell English',serif}
+.die-btn:hover{border-color:var(--ink);background:rgba(10,10,10,.04);transform:translateY(-2px)}
+.die-btn:active{transform:translateY(0) scale(.96)}
+.die-shape{font-family:'Cinzel',serif;font-weight:900;font-size:1rem;color:var(--ink);width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%)}
+.die-shape.d4{clip-path:polygon(50% 0%,100% 100%,0% 100%)}
+.die-shape.d6{clip-path:none;border-radius:6px}
+.die-shape.d8{clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)}
+.die-shape.d10{clip-path:polygon(50% 0%,100% 35%,80% 100%,20% 100%,0% 35%)}
+.die-shape.d12{clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)}
+.die-shape.d100{clip-path:none;border-radius:50%;font-size:.78rem}
+.die-label{font-family:'Cinzel',serif;font-size:.45rem;letter-spacing:.3em;text-transform:uppercase;opacity:.5}
+#dice-result{font-family:'Cinzel',serif;font-size:1.6rem;text-align:center;padding:18px;border:2px solid var(--ink);margin-bottom:14px;min-height:1.6rem}
+#dice-log{font-size:.8rem;opacity:.6;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;border:1px solid rgba(10,10,10,.2);padding:10px}
+@media(max-width:680px){.dice-layout{grid-template-columns:1fr}}
+
+#save-btn{position:fixed;bottom:24px;right:32px;z-index:800;background:var(--ink);color:var(--paper);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.35em;text-transform:uppercase;border:none;padding:13px 22px;cursor:pointer;transition:background .2s,transform .2s;box-shadow:0 4px 20px rgba(10,10,10,.3)}
+#save-btn:hover{background:var(--red);transform:translateY(-2px)}
+#save-btn.saved{background:var(--green)}
+#save-btn.saving{background:#7a6a00}
+#save-btn.error{background:var(--red)}
+#sync-status{position:fixed;bottom:70px;right:32px;z-index:800;font-size:.75rem;color:var(--ink);opacity:0;transition:opacity .4s;pointer-events:none}
+#sync-status.visible{opacity:.6}
+
+@media(max-width:640px){
+  .page{padding:24px 16px}
+  .header{grid-template-columns:1fr}
+  .char-art{width:100%;height:110px}
+  .abilities-grid{grid-template-columns:repeat(3,1fr)}
+  .core-stats{grid-template-columns:repeat(2,1fr)}
+  .two-col,.features-grid,.spells-known,.death-section{grid-template-columns:1fr}
+  .tab-btn{padding:10px 14px;font-size:.5rem;letter-spacing:.25em}
+  #save-btn{bottom:14px;right:14px;padding:10px 16px;font-size:.5rem}
+  #sync-status{bottom:54px;right:14px}
+}
 </style>
 </head>
 <body>
-<div class="page" id="page">
-  <div class="loading" id="loading">CARREGANDO FICHA…</div>
-</div>
-
+<div class="page" id="page"><div class="loading">CARREGANDO FICHA…</div></div>
 <button id="save-btn" style="display:none">SALVAR</button>
 <div id="sync-status"></div>
 
 <script>
-/* ───────────────────────────────────────────────
-   FICHA GENÉRICA — lê ?id=NOME e busca:
-   1) /api/ficha?id=NOME   (dados salvos na nuvem)
-   2) fallback: /personagens/NOME.json (dados-base)
-   3) fallback: localStorage
-─────────────────────────────────────────────── */
-
 const params = new URLSearchParams(location.search);
 const FICHA_ID = params.get('id');
 let state = null;
+let activeTab = 'principal';
 
 const MODS = (score) => Math.floor((score - 10) / 2);
 const fmtMod = (m) => (m >= 0 ? '+' + m : m);
+const attrLabel = (k) => ({forca:'Força',destreza:'Destreza',constituicao:'Constituição',inteligencia:'Inteligência',sabedoria:'Sabedoria',carisma:'Carisma'}[k] || k);
+const attrShort = (k) => ({forca:'FOR',destreza:'DES',constituicao:'CON',inteligencia:'INT',sabedoria:'SAB',carisma:'CAR'}[k] || k.slice(0,3).toUpperCase());
 
 async function loadState() {
-  if (!FICHA_ID) {
-    document.getElementById('page').innerHTML = '<div class="error">Nenhum personagem especificado.<br>Use a URL assim: ficha.html?id=mikhail</div>';
-    return null;
-  }
-  // 1) tenta a API (dados salvos / compartilhados)
+  if (!FICHA_ID) return null;
   try {
     const r = await fetch(`/api/ficha?id=${FICHA_ID}`);
-    if (r.ok) {
-      const data = await r.json();
-      if (data && data.nome) return data;
-    }
-  } catch (e) { /* segue pro fallback */ }
-
-  // 2) tenta o JSON-base do personagem
+    if (r.ok) { const data = await r.json(); if (data && data.nome) return data; }
+  } catch (e) {}
   try {
     const r2 = await fetch(`personagens/${FICHA_ID}.json`);
     if (r2.ok) return await r2.json();
   } catch (e) {}
-
-  // 3) tenta localStorage
   const local = localStorage.getItem('ficha_' + FICHA_ID);
   if (local) return JSON.parse(local);
-
   return null;
-}
-
-function attrLabel(key) {
-  const labels = { forca:'Força', destreza:'Destreza', constituicao:'Constituição', inteligencia:'Inteligência', sabedoria:'Sabedoria', carisma:'Carisma' };
-  return labels[key] || key;
-}
-function attrShort(key) {
-  const s = { forca:'FOR', destreza:'DES', constituicao:'CON', inteligencia:'INT', sabedoria:'SAB', carisma:'CAR' };
-  return s[key] || key.slice(0,3).toUpperCase();
 }
 
 function render() {
   const s = state;
-  const html = `
+  document.getElementById('page').innerHTML = `
     <div class="header">
       <div>
         <div class="char-name">${s.nome}</div>
         <div class="char-subtitle">${s.subtitulo || ''}</div>
-        <div class="char-meta">
-          <span>${s.raca || ''}</span><span>${s.classe || ''}</span><span>Nível ${s.nivel ?? '-'}</span><span>${s.antecedente || ''}</span>
+        <div class="char-meta"><span>${s.raca||''}</span><span>${s.classe||''}</span><span>Nível ${s.nivel??'-'}</span><span>${s.antecedente||''}</span></div>
+      </div>
+      <div class="char-art"></div>
+    </div>
+
+    <div class="tab-nav">
+      <button class="tab-btn" data-tab="principal">Principal</button>
+      <button class="tab-btn" data-tab="habilidades">Habilidades</button>
+      <button class="tab-btn" data-tab="magias">Magias</button>
+      <button class="tab-btn" data-tab="dados">Dados</button>
+      <button class="tab-btn" data-tab="notas">Notas</button>
+    </div>
+
+    <div class="tab-panel" data-panel="principal">
+      <div class="section-label">Atributos</div>
+      <div class="abilities-grid">
+        ${Object.entries(s.atributos).map(([k,v]) => `
+          <div class="ability">
+            <div class="ability-name">${attrShort(k)}</div>
+            <div class="ability-score"><input data-attr="${k}" type="number" value="${v}"></div>
+            <div class="ability-mod">${fmtMod(MODS(v))}</div>
+            <div class="ability-ctrl"><button data-attrdelta="${k}" data-d="-1">−</button><button data-attrdelta="${k}" data-d="1">+</button></div>
+          </div>`).join('')}
+      </div>
+
+      <div class="section-label">Status</div>
+      <div class="core-stats">
+        <div class="stat-box"><span class="stat-label">CA</span><div class="stat-value"><input data-core="ca" type="number" value="${s.core.ca}"></div></div>
+        <div class="stat-box"><span class="stat-label">Iniciativa</span><div class="stat-value"><input data-core="iniciativa" type="number" value="${s.core.iniciativa}"></div></div>
+        <div class="stat-box"><span class="stat-label">Deslocamento</span><div class="stat-value"><input data-core="deslocamento" type="number" value="${s.core.deslocamento}"></div></div>
+        <div class="stat-box"><span class="stat-label">Bônus Prof.</span><div class="stat-value"><input data-core="bonusProf" type="number" value="${s.core.bonusProf}"></div></div>
+      </div>
+      <div class="hp-box">
+        <span class="stat-label">Pontos de Vida</span>
+        <div class="hp-row">
+          <input data-core="hpAtual" type="number" value="${s.core.hpAtual}"><span class="hp-sep">/</span><input data-core="hpMax" type="number" value="${s.core.hpMax}">
+          <span class="hp-temp">temp <input data-core="hpTemp" type="number" value="${s.core.hpTemp}"></span>
         </div>
       </div>
-    </div>
 
-    <div class="section-label">Atributos</div>
-    <div class="abilities-grid">
-      ${Object.entries(s.atributos).map(([k,v]) => `
-        <div class="ability">
-          <div class="ability-name">${attrShort(k)}</div>
-          <div class="ability-score"><input data-attr="${k}" type="number" value="${v}"></div>
-          <div class="ability-mod" data-attrmod="${k}">${fmtMod(MODS(v))}</div>
-        </div>`).join('')}
-    </div>
+      <div class="two-col">
+        <div>
+          <div class="section-label">Salvaguardas</div>
+          ${Object.entries(s.salvaguardas).map(([k,v]) => {
+            const mod = MODS(s.atributos[k]) + (v.prof ? s.core.bonusProf : 0);
+            return `<div class="save-row"><div class="chk ${v.prof?'on':''}" data-save="${k}"></div><div class="skill-name">${attrLabel(k)}</div><div class="skill-bonus">${fmtMod(mod)}</div></div>`;
+          }).join('')}
+        </div>
+        <div>
+          <div class="section-label">Perícias</div>
+          ${Object.entries(s.pericias).map(([name,p]) => {
+            const mod = MODS(s.atributos[p.attr]) + (p.prof ? s.core.bonusProf : 0);
+            return `<div class="skill-row"><div class="chk ${p.prof?'on':''}" data-skill="${name}"></div><div class="skill-name">${name}</div><div class="skill-bonus">${fmtMod(mod)}</div></div>`;
+          }).join('')}
+        </div>
+      </div>
 
-    <div class="section-label">Status</div>
-    <div class="core-stats">
-      <div class="stat-box"><span class="stat-label">CA</span><div class="stat-value"><input data-core="ca" type="number" value="${s.core.ca}"></div></div>
-      <div class="stat-box"><span class="stat-label">Iniciativa</span><div class="stat-value"><input data-core="iniciativa" type="number" value="${s.core.iniciativa}"></div></div>
-      <div class="stat-box"><span class="stat-label">Deslocamento</span><div class="stat-value"><input data-core="deslocamento" type="number" value="${s.core.deslocamento}"></div></div>
-      <div class="stat-box"><span class="stat-label">Bônus Prof.</span><div class="stat-value"><input data-core="bonusProf" type="number" value="${s.core.bonusProf}"></div></div>
-    </div>
-    <div class="stat-box" style="margin-top:12px">
-      <span class="stat-label">Pontos de Vida</span>
-      <div class="hp-row">
-        <input data-core="hpAtual" type="number" value="${s.core.hpAtual}"> /
-        <input data-core="hpMax" type="number" value="${s.core.hpMax}">
-        <span style="opacity:.5;font-size:.7rem">temp</span>
-        <input data-core="hpTemp" type="number" value="${s.core.hpTemp}">
+      <div class="section-label">Dinheiro</div>
+      <div class="gold-row">
+        ${Object.entries(s.dinheiro||{ouro:0,prata:0,cobre:0}).map(([m,v]) => `
+          <div class="gold-ctrl"><button data-money="${m}" data-delta="-1">−</button><span class="gold-val" data-moneyval="${m}">${v}</span><button data-money="${m}" data-delta="1">+</button><span class="gold-label">${m}</span></div>`).join('')}
+      </div>
+
+      <div class="section-label" style="margin-top:36px">Testes de Morte</div>
+      <div class="death-section">
+        <div class="death-box"><div class="death-label">Sucessos</div><div class="death-circles">${[0,1,2].map(i=>`<div class="death-circle death-success ${i<(s.mortesSalvas?.sucessos||0)?'filled':''}" data-death="sucessos" data-idx="${i}"></div>`).join('')}</div></div>
+        <div class="death-box"><div class="death-label">Falhas</div><div class="death-circles">${[0,1,2].map(i=>`<div class="death-circle death-fail ${i<(s.mortesSalvas?.falhas||0)?'filled':''}" data-death="falhas" data-idx="${i}"></div>`).join('')}</div></div>
       </div>
     </div>
 
-    <div class="two-col">
-      <div>
-        <div class="section-label">Salvaguardas</div>
-        ${Object.entries(s.salvaguardas).map(([k,v]) => {
-          const mod = MODS(s.atributos[k]) + (v.prof ? s.core.bonusProf : 0);
-          return `<div class="save-row"><div class="chk ${v.prof ? 'on' : ''}" data-save="${k}"></div><div class="skill-name">${attrLabel(k)}</div><div class="skill-bonus">${fmtMod(mod)}</div></div>`;
-        }).join('')}
-      </div>
-      <div>
-        <div class="section-label">Perícias</div>
-        ${Object.entries(s.pericias).map(([name,p]) => {
-          const mod = MODS(s.atributos[p.attr]) + (p.prof ? s.core.bonusProf : 0);
-          return `<div class="skill-row"><div class="chk ${p.prof ? 'on' : ''}" data-skill="${name}"></div><div class="skill-name">${name}</div><div class="skill-bonus">${fmtMod(mod)}</div></div>`;
-        }).join('')}
-      </div>
+    <div class="tab-panel" data-panel="habilidades">
+      ${s.ataques && s.ataques.length ? `
+      <div class="section-label">Ataques</div>
+      <div class="features-grid">
+        ${s.ataques.map(a => `<div class="feature-card"><div class="feature-title"><span class="dot"></span>${a.nome}</div><div class="feature-text">${a.bonus} para acertar — ${a.dano}</div></div>`).join('')}
+      </div>` : ''}
+
+      ${s.features && s.features.length ? `
+      <div class="section-label">Características</div>
+      <div class="features-grid">
+        ${s.features.map(f => `<div class="feature-card"><div class="feature-title"><span class="dot"></span>${f.titulo}</div><div class="feature-text">${f.texto}</div></div>`).join('')}
+      </div>` : ''}
+
+      ${s.equipamento && s.equipamento.length ? `
+      <div class="section-label">Equipamento</div>
+      <div style="margin-bottom:8px">
+        ${s.equipamento.map(e => `<div class="equip-item"><span class="equip-name">${e.nome}</span><span class="equip-info">${e.info||''}</span></div>`).join('')}
+      </div>` : ''}
     </div>
 
-    ${s.ataques && s.ataques.length ? `
-    <div class="section-label">Ataques</div>
-    <div class="card-grid">
-      ${s.ataques.map(a => `<div class="card"><div class="card-title">${a.nome}</div><div class="card-text">${a.bonus} para acertar — ${a.dano}</div></div>`).join('')}
-    </div>` : ''}
+    <div class="tab-panel" data-panel="magias">
+      ${s.magias && s.magias.conhecidas && s.magias.conhecidas.length ? `
+      <div class="section-label">Espaços de Magia</div>
+      <div class="spell-slots-row">
+        ${(s.magias.slots||[]).map((lvl,li) => `
+          <div class="spell-level">
+            <div class="spell-level-num">Nível ${lvl.nivel}</div>
+            <div class="spell-level-slots">${lvl.total-lvl.usados}/${lvl.total}</div>
+            <div class="slot-circles">${Array.from({length:lvl.total}).map((_,i)=>`<div class="slot-circle ${i<lvl.usados?'used':''}" data-slotlevel="${li}" data-slotidx="${i}"></div>`).join('')}</div>
+          </div>`).join('')}
+      </div>
+      <div class="section-label">Magias Conhecidas</div>
+      <div class="spells-known">
+        ${s.magias.conhecidas.map(m => `<div class="spell-entry">${m.nome}<span class="spell-school">${m.escola} · nível ${m.nivel}</span></div>`).join('')}
+      </div>` : `<div class="feature-text" style="opacity:.5;font-style:italic">Este personagem não possui magias.</div>`}
+    </div>
 
-    ${s.magias && s.magias.conhecidas && s.magias.conhecidas.length ? `
-    <div class="section-label">Magias</div>
-    <div class="spell-slots">
-      ${(s.magias.slots||[]).map((lvl, li) => `
-        <div class="spell-level">
-          <div class="spell-level-label">Nível ${lvl.nivel}</div>
-          <div>${lvl.total - lvl.usados}/${lvl.total}</div>
-          <div class="slot-circles">
-            ${Array.from({length:lvl.total}).map((_,i) => `<div class="slot-circle ${i < lvl.usados ? 'used' : ''}" data-slotlevel="${li}" data-slotidx="${i}"></div>`).join('')}
+    <div class="tab-panel" data-panel="dados">
+      <div class="dice-layout">
+        <div>
+          <div class="section-label">Rolar Dados</div>
+          <div class="dice-grid">
+            ${[4,6,8,10,12,20,100].map(d => `
+              <button class="die-btn" data-die="${d}">
+                <div class="die-shape d${d}">d${d}</div>
+                <div class="die-label">${d===100?'percentual':'rolar'}</div>
+              </button>`).join('')}
           </div>
-        </div>`).join('')}
-    </div>
-    <div>
-      ${s.magias.conhecidas.map(m => `<div class="spell-entry">${m.nome}<span class="spell-school">${m.escola} · nível ${m.nivel}</span></div>`).join('')}
-    </div>` : ''}
-
-    ${s.features && s.features.length ? `
-    <div class="section-label">Características</div>
-    <div class="card-grid">
-      ${s.features.map(f => `<div class="card"><div class="card-title">${f.titulo}</div><div class="card-text">${f.texto}</div></div>`).join('')}
-    </div>` : ''}
-
-    ${s.equipamento && s.equipamento.length ? `
-    <div class="section-label">Equipamento</div>
-    <div>
-      ${s.equipamento.map(e => `<div class="equip-item"><span>${e.nome}</span><span class="equip-info">${e.info || ''}</span></div>`).join('')}
-    </div>` : ''}
-
-    <div class="section-label">Dinheiro</div>
-    <div class="gold-row">
-      ${Object.entries(s.dinheiro || {ouro:0,prata:0,cobre:0}).map(([moeda,val]) => `
-        <div class="gold-ctrl">
-          <button data-money="${moeda}" data-delta="-1">-</button>
-          <span class="gold-val" data-moneyval="${moeda}">${val}</span>
-          <button data-money="${moeda}" data-delta="1">+</button>
-          <span style="opacity:.5;font-size:.7rem;text-transform:uppercase">${moeda}</span>
-        </div>`).join('')}
-    </div>
-
-    <div class="section-label">Testes de Morte</div>
-    <div class="death-section">
-      <div class="death-box">
-        <div class="death-label">Sucessos</div>
-        <div class="death-circles">
-          ${[0,1,2].map(i => `<div class="death-circle death-success ${i < (s.mortesSalvas?.sucessos||0) ? 'filled' : ''}" data-death="sucessos" data-idx="${i}"></div>`).join('')}
         </div>
-      </div>
-      <div class="death-box">
-        <div class="death-label">Falhas</div>
-        <div class="death-circles">
-          ${[0,1,2].map(i => `<div class="death-circle death-fail ${i < (s.mortesSalvas?.falhas||0) ? 'filled' : ''}" data-death="falhas" data-idx="${i}"></div>`).join('')}
+        <div>
+          <div class="section-label">Resultado</div>
+          <div id="dice-result">—</div>
+          <div id="dice-log"></div>
         </div>
       </div>
     </div>
 
-    <div class="section-label">Dados</div>
-    <div class="dice-grid">
-      ${[4,6,8,10,12,20,100].map(d => `<button class="die-btn" data-die="${d}">d${d}</button>`).join('')}
+    <div class="tab-panel" data-panel="notas">
+      ${s.antecedenteTexto ? `<div class="section-label">Antecedente</div><div class="bg-box">${s.antecedenteTexto}</div>` : ''}
+      <div class="section-label">Anotações</div>
+      <textarea class="notes-area" id="notes" placeholder="Escreva aqui suas anotações de sessão…">${s.notas||''}</textarea>
     </div>
-    <div id="dice-result">—</div>
-    <div id="dice-log"></div>
-
-    <div class="section-label">Antecedente</div>
-    <div class="card-text" style="font-size:.9rem">${s.antecedenteTexto || ''}</div>
-
-    <div class="section-label">Anotações</div>
-    <textarea class="notes-area" id="notes" placeholder="Escreva aqui suas anotações de sessão…">${s.notas || ''}</textarea>
   `;
-  document.getElementById('page').innerHTML = html;
   attachEvents();
+  setActiveTab(activeTab);
+}
+
+function setActiveTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel===name));
 }
 
 function attachEvents() {
-  // atributos
-  document.querySelectorAll('[data-attr]').forEach(el => {
-    el.addEventListener('input', () => {
-      const key = el.dataset.attr;
-      state.atributos[key] = parseInt(el.value) || 0;
-      document.querySelector(`[data-attrmod="${key}"]`).textContent = fmtMod(MODS(state.atributos[key]));
-      render(); // re-render pra recalcular perícias/saves dependentes
-    });
-  });
-  // core stats
-  document.querySelectorAll('[data-core]').forEach(el => {
-    el.addEventListener('input', () => { state.core[el.dataset.core] = parseInt(el.value) || 0; });
-  });
-  // saves prof toggle
-  document.querySelectorAll('[data-save]').forEach(el => {
-    el.addEventListener('click', () => {
-      const k = el.dataset.save;
-      state.salvaguardas[k].prof = !state.salvaguardas[k].prof;
-      render();
-    });
-  });
-  // pericias prof toggle
-  document.querySelectorAll('[data-skill]').forEach(el => {
-    el.addEventListener('click', () => {
-      const k = el.dataset.skill;
-      state.pericias[k].prof = !state.pericias[k].prof;
-      render();
-    });
-  });
-  // slots de magia
-  document.querySelectorAll('[data-slotlevel]').forEach(el => {
-    el.addEventListener('click', () => {
-      const li = parseInt(el.dataset.slotlevel), idx = parseInt(el.dataset.slotidx);
-      const lvl = state.magias.slots[li];
-      lvl.usados = (idx < lvl.usados) ? idx : idx + 1;
-      render();
-    });
-  });
-  // dinheiro
-  document.querySelectorAll('[data-money]').forEach(el => {
-    el.addEventListener('click', () => {
-      const moeda = el.dataset.money, delta = parseInt(el.dataset.delta);
-      state.dinheiro[moeda] = Math.max(0, (state.dinheiro[moeda] || 0) + delta);
-      document.querySelector(`[data-moneyval="${moeda}"]`).textContent = state.dinheiro[moeda];
-    });
-  });
-  // testes de morte
-  document.querySelectorAll('[data-death]').forEach(el => {
-    el.addEventListener('click', () => {
-      const tipo = el.dataset.death, idx = parseInt(el.dataset.idx);
-      if (!state.mortesSalvas) state.mortesSalvas = { sucessos:0, falhas:0 };
-      const atual = state.mortesSalvas[tipo] || 0;
-      state.mortesSalvas[tipo] = (idx < atual) ? idx : idx + 1;
-      render();
-    });
-  });
-  // notas
-  document.getElementById('notes').addEventListener('input', (e) => { state.notas = e.target.value; });
-  // dados
-  document.querySelectorAll('[data-die]').forEach(el => {
-    el.addEventListener('click', () => {
-      const d = parseInt(el.dataset.die);
-      const result = Math.floor(Math.random() * d) + 1;
-      document.getElementById('dice-result').textContent = `d${d} → ${result}`;
-      const log = document.getElementById('dice-log');
-      const entry = document.createElement('div');
-      entry.textContent = `d${d}: ${result}`;
-      log.prepend(entry);
-    });
-  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
+
+  document.querySelectorAll('[data-attr]').forEach(el => el.addEventListener('input', () => {
+    state.atributos[el.dataset.attr] = parseInt(el.value)||0; render();
+  }));
+  document.querySelectorAll('[data-attrdelta]').forEach(el => el.addEventListener('click', () => {
+    const k = el.dataset.attrdelta; state.atributos[k] = Math.max(1,(state.atributos[k]||10)+parseInt(el.dataset.d)); render(); scheduleSave();
+  }));
+  document.querySelectorAll('[data-core]').forEach(el => el.addEventListener('input', () => { state.core[el.dataset.core] = parseInt(el.value)||0; }));
+  document.querySelectorAll('[data-save]').forEach(el => el.addEventListener('click', () => { const k=el.dataset.save; state.salvaguardas[k].prof=!state.salvaguardas[k].prof; render(); scheduleSave(); }));
+  document.querySelectorAll('[data-skill]').forEach(el => el.addEventListener('click', () => { const k=el.dataset.skill; state.pericias[k].prof=!state.pericias[k].prof; render(); scheduleSave(); }));
+  document.querySelectorAll('[data-slotlevel]').forEach(el => el.addEventListener('click', () => {
+    const li=parseInt(el.dataset.slotlevel), idx=parseInt(el.dataset.slotidx), lvl=state.magias.slots[li];
+    lvl.usados = idx<lvl.usados ? idx : idx+1; render(); scheduleSave();
+  }));
+  document.querySelectorAll('[data-money]').forEach(el => el.addEventListener('click', () => {
+    const m=el.dataset.money; state.dinheiro[m]=Math.max(0,(state.dinheiro[m]||0)+parseInt(el.dataset.delta));
+    document.querySelector(`[data-moneyval="${m}"]`).textContent = state.dinheiro[m]; scheduleSave();
+  }));
+  document.querySelectorAll('[data-death]').forEach(el => el.addEventListener('click', () => {
+    const tipo=el.dataset.death, idx=parseInt(el.dataset.idx);
+    if(!state.mortesSalvas) state.mortesSalvas={sucessos:0,falhas:0};
+    const atual=state.mortesSalvas[tipo]||0; state.mortesSalvas[tipo] = idx<atual ? idx : idx+1; render(); scheduleSave();
+  }));
+  const notes = document.getElementById('notes');
+  if (notes) notes.addEventListener('input', e => { state.notas = e.target.value; });
+  document.querySelectorAll('[data-die]').forEach(el => el.addEventListener('click', () => {
+    const d = parseInt(el.dataset.die), result = Math.floor(Math.random()*d)+1;
+    el.classList.remove('roll'); void el.offsetWidth; el.classList.add('roll');
+    document.getElementById('dice-result').textContent = `d${d} → ${result}`;
+    const log = document.getElementById('dice-log');
+    const entry = document.createElement('div'); entry.textContent = `d${d}: ${result}`;
+    log.prepend(entry);
+  }));
+  document.getElementById('page').addEventListener('input', scheduleSave);
 }
 
 let saveTimeout = null;
-function scheduleSave() {
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(saveState, 600);
-}
+function scheduleSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveState, 600); }
 
 async function saveState() {
-  const btn = document.getElementById('save-btn');
-  const status = document.getElementById('sync-status');
-  btn.className = 'saving'; btn.textContent = 'SALVANDO…';
-  localStorage.setItem('ficha_' + FICHA_ID, JSON.stringify(state));
+  const btn = document.getElementById('save-btn'), status = document.getElementById('sync-status');
+  btn.className='saving'; btn.textContent='SALVANDO…';
+  localStorage.setItem('ficha_'+FICHA_ID, JSON.stringify(state));
   try {
-    const r = await fetch(`/api/ficha?id=${FICHA_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state)
-    });
-    if (r.ok) { btn.className = 'saved'; btn.textContent = 'SALVO ✓'; status.textContent = 'sincronizado'; }
+    const r = await fetch(`/api/ficha?id=${FICHA_ID}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
+    if (r.ok) { btn.className='saved'; btn.textContent='SALVO ✓'; status.textContent='sincronizado'; status.classList.add('visible'); }
     else throw new Error('fail');
   } catch (e) {
-    btn.className = 'error'; btn.textContent = 'SALVO LOCAL';
-    status.textContent = 'salvo apenas neste navegador';
+    btn.className='error'; btn.textContent='SALVO LOCAL'; status.textContent='salvo apenas neste navegador'; status.classList.add('visible');
   }
-  setTimeout(() => { btn.textContent = 'SALVAR'; btn.className=''; }, 2500);
+  setTimeout(() => { btn.textContent='SALVAR'; btn.className=''; status.classList.remove('visible'); }, 2500);
 }
 
 (async function init() {
   state = await loadState();
   if (!state) {
-    document.getElementById('page').innerHTML = `<div class="error">Personagem "${FICHA_ID}" não encontrado.<br>Crie um arquivo personagens/${FICHA_ID}.json</div>`;
+    document.getElementById('page').innerHTML = `<div class="error">${FICHA_ID ? `Personagem "${FICHA_ID}" não encontrado.<br>Crie personagens/${FICHA_ID}.json` : 'Nenhum personagem especificado.<br>Use: ficha.html?id=mikhail'}</div>`;
     return;
   }
   render();
   const btn = document.getElementById('save-btn');
-  btn.style.display = 'flex';
+  btn.style.display='block';
   btn.addEventListener('click', saveState);
-  // autosave a cada mudança de input
-  document.getElementById('page').addEventListener('input', scheduleSave);
-  document.getElementById('page').addEventListener('click', (e) => {
-    if (e.target.matches('[data-save],[data-skill],[data-slotlevel],[data-money],[data-death]')) scheduleSave();
-  });
 })();
 </script>
 </body>
