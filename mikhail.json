@@ -1,0 +1,92 @@
+{
+  "id": "mikhail",
+  "nome": "Mikhail Haschwalth",
+  "subtitulo": "Tiefling de Levistus — Paladino 3 / Bruxo 1 (Hexblade)",
+  "nivel": 4,
+  "classe": "Paladino 3 / Bruxo 1",
+  "raca": "Tiefling (Levistus)",
+  "antecedente": "Nobre Caído",
+  "alinhamento": "Leal e Neutro",
+
+  "atributos": {
+    "forca": 16,
+    "destreza": 12,
+    "constituicao": 14,
+    "inteligencia": 10,
+    "sabedoria": 12,
+    "carisma": 17
+  },
+
+  "core": {
+    "ca": 18,
+    "iniciativa": 1,
+    "deslocamento": 9,
+    "hpMax": 38,
+    "hpAtual": 38,
+    "hpTemp": 0,
+    "bonusProf": 2
+  },
+
+  "salvaguardas": {
+    "forca": { "prof": true },
+    "destreza": { "prof": false },
+    "constituicao": { "prof": true },
+    "inteligencia": { "prof": false },
+    "sabedoria": { "prof": false },
+    "carisma": { "prof": false }
+  },
+
+  "pericias": {
+    "Atletismo": { "attr": "forca", "prof": true },
+    "Intimidação": { "attr": "carisma", "prof": true },
+    "Persuasão": { "attr": "carisma", "prof": false },
+    "Religião": { "attr": "inteligencia", "prof": false },
+    "Percepção": { "attr": "sabedoria", "prof": true },
+    "Arcanismo": { "attr": "inteligencia", "prof": false }
+  },
+
+  "ataques": [
+    { "nome": "Espada Longa (Hexblade)", "bonus": "+5", "dano": "1d8+3 cortante" },
+    { "nome": "Eldritch Blast", "bonus": "+5", "dano": "1d10 de força" }
+  ],
+
+  "magias": {
+    "slots": [
+      { "nivel": 1, "total": 3, "usados": 0 }
+    ],
+    "conhecidas": [
+      { "nome": "Hex", "escola": "Encantamento", "nivel": 1 },
+      { "nome": "Compelir Duelo", "escola": "Adivinhação", "nivel": 1 },
+      { "nome": "Detectar Magia", "escola": "Adivinhação", "nivel": 1 }
+    ]
+  },
+
+  "features": [
+    {
+      "titulo": "Pacto da Lâmina",
+      "texto": "Pode invocar uma arma de pacto na mão como ação bônus."
+    },
+    {
+      "titulo": "Sentido Divino",
+      "texto": "Detecta presenças celestiais, infernais ou mortas-vivas próximas."
+    },
+    {
+      "titulo": "Imposição das Mãos",
+      "texto": "Pool de cura de 5 x nível de Paladino por dia."
+    }
+  ],
+
+  "equipamento": [
+    { "nome": "Espada Longa", "info": "1d8 cortante, versátil" },
+    { "nome": "Armadura de Placas", "info": "CA base 18" },
+    { "nome": "Brasão da Casa Levistus", "info": "item de valor sentimental" }
+  ],
+
+  "antecedenteTexto": "Outrora herdeiro de uma casa nobre infernal, Mikhail abandonou seu título ao firmar um pacto com um patrono das sombras.",
+
+  "notas": "",
+
+  "dinheiro": { "ouro": 45, "prata": 12, "cobre": 0 },
+
+  "mortesSalvas": { "sucessos": 0, "falhas": 0 }
+}

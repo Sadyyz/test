@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D&D Bankai — Fichas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0a0a0a;--paper:#f0ece4;--accent:#4a3f35}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:'IM Fell English',serif;min-height:100vh}
+  .page{max-width:760px;margin:0 auto;padding:60px 32px}
+  h1{font-family:'Cinzel',serif;font-size:2rem;letter-spacing:.15em;text-transform:uppercase;border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:32px}
+  .list{display:flex;flex-direction:column;gap:12px}
+  .card{display:block;border:1px solid var(--ink);padding:18px 20px;text-decoration:none;color:var(--ink);transition:background .2s, transform .15s}
+  .card:hover{background:rgba(10,10,10,0.05);transform:translateX(4px)}
+  .card-name{font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:.08em;text-transform:uppercase}
+  .card-sub{font-size:.85rem;opacity:.65;font-style:italic;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>D&D Bankai</h1>
+  <div class="list" id="list">Carregando…</div>
+</div>
+
+<script>
+// manifest.json lista os personagens disponíveis — adicionar um novo
+// personagem = adicionar uma linha aqui, nada de copiar HTML.
+fetch('manifest.json')
+  .then(r => r.json())
+  .then(personagens => {
+    document.getElementById('list').innerHTML = personagens.map(p => `
+      <a class="card" href="ficha.html?id=${p.id}">
+        <div class="card-name">${p.nome}</div>
+        <div class="card-sub">${p.subtitulo || ''}</div>
+      </a>
+    `).join('');
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML = '<p>Erro ao carregar lista de personagens.</p>';
+  });
+</script>
+</body>
+</html>
