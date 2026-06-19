@@ -1,4 +1,4 @@
-// assets/ficha.js — Codex Edition
+// assets/ficha.js — Codex Edition + Sistema de Habilidades
 
 const params   = new URLSearchParams(location.search);
 const FICHA_ID = params.get('id');
@@ -24,6 +24,205 @@ function hpPercent() {
   const s = state.core;
   return Math.max(0, Math.min(100, Math.round((s.hpAtual / (s.hpMax || 1)) * 100)));
 }
+
+// ══════════════════════════════════════════════════
+//  MODAL SYSTEM
+// ══════════════════════════════════════════════════
+
+let modalCallback = null;
+
+function openModal({ title, fields, onSave, onDelete }) {
+  const overlay = document.getElementById('skill-modal');
+  overlay.classList.remove('hidden');
+
+  document.getElementById('modal-title').textContent = title;
+
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '';
+
+  fields.forEach(f => {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal-field';
+    let input;
+
+    if (f.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.className = 'modal-textarea';
+    } else if (f.type === 'select') {
+      input = document.createElement('select');
+      input.className = 'modal-select';
+      f.options.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.value; opt.textContent = o.label;
+        if (f.value === o.value) opt.selected = true;
+        input.appendChild(opt);
+      });
+    } else {
+      input = document.createElement('input');
+      input.type = f.type || 'text';
+      input.className = 'modal-input';
+      input.placeholder = f.placeholder || '';
+    }
+
+    if (f.type !== 'select') input.value = f.value || '';
+    input.dataset.field = f.key;
+    input.id = 'mf-' + f.key;
+
+    const label = document.createElement('label');
+    label.className = 'modal-label';
+    label.textContent = f.label;
+    label.htmlFor = 'mf-' + f.key;
+
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    body.appendChild(wrap);
+  });
+
+  // Footer buttons
+  const foot = document.getElementById('modal-foot');
+  foot.innerHTML = '';
+
+  const leftSide = document.createElement('div');
+  if (onDelete) {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-modal-delete';
+    delBtn.textContent = '⛌ Remover';
+    delBtn.addEventListener('click', () => {
+      if (confirm('Remover este item?')) {
+        closeModal();
+        onDelete();
+      }
+    });
+    leftSide.appendChild(delBtn);
+  }
+
+  const rightSide = document.createElement('div');
+  rightSide.className = 'modal-foot-right';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn-modal-cancel';
+  cancelBtn.textContent = 'Cancelar';
+  cancelBtn.addEventListener('click', closeModal);
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-modal-save';
+  saveBtn.textContent = 'Salvar';
+  saveBtn.addEventListener('click', () => {
+    const values = {};
+    fields.forEach(f => {
+      const el = document.getElementById('mf-' + f.key);
+      values[f.key] = el ? el.value.trim() : '';
+    });
+    if (onSave(values) !== false) closeModal();
+  });
+
+  rightSide.appendChild(cancelBtn);
+  rightSide.appendChild(saveBtn);
+  foot.appendChild(leftSide);
+  foot.appendChild(rightSide);
+
+  // Focus first input
+  setTimeout(() => {
+    const first = body.querySelector('input,textarea,select');
+    if (first) first.focus();
+  }, 50);
+}
+
+function closeModal() {
+  document.getElementById('skill-modal').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL: ATAQUE
+// ══════════════════════════════════════════════════
+
+function openAttackModal(idx) {
+  const isNew = idx === -1;
+  const atk = isNew ? { nome: '', bonus: '', dano: '' } : state.ataques[idx];
+
+  openModal({
+    title: isNew ? '⚔ Novo Ataque' : '⚔ Editar Ataque',
+    fields: [
+      { key: 'nome',  label: 'Nome do Ataque', placeholder: 'Ex: Espada Longa', value: atk.nome },
+      { key: 'bonus', label: 'Bônus de Ataque', placeholder: 'Ex: +5', value: atk.bonus },
+      { key: 'dano',  label: 'Dano', placeholder: 'Ex: 1d8+3 cortante', value: atk.dano },
+    ],
+    onSave(vals) {
+      if (!vals.nome) { alert('Nome é obrigatório.'); return false; }
+      if (!state.ataques) state.ataques = [];
+      const obj = { nome: vals.nome, bonus: vals.bonus, dano: vals.dano };
+      if (isNew) state.ataques.push(obj);
+      else state.ataques[idx] = obj;
+      render(); scheduleSave();
+    },
+    onDelete: isNew ? null : () => {
+      state.ataques.splice(idx, 1);
+      render(); scheduleSave();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL: FEATURE
+// ══════════════════════════════════════════════════
+
+function openFeatureModal(idx) {
+  const isNew = idx === -1;
+  const feat = isNew ? { titulo: '', texto: '' } : state.features[idx];
+
+  openModal({
+    title: isNew ? '✦ Nova Característica' : '✦ Editar Característica',
+    fields: [
+      { key: 'titulo', label: 'Título', placeholder: 'Ex: Pacto da Lâmina', value: feat.titulo },
+      { key: 'texto',  label: 'Descrição', type: 'textarea', placeholder: 'Descreva o efeito…', value: feat.texto },
+    ],
+    onSave(vals) {
+      if (!vals.titulo) { alert('Título é obrigatório.'); return false; }
+      if (!state.features) state.features = [];
+      const obj = { titulo: vals.titulo, texto: vals.texto };
+      if (isNew) state.features.push(obj);
+      else state.features[idx] = obj;
+      render(); scheduleSave();
+    },
+    onDelete: isNew ? null : () => {
+      state.features.splice(idx, 1);
+      render(); scheduleSave();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL: EQUIPAMENTO
+// ══════════════════════════════════════════════════
+
+function openEquipModal(idx) {
+  const isNew = idx === -1;
+  const eq = isNew ? { nome: '', info: '' } : state.equipamento[idx];
+
+  openModal({
+    title: isNew ? '⚜ Novo Equipamento' : '⚜ Editar Equipamento',
+    fields: [
+      { key: 'nome', label: 'Nome do Item', placeholder: 'Ex: Armadura de Placas', value: eq.nome },
+      { key: 'info', label: 'Informação / Propriedade', placeholder: 'Ex: CA base 18, Desvantagem em Furtividade', value: eq.info || '' },
+    ],
+    onSave(vals) {
+      if (!vals.nome) { alert('Nome é obrigatório.'); return false; }
+      if (!state.equipamento) state.equipamento = [];
+      const obj = { nome: vals.nome, info: vals.info };
+      if (isNew) state.equipamento.push(obj);
+      else state.equipamento[idx] = obj;
+      render(); scheduleSave();
+    },
+    onDelete: isNew ? null : () => {
+      state.equipamento.splice(idx, 1);
+      render(); scheduleSave();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════
 
 function render() {
   const s = state;
@@ -191,46 +390,70 @@ function render() {
     </div>
 
     <!-- ══════════════════════════
-         ABA: HABILIDADES
+         ABA: HABILIDADES (com edição)
     ══════════════════════════ -->
     <div class="tab-panel" data-panel="habilidades">
 
+      <!-- ATAQUES -->
+      <div class="section-label">Ataques</div>
       ${s.ataques?.length ? `
-        <div class="section-label">Ataques</div>
         <div class="attack-strip">
-          ${s.ataques.map(a => `
+          ${s.ataques.map((a, i) => `
             <div class="attack-item">
               <div class="attack-n">${a.nome}</div>
               <div class="attack-hit">${a.bonus}</div>
               <div class="attack-dmg">${a.dano}</div>
+              <div class="item-actions">
+                <button class="btn-edit-item" data-edit-attack="${i}" title="Editar">✎</button>
+                <button class="btn-del-item"  data-del-attack="${i}"  title="Remover">✕</button>
+              </div>
             </div>`).join('')}
-        </div>` : ''}
+        </div>` : `<div class="empty-hint">Nenhum ataque cadastrado.</div>`}
+      <button class="btn-add-skill" id="btn-add-attack">
+        <span class="btn-icon">+</span> Adicionar Ataque
+      </button>
 
+      <!-- CARACTERÍSTICAS -->
+      <div class="section-label" style="margin-top:18px">Características de Classe</div>
       ${s.features?.length ? `
-        <div class="section-label">Características de Classe</div>
         <div>
           ${s.features.map((f, i) => `
             <div class="feat-item" id="feat-${i}">
               <div class="feat-header" data-feat="${i}">
                 <div class="feat-dot"></div>
                 <div class="feat-name">${f.titulo}</div>
+                <div class="item-actions">
+                  <button class="btn-edit-item" data-edit-feat="${i}" title="Editar">✎</button>
+                  <button class="btn-del-item"  data-del-feat="${i}"  title="Remover">✕</button>
+                </div>
                 <div class="feat-arrow">▶</div>
               </div>
               <div class="feat-body">
                 <div class="feat-desc">${f.texto}</div>
               </div>
             </div>`).join('')}
-        </div>` : ''}
+        </div>` : `<div class="empty-hint">Nenhuma característica cadastrada.</div>`}
+      <button class="btn-add-skill" id="btn-add-feat">
+        <span class="btn-icon">+</span> Adicionar Característica
+      </button>
 
+      <!-- EQUIPAMENTO -->
+      <div class="section-label" style="margin-top:18px">Equipamento</div>
       ${s.equipamento?.length ? `
-        <div class="section-label">Equipamento</div>
         <div class="equip-grid">
-          ${s.equipamento.map(e => `
+          ${s.equipamento.map((e, i) => `
             <div class="equip-card">
               <div class="equip-n">${e.nome}</div>
               ${e.info ? `<div class="equip-info">${e.info}</div>` : ''}
+              <div class="item-actions">
+                <button class="btn-edit-item" data-edit-equip="${i}" title="Editar">✎</button>
+                <button class="btn-del-item"  data-del-equip="${i}"  title="Remover">✕</button>
+              </div>
             </div>`).join('')}
-        </div>` : ''}
+        </div>` : `<div class="empty-hint">Nenhum equipamento cadastrado.</div>`}
+      <button class="btn-add-skill" id="btn-add-equip">
+        <span class="btn-icon">+</span> Adicionar Equipamento
+      </button>
 
     </div>
 
@@ -370,9 +593,11 @@ function attachEvents() {
   }));
 
   // Feature accordion
-  document.querySelectorAll('[data-feat]').forEach(el => el.addEventListener('click', () => {
+  document.querySelectorAll('[data-feat]').forEach(el => el.addEventListener('click', e => {
+    // Não expandir se clicou num botão de ação
+    if (e.target.closest('.item-actions')) return;
     const item = document.getElementById('feat-' + el.dataset.feat);
-    item.classList.toggle('open');
+    if (item) item.classList.toggle('open');
   }));
 
   // Notas
@@ -391,6 +616,48 @@ function attachEvents() {
     const entry = document.createElement('div');
     entry.textContent = `d${d} → ${result}`;
     log.prepend(entry);
+  }));
+
+  // ── HABILIDADES: botões de adicionar ──
+  document.getElementById('btn-add-attack')?.addEventListener('click', () => openAttackModal(-1));
+  document.getElementById('btn-add-feat')  ?.addEventListener('click', () => openFeatureModal(-1));
+  document.getElementById('btn-add-equip') ?.addEventListener('click', () => openEquipModal(-1));
+
+  // ── HABILIDADES: editar ──
+  document.querySelectorAll('[data-edit-attack]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    openAttackModal(parseInt(el.dataset.editAttack));
+  }));
+  document.querySelectorAll('[data-edit-feat]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    openFeatureModal(parseInt(el.dataset.editFeat));
+  }));
+  document.querySelectorAll('[data-edit-equip]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    openEquipModal(parseInt(el.dataset.editEquip));
+  }));
+
+  // ── HABILIDADES: remover rápido (✕) ──
+  document.querySelectorAll('[data-del-attack]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    if (confirm('Remover este ataque?')) {
+      state.ataques.splice(parseInt(el.dataset.delAttack), 1);
+      render(); scheduleSave();
+    }
+  }));
+  document.querySelectorAll('[data-del-feat]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    if (confirm('Remover esta característica?')) {
+      state.features.splice(parseInt(el.dataset.delFeat), 1);
+      render(); scheduleSave();
+    }
+  }));
+  document.querySelectorAll('[data-del-equip]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    if (confirm('Remover este equipamento?')) {
+      state.equipamento.splice(parseInt(el.dataset.delEquip), 1);
+      render(); scheduleSave();
+    }
   }));
 }
 
