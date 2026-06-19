@@ -221,6 +221,76 @@ function openEquipModal(idx) {
 }
 
 // ══════════════════════════════════════════════════
+//  MODAL: MAGIA
+// ══════════════════════════════════════════════════
+
+const ESCOLAS = ['Abjuração','Adivinhação','Conjuração','Encantamento','Evocação','Ilusão','Necromancia','Transmutação'];
+
+function openSpellModal(idx) {
+  const isNew = idx === -1;
+  const m = isNew ? { nome: '', escola: 'Evocação', nivel: 1 } : state.magias.conhecidas[idx];
+
+  openModal({
+    title: isNew ? '✦ Nova Magia' : '✦ Editar Magia',
+    fields: [
+      { key: 'nome',   label: 'Nome da Magia', placeholder: 'Ex: Bola de Fogo', value: m.nome },
+      { key: 'escola', label: 'Escola', type: 'select',
+        value: m.escola,
+        options: ESCOLAS.map(e => ({ value: e, label: e })) },
+      { key: 'nivel',  label: 'Nível (0 = Truque)', type: 'number', placeholder: '0–9', value: String(m.nivel) },
+    ],
+    onSave(vals) {
+      if (!vals.nome) { alert('Nome é obrigatório.'); return false; }
+      if (!state.magias) state.magias = { slots: [], conhecidas: [] };
+      if (!state.magias.conhecidas) state.magias.conhecidas = [];
+      const obj = { nome: vals.nome, escola: vals.escola, nivel: parseInt(vals.nivel) || 0 };
+      if (isNew) state.magias.conhecidas.push(obj);
+      else state.magias.conhecidas[idx] = obj;
+      render(); scheduleSave();
+    },
+    onDelete: isNew ? null : () => {
+      state.magias.conhecidas.splice(idx, 1);
+      render(); scheduleSave();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL: SLOT DE MAGIA
+// ══════════════════════════════════════════════════
+
+function openSlotModal(idx) {
+  const isNew = idx === -1;
+  const slot = isNew ? { nivel: 1, total: 2, usados: 0 } : state.magias.slots[idx];
+
+  openModal({
+    title: isNew ? '◈ Novo Espaço de Magia' : '◈ Editar Espaço',
+    fields: [
+      { key: 'nivel', label: 'Nível do Espaço', type: 'number', placeholder: '1–9', value: String(slot.nivel) },
+      { key: 'total', label: 'Total de Espaços',  type: 'number', placeholder: 'Ex: 3', value: String(slot.total) },
+      { key: 'usados', label: 'Espaços Usados',   type: 'number', placeholder: '0', value: String(slot.usados) },
+    ],
+    onSave(vals) {
+      const nivel  = Math.max(1, Math.min(9, parseInt(vals.nivel)  || 1));
+      const total  = Math.max(1, Math.min(9, parseInt(vals.total)  || 1));
+      const usados = Math.max(0, Math.min(total, parseInt(vals.usados) || 0));
+      if (!state.magias) state.magias = { slots: [], conhecidas: [] };
+      if (!state.magias.slots) state.magias.slots = [];
+      const obj = { nivel, total, usados };
+      if (isNew) state.magias.slots.push(obj);
+      else state.magias.slots[idx] = obj;
+      // ordenar por nível
+      state.magias.slots.sort((a, b) => a.nivel - b.nivel);
+      render(); scheduleSave();
+    },
+    onDelete: isNew ? null : () => {
+      state.magias.slots.splice(idx, 1);
+      render(); scheduleSave();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════
 //  RENDER
 // ══════════════════════════════════════════════════
 
@@ -461,10 +531,12 @@ function render() {
          ABA: MAGIAS
     ══════════════════════════ -->
     <div class="tab-panel" data-panel="magias">
-      ${s.magias?.conhecidas?.length ? `
-        <div class="spell-header">Espaços de Magia</div>
+
+      <!-- SLOTS DE MAGIA -->
+      <div class="section-label">Espaços de Magia</div>
+      ${(s.magias?.slots?.length) ? `
         <div class="slot-track">
-          ${(s.magias.slots || []).map((lvl, li) => `
+          ${(s.magias.slots).map((lvl, li) => `
             <div class="slot-badge">
               <div class="slot-lv">Nível ${lvl.nivel}</div>
               <div class="slot-ct">${lvl.total - lvl.usados}/${lvl.total}</div>
@@ -473,18 +545,34 @@ function render() {
                   `<div class="slot-pip ${i < lvl.usados ? 'used' : ''}" data-slotlevel="${li}" data-slotidx="${i}"></div>`
                 ).join('')}
               </div>
+              <div class="slot-actions">
+                <button class="btn-edit-item" data-edit-slot="${li}" title="Editar slot">✎</button>
+                <button class="btn-del-item"  data-del-slot="${li}"  title="Remover slot">✕</button>
+              </div>
             </div>`).join('')}
-        </div>
+        </div>` : `<div class="empty-hint">Nenhum espaço de magia cadastrado.</div>`}
+      <button class="btn-add-skill" id="btn-add-slot">
+        <span class="btn-icon">+</span> Adicionar Espaço de Magia
+      </button>
 
-        <div class="section-label">Magias Conhecidas</div>
-        <div>
-          ${s.magias.conhecidas.map(m => `
-            <div class="spell-row">
-              ${m.nome}
+      <!-- MAGIAS CONHECIDAS -->
+      <div class="section-label" style="margin-top:18px">Magias Conhecidas</div>
+      ${s.magias?.conhecidas?.length ? `
+        <div id="spell-list">
+          ${s.magias.conhecidas.map((m, i) => `
+            <div class="spell-row" data-spell-idx="${i}">
+              <span class="spell-nome">${m.nome}</span>
               <span class="spell-sch">${m.escola} · nível ${m.nivel}</span>
+              <div class="item-actions spell-actions">
+                <button class="btn-edit-item" data-edit-spell="${i}" title="Editar">✎</button>
+                <button class="btn-del-item"  data-del-spell="${i}"  title="Remover">✕</button>
+              </div>
             </div>`).join('')}
-        </div>
-      ` : `<p style="color:var(--ink-dim);font-style:italic;padding:40px 0;text-align:center;">Este personagem não possui magias.</p>`}
+        </div>` : `<div class="empty-hint">Nenhuma magia cadastrada.</div>`}
+      <button class="btn-add-skill" id="btn-add-spell">
+        <span class="btn-icon">+</span> Adicionar Magia
+      </button>
+
     </div>
 
     <!-- ══════════════════════════
@@ -656,6 +744,36 @@ function attachEvents() {
     e.stopPropagation();
     if (confirm('Remover este equipamento?')) {
       state.equipamento.splice(parseInt(el.dataset.delEquip), 1);
+      render(); scheduleSave();
+    }
+  }));
+
+  // ── MAGIAS: botões de adicionar ──
+  document.getElementById('btn-add-spell')?.addEventListener('click', () => openSpellModal(-1));
+  document.getElementById('btn-add-slot') ?.addEventListener('click', () => openSlotModal(-1));
+
+  // ── MAGIAS: editar ──
+  document.querySelectorAll('[data-edit-spell]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    openSpellModal(parseInt(el.dataset.editSpell));
+  }));
+  document.querySelectorAll('[data-edit-slot]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    openSlotModal(parseInt(el.dataset.editSlot));
+  }));
+
+  // ── MAGIAS: remover rápido ──
+  document.querySelectorAll('[data-del-spell]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    if (confirm('Remover esta magia?')) {
+      state.magias.conhecidas.splice(parseInt(el.dataset.delSpell), 1);
+      render(); scheduleSave();
+    }
+  }));
+  document.querySelectorAll('[data-del-slot]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    if (confirm('Remover este espaço de magia?')) {
+      state.magias.slots.splice(parseInt(el.dataset.delSlot), 1);
       render(); scheduleSave();
     }
   }));

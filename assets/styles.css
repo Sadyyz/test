@@ -843,3 +843,25 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
   font-family: 'Cinzel', serif; font-size: .58rem;
   letter-spacing: .18em; color: var(--ink-dim); font-style: italic;
 }
+
+/* =========================================================
+   MAGIAS — EDIÇÃO
+   ========================================================= */
+.slot-badge {
+  position: relative;
+}
+.slot-actions {
+  display: flex; justify-content: center; gap: 4px;
+  margin-top: 8px; opacity: 0; transition: opacity .2s;
+}
+.slot-badge:hover .slot-actions { opacity: 1; }
+
+.spell-row {
+  position: relative;
+}
+.spell-nome { flex: 1; }
+.spell-actions {
+  opacity: 0; transition: opacity .2s;
+  flex-shrink: 0;
+}
+.spell-row:hover .spell-actions { opacity: 1; }
