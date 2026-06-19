@@ -26,9 +26,9 @@ async function loadAvatar() {
 
 function getAvatarHTML() {
   if (_avatarCache) {
-    return `<img src="${_avatarCache}" class="avatar-img" alt="Avatar">`;
+    return `<img src="${_avatarCache}" class="avatar-img" alt="Avatar"><div class="avatar-overlay">Trocar</div>`;
   }
-  return `<span class="avatar-placeholder">⚔</span>`;
+  return `<div class="avatar-placeholder"><span class="avatar-placeholder-icon">🖼</span>Imagem</div><div class="avatar-overlay">Adicionar</div>`;
 }
 
 function updateAvatarSlot() {
@@ -406,28 +406,8 @@ function render() {
   document.getElementById('page').innerHTML = `
     <!-- ── HEADER ── -->
     <header class="char-header">
-      <div class="header-seal">
-        <svg class="seal-ring seal-ring-outer" viewBox="0 0 120 120" fill="none">
-          <polygon points="60,4 116,32 116,88 60,116 4,88 4,32"
-            stroke="url(#sg1)" stroke-width="1.2" fill="none" stroke-dasharray="5 4"/>
-          <defs>
-            <linearGradient id="sg1" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#c8922a"/><stop offset="50%" stop-color="#f2d078"/><stop offset="100%" stop-color="#c8922a"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <svg class="seal-ring seal-ring-inner" viewBox="0 0 80 80" fill="none">
-          <polygon points="40,3 77,21 77,59 40,77 3,59 3,21"
-            stroke="url(#sg2)" stroke-width=".8" fill="none"/>
-          <defs>
-            <linearGradient id="sg2" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#f2d078"/><stop offset="100%" stop-color="#5a3e10"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <div class="seal-core avatar-slot" id="avatar-slot" title="Clique para mudar imagem • Ctrl+Clique para remover" onclick="openAvatarPicker(event)" oncontextmenu="openAvatarPicker(event);return false;">
-          ${getAvatarHTML()}
-        </div>
+      <div class="avatar-slot" id="avatar-slot" title="Clique para mudar imagem • Ctrl+Clique para remover" onclick="openAvatarPicker(event)" oncontextmenu="openAvatarPicker(event);return false;">
+        ${getAvatarHTML()}
       </div>
       <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
       <div class="header-body">
