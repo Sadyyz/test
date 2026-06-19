@@ -9,30 +9,28 @@
 </head>
 <body>
 
-<!-- Theme toggle injected here so it works even before JS loads ficha -->
 <button id="theme-btn" title="Alternar tema" aria-label="Alternar entre modo claro e escuro">☽</button>
 
 <div class="page" id="page">
   <div class="loading">⧖ Convocando o pergaminho…</div>
 </div>
 
-<button id="save-btn" style="display:none">✦ Salvar</button>
+<button id="save-btn" style="display:none">SALVAR</button>
 <div id="sync-status"></div>
 
 <script>
-// ---- Theme toggle (must run before ficha.js) ----
+// Theme toggle — roda antes do ficha.js
 (function() {
-  const btn  = document.getElementById('theme-btn');
-  const html = document.documentElement;
-  const saved = localStorage.getItem('theme') || 'dark';
+  var btn  = document.getElementById('theme-btn');
+  var html = document.documentElement;
+  var saved = localStorage.getItem('dnd-theme') || 'dark';
   html.setAttribute('data-theme', saved);
   btn.textContent = saved === 'dark' ? '☀' : '☽';
-
-  btn.addEventListener('click', () => {
-    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  btn.addEventListener('click', function() {
+    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
     btn.textContent = next === 'dark' ? '☀' : '☽';
-    localStorage.setItem('theme', next);
+    localStorage.setItem('dnd-theme', next);
   });
 })();
 </script>
