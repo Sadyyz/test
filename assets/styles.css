@@ -956,3 +956,81 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .dice-roll-detail.vantagem    { color: var(--teal-lt); }
 .dice-roll-detail.desvantagem { color: var(--crimson-lt); }
 .dice-roll-detail s { opacity: .45; text-decoration-color: currentColor; }
+
+/* =========================================================
+   CAMPOS EDITÁVEIS DA FICHA (ADIÇÃO)
+   Estes seletores usam IDs para garantir prioridade sobre as
+   regras genéricas de input[type] sem alterar nada existente.
+   ========================================================= */
+
+/* Nome do personagem (mantém o visual em gradiente dourado) */
+#f-nome {
+  background: linear-gradient(135deg, var(--gold-lt) 0%, var(--gold-hot) 50%, var(--gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  color: var(--gold-lt);
+  border: none; outline: none; padding: 0; margin: 0; display: block;
+  width: 100%; font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 900;
+  line-height: 1.15; letter-spacing: .03em;
+}
+#f-nome::placeholder { color: var(--ink-dim); -webkit-text-fill-color: var(--ink-dim); opacity: .55; }
+#f-nome:focus { filter: drop-shadow(0 0 8px rgba(200,146,42,.3)); }
+
+/* Subtítulo */
+#f-subtitulo {
+  display: block; border: none; outline: none; padding: 0; margin-top: 4px; width: 100%;
+  background: transparent; font-family: 'IM Fell English', serif; font-style: italic;
+  font-size: .83rem; color: var(--ink-dim);
+}
+#f-subtitulo::placeholder { color: var(--ink-dim); opacity: .5; }
+
+/* Tags (raça, classe, antecedente, alinhamento) */
+#f-raca, #f-classe, #f-antecedente, #f-alinhamento {
+  font-family: 'Cinzel', serif; font-size: .5rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-dim);
+  border: 1px solid var(--border); background: transparent;
+  padding: 2px 8px; outline: none; width: auto; min-width: 64px; max-width: 160px;
+  transition: all .22s;
+}
+#f-raca:hover, #f-classe:hover, #f-antecedente:hover, #f-alinhamento:hover,
+#f-raca:focus, #f-classe:focus, #f-antecedente:focus, #f-alinhamento:focus {
+  border-color: var(--gold-dim); color: var(--gold);
+}
+
+/* =========================================================
+   NÍVEL & EXPERIÊNCIA
+   ========================================================= */
+.level-block {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 14px 16px; box-shadow: var(--card-s);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.level-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.level-row .s-label {
+  font-family: 'Cinzel', serif; font-size: .56rem; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+.level-controls { display: flex; align-items: center; gap: 6px; }
+#f-nivel {
+  width: 48px; text-align: center; font-family: 'Cinzel', serif; font-size: 1.05rem; font-weight: 700;
+  color: var(--gold-lt); border: 1px solid var(--border); background: var(--bg2); padding: 3px 0;
+}
+#f-xp {
+  width: 90px; text-align: center; font-family: 'Cinzel', serif; font-size: .92rem;
+  color: var(--gold-lt); border: 1px solid var(--border); background: var(--bg2); padding: 3px 4px;
+}
+.level-profbonus { font-family: 'Cinzel', serif; font-size: 1.05rem; font-weight: 700; color: var(--teal-lt); }
+
+/* =========================================================
+   HISTÓRIA / ANTECEDENTE (editável)
+   ========================================================= */
+#f-historia {
+  display: block; width: 100%; min-height: 110px; resize: vertical;
+  background: var(--surface) !important; border: 1px solid var(--border) !important;
+  border-left: 3px solid var(--gold) !important; padding: 16px 20px;
+  font-size: .87rem; font-style: italic; color: var(--ink-dim);
+  font-family: 'IM Fell English', serif; line-height: 1.8; margin-bottom: 10px;
+  box-shadow: var(--card-s) !important; outline: none; transition: border-color .3s, box-shadow .3s;
+}
+#f-historia:focus { border-color: var(--gold) !important; box-shadow: 0 0 14px var(--glow-g), var(--card-s) !important; }
+#f-historia::placeholder { color: var(--ink-dim); opacity: .5; }

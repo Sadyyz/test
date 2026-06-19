@@ -116,6 +116,21 @@ const ATTR_FULL  = { forca:'Força', destreza:'Destreza', constituicao:'Constitu
 const ATTR_SHORT = { forca:'FOR', destreza:'DES', constituicao:'CON', inteligencia:'INT', sabedoria:'SAB', carisma:'CAR' };
 const MONEY_ICON = { ouro:'🪙', prata:'🥈', cobre:'🟫' };
 
+// Escapa texto para uso seguro em atributos value="" e em conteúdo de textarea
+function esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Bônus de proficiência padrão (regras D&D 5e) conforme o nível
+function profBonusForLevel(lvl) {
+  lvl = parseInt(lvl) || 1;
+  if (lvl >= 17) return 6;
+  if (lvl >= 13) return 5;
+  if (lvl >= 9)  return 4;
+  if (lvl >= 5)  return 3;
+  return 2;
+}
+
 async function loadState() {
   if (!FICHA_ID) return null;
   try { const r = await fetch(`/api/ficha?id=${FICHA_ID}`); if (r.ok) { const d = await r.json(); if (d?.nome) return d; } } catch {}
@@ -411,11 +426,15 @@ function render() {
       </div>
       <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
       <div class="header-body">
-        <div class="char-name">${s.nome}</div>
-        ${s.subtitulo ? `<div class="char-subtitle">${s.subtitulo}</div>` : ''}
+        <input id="f-nome" class="char-name" data-field="nome" value="${esc(s.nome)}" placeholder="Nome do Personagem">
+        <input id="f-subtitulo" class="char-subtitle" data-field="subtitulo" value="${esc(s.subtitulo)}" placeholder="Subtítulo (ex: raça, classes, etc.)">
         <div class="char-divider"></div>
         <div class="char-tags">
-          ${[s.raca, s.classe, `Nível ${s.nivel ?? '-'}`, s.antecedente, s.alinhamento].filter(Boolean).map(t => `<span class="char-tag">${t}</span>`).join('')}
+          <input id="f-raca" class="char-tag" data-field="raca" value="${esc(s.raca)}" placeholder="Raça">
+          <input id="f-classe" class="char-tag" data-field="classe" value="${esc(s.classe)}" placeholder="Classe">
+          <span class="char-tag" id="tag-nivel">Nível ${s.nivel ?? 1}</span>
+          <input id="f-antecedente" class="char-tag" data-field="antecedente" value="${esc(s.antecedente)}" placeholder="Antecedente">
+          <input id="f-alinhamento" class="char-tag" data-field="alinhamento" value="${esc(s.alinhamento)}" placeholder="Alinhamento">
         </div>
       </div>
     </header>
@@ -437,6 +456,26 @@ function render() {
 
         <!-- Coluna Esquerda -->
         <div class="principal-left">
+
+          <div class="section-label">Nível &amp; Experiência</div>
+          <div class="level-block">
+            <div class="level-row">
+              <span class="s-label">Nível</span>
+              <div class="level-controls">
+                <button class="attr-btn" data-leveldelta="-1" title="Diminuir nível">−</button>
+                <input id="f-nivel" type="number" min="1" max="20" value="${s.nivel ?? 1}">
+                <button class="attr-btn" data-leveldelta="1" title="Aumentar nível">+</button>
+              </div>
+            </div>
+            <div class="level-row">
+              <span class="s-label">XP</span>
+              <input id="f-xp" type="number" min="0" value="${s.xp ?? 0}">
+            </div>
+            <div class="level-row">
+              <span class="s-label">Bônus de Proficiência</span>
+              <div class="level-profbonus" id="level-profbonus">${fmtMod(s.core.bonusProf)}</div>
+            </div>
+          </div>
 
           <div class="section-label">Atributos</div>
           <div class="attr-grid">
@@ -715,11 +754,10 @@ function render() {
          ABA: NOTAS
     ══════════════════════════ -->
     <div class="tab-panel" data-panel="notas">
-      ${s.antecedenteTexto ? `
-        <div class="section-label">Antecedente</div>
-        <div class="bg-box">${s.antecedenteTexto}</div>` : ''}
+      <div class="section-label">História / Antecedente</div>
+      <textarea class="bg-box" id="f-historia" data-field="antecedenteTexto" placeholder="Escreva aqui a história do personagem…">${esc(s.antecedenteTexto)}</textarea>
       <div class="section-label">Anotações</div>
-      <textarea class="notes-area" id="notes" placeholder="Escreva aqui suas anotações de sessão…">${s.notas || ''}</textarea>
+      <textarea class="notes-area" id="notes" placeholder="Escreva aqui suas anotações de sessão…">${esc(s.notas)}</textarea>
     </div>
   `;
 
@@ -738,9 +776,46 @@ function updateHpBar() {
   if (bar) bar.style.width = hpPercent() + '%';
 }
 
+// Aplica mudança de nível: clampa 1–20, recalcula bônus de proficiência
+// e re-renderiza (perícias/salvaguardas dependem do bônus de proficiência).
+function applyLevelChange(novoNivel) {
+  novoNivel = Math.max(1, Math.min(20, parseInt(novoNivel) || 1));
+  state.nivel = novoNivel;
+  state.core.bonusProf = profBonusForLevel(novoNivel);
+  render();
+  scheduleSave();
+}
+
 function attachEvents() {
   // Tabs
   document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
+
+  // Campos de texto simples (nome, subtítulo, raça, classe, antecedente, alinhamento, história, etc.)
+  document.querySelectorAll('input[data-field], textarea[data-field]').forEach(el => {
+    el.addEventListener('input', () => {
+      state[el.dataset.field] = el.value;
+      scheduleSave();
+    });
+  });
+
+  // Nível (digitado diretamente) — atualiza bônus de proficiência automaticamente
+  const nivelInput = document.getElementById('f-nivel');
+  if (nivelInput) nivelInput.addEventListener('change', () => {
+    applyLevelChange(parseInt(nivelInput.value) || 1);
+  });
+
+  // Nível (botões + / −)
+  document.querySelectorAll('[data-leveldelta]').forEach(el => el.addEventListener('click', () => {
+    const atual = parseInt(state.nivel) || 1;
+    applyLevelChange(atual + parseInt(el.dataset.leveldelta));
+  }));
+
+  // XP
+  const xpInput = document.getElementById('f-xp');
+  if (xpInput) xpInput.addEventListener('input', () => {
+    state.xp = parseInt(xpInput.value) || 0;
+    scheduleSave();
+  });
 
   // Atributos delta
   document.querySelectorAll('[data-attrdelta]').forEach(el => el.addEventListener('click', () => {
