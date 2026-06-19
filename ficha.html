@@ -1,16 +1,41 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ficha de Personagem — D&D Bankai</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-<div class="page" id="page"><div class="loading">CARREGANDO FICHA…</div></div>
-<button id="save-btn" style="display:none">SALVAR</button>
+
+<!-- Theme toggle injected here so it works even before JS loads ficha -->
+<button id="theme-btn" title="Alternar tema" aria-label="Alternar entre modo claro e escuro">☽</button>
+
+<div class="page" id="page">
+  <div class="loading">⧖ Convocando o pergaminho…</div>
+</div>
+
+<button id="save-btn" style="display:none">✦ Salvar</button>
 <div id="sync-status"></div>
+
+<script>
+// ---- Theme toggle (must run before ficha.js) ----
+(function() {
+  const btn  = document.getElementById('theme-btn');
+  const html = document.documentElement;
+  const saved = localStorage.getItem('theme') || 'dark';
+  html.setAttribute('data-theme', saved);
+  btn.textContent = saved === 'dark' ? '☀' : '☽';
+
+  btn.addEventListener('click', () => {
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    btn.textContent = next === 'dark' ? '☀' : '☽';
+    localStorage.setItem('theme', next);
+  });
+})();
+</script>
 
 <script src="assets/ficha.js"></script>
 </body>
