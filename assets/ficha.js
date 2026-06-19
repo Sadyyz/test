@@ -301,27 +301,34 @@ function render() {
   document.getElementById('page').innerHTML = `
     <!-- ── HEADER ── -->
     <header class="char-header">
-      <div class="header-accent"></div>
-      <div class="header-info">
-        <div class="char-name">${s.nome}</div>
-        <div class="char-subtitle">${s.subtitulo || ''}</div>
-        <div class="char-tags">
-          ${[s.raca, s.classe, `Nível ${s.nivel ?? '-'}`, s.antecedente, s.alinhamento].filter(Boolean).map(t => `<span class="char-tag">${t}</span>`).join('')}
-        </div>
-      </div>
-      <div class="header-crest">
-        <svg class="crest-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="40,3 77,21 77,59 40,77 3,59 3,21"
-            stroke="url(#cg)" stroke-width="1" fill="none" stroke-dasharray="4 3"/>
-          <circle cx="40" cy="40" r="35" stroke="url(#cg)" stroke-width=".5" fill="none" opacity=".4" stroke-dasharray="2 6"/>
-          <text x="40" y="49" text-anchor="middle" font-family="serif" font-size="22" fill="url(#cg)">⚔</text>
+      <div class="header-seal">
+        <svg class="seal-ring seal-ring-outer" viewBox="0 0 120 120" fill="none">
+          <polygon points="60,4 116,32 116,88 60,116 4,88 4,32"
+            stroke="url(#sg1)" stroke-width="1.2" fill="none" stroke-dasharray="5 4"/>
           <defs>
-            <linearGradient id="cg" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#e8be68"/><stop offset="50%" stop-color="#f2d078"/>
-              <stop offset="100%" stop-color="#c8922a"/>
+            <linearGradient id="sg1" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c8922a"/><stop offset="50%" stop-color="#f2d078"/><stop offset="100%" stop-color="#c8922a"/>
             </linearGradient>
           </defs>
         </svg>
+        <svg class="seal-ring seal-ring-inner" viewBox="0 0 80 80" fill="none">
+          <polygon points="40,3 77,21 77,59 40,77 3,59 3,21"
+            stroke="url(#sg2)" stroke-width=".8" fill="none"/>
+          <defs>
+            <linearGradient id="sg2" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#f2d078"/><stop offset="100%" stop-color="#5a3e10"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="seal-core">⚔</div>
+      </div>
+      <div class="header-body">
+        <div class="char-name">${s.nome}</div>
+        ${s.subtitulo ? `<div class="char-subtitle">${s.subtitulo}</div>` : ''}
+        <div class="char-divider"></div>
+        <div class="char-tags">
+          ${[s.raca, s.classe, `Nível ${s.nivel ?? '-'}`, s.antecedente, s.alinhamento].filter(Boolean).map(t => `<span class="char-tag">${t}</span>`).join('')}
+        </div>
       </div>
     </header>
 
