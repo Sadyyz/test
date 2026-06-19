@@ -3,88 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ficha de Personagem — D&D Bankai</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<title>Ficha — D&D Bankai</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 <style>
-/* ---- extras específicos da ficha ---- */
+#cosmos { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-/* Canvas de partículas fixo atrás de tudo */
-#cosmos {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Portal de loading */
 #portal-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
+  position: fixed; inset: 0; z-index: 999;
   background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  transition: opacity 0.8s ease, visibility 0.8s ease;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  transition: opacity .9s ease, visibility .9s ease;
 }
 #portal-screen.fade-out { opacity: 0; visibility: hidden; }
 
-.portal-ring { position: relative; width: 110px; height: 110px; }
-.portal-ring svg { width: 100%; height: 100%; animation: portalSpin 3s linear infinite; }
-@keyframes portalSpin { to { transform: rotate(360deg); } }
-.portal-inner {
-  position: absolute;
-  inset: 18px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ea80ff 0%, #b388ff 40%, transparent 70%);
-  opacity: 0.55;
-  animation: portalPulse 1.5s ease-in-out infinite;
+.p-ring { position: relative; width: 110px; height: 110px; }
+.p-outer { position: absolute; inset: 0; animation: spinCW 8s linear infinite; }
+.p-inner { position: absolute; inset: 16px; animation: spinCCW 5s linear infinite; }
+@keyframes spinCW  { to { transform: rotate(360deg); } }
+@keyframes spinCCW { to { transform: rotate(-360deg); } }
+.p-core {
+  position: absolute; inset: 34px; border-radius: 50%;
+  background: radial-gradient(circle, var(--gold-hot) 0%, var(--gold) 40%, transparent 75%);
+  animation: breathe 2s ease-in-out infinite;
 }
-@keyframes portalPulse { 0%,100%{transform:scale(0.8);opacity:0.35} 50%{transform:scale(1.1);opacity:0.75} }
-.portal-text {
-  font-family: 'Cinzel', serif;
-  font-size: 0.72rem;
-  letter-spacing: .42em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  animation: blink 1.4s ease-in-out infinite;
+@keyframes breathe { 0%,100%{transform:scale(.85);opacity:.5} 50%{transform:scale(1.1);opacity:1} }
+.p-text {
+  font-family: 'Cinzel', serif; font-size: .65rem; letter-spacing: .5em;
+  text-transform: uppercase; color: var(--ink-dim);
+  animation: blink 1.8s ease-in-out infinite;
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-/* Char art ring override para ficha */
-.char-art { width: 88px; height: 88px; }
+.back-btn {
+  position: fixed; top: 20px; left: 20px; z-index: 200;
+  background: var(--surface); border: 1px solid var(--border); color: var(--gold);
+  padding: 9px 16px; font-family: 'Cinzel', serif; font-size: .56rem;
+  letter-spacing: .22em; text-transform: uppercase; cursor: pointer;
+  text-decoration: none; display: flex; align-items: center; gap: 7px;
+  transition: all .3s; box-shadow: 0 0 12px var(--glow-g), var(--card-s);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.back-btn:hover { border-color: var(--gold); color: var(--gold-hot); transform: translateX(-3px); }
 </style>
 </head>
 <body>
 
-<!-- Portal loading -->
 <div id="portal-screen">
-  <div class="portal-ring">
-    <svg viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="55" cy="55" r="50" stroke="url(#pl1)" stroke-width="1.5" stroke-dasharray="8 4"/>
-      <circle cx="55" cy="55" r="38" stroke="url(#pl2)" stroke-width="1" stroke-dasharray="3 8"/>
+  <div class="p-ring">
+    <svg class="p-outer" viewBox="0 0 110 110" fill="none">
+      <polygon points="55,3 107,29 107,81 55,107 3,81 3,29"
+        stroke="url(#pg1)" stroke-width="1" fill="none" stroke-dasharray="5 4"/>
       <defs>
-        <linearGradient id="pl1" x1="0" y1="0" x2="110" y2="110" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#b388ff"/><stop offset="50%" stop-color="#ea80ff"/><stop offset="100%" stop-color="#40c4ff"/>
-        </linearGradient>
-        <linearGradient id="pl2" x1="110" y1="0" x2="0" y2="110" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#ea80ff"/><stop offset="100%" stop-color="#40c4ff"/>
+        <linearGradient id="pg1" x1="0" y1="0" x2="110" y2="110" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#c8922a"/>
+          <stop offset="50%" stop-color="#f2d078"/>
+          <stop offset="100%" stop-color="#c8922a"/>
         </linearGradient>
       </defs>
     </svg>
-    <div class="portal-inner"></div>
+    <svg class="p-inner" viewBox="0 0 78 78" fill="none" style="position:absolute;inset:16px;width:78px;height:78px;">
+      <polygon points="39,3 75,21 75,57 39,75 3,57 3,21"
+        stroke="url(#pg2)" stroke-width=".8" fill="none"/>
+      <defs>
+        <linearGradient id="pg2" x1="0" y1="0" x2="78" y2="78" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#f2d078"/>
+          <stop offset="100%" stop-color="#5a3e10"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="p-core"></div>
   </div>
-  <div class="portal-text">⧖ Convocando o Pergaminho ⧖</div>
+  <div class="p-text">⧖ Convocando o Pergaminho ⧖</div>
 </div>
 
-<!-- Canvas de partículas -->
 <canvas id="cosmos"></canvas>
-
-<!-- Botão tema -->
-<button id="theme-btn" title="Alternar tema" aria-label="Alternar entre modo claro e escuro">☽</button>
+<a class="back-btn" href="index.html">← Grimório</a>
+<button id="theme-btn" title="Alternar tema">☽</button>
 
 <div class="page" id="page">
   <div class="loading">⧖ Convocando o pergaminho…</div>
@@ -94,97 +88,95 @@
 <div id="sync-status"></div>
 
 <script>
-// ---- Partículas arcanas ----
+// Particles
 (function() {
-  const canvas = document.getElementById('cosmos');
-  const ctx = canvas.getContext('2d');
-  let W, H, particles = [];
-
-  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-  resize();
-  window.addEventListener('resize', resize);
-
-  function colors() {
+  const c = document.getElementById('cosmos'), ctx = c.getContext('2d');
+  let W, H, ps = [];
+  function resize() { W = c.width = window.innerWidth; H = c.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  function cols() {
     return document.documentElement.getAttribute('data-theme') === 'light'
-      ? ['rgba(106,27,154,','rgba(171,71,188,','rgba(2,119,189,']
-      : ['rgba(179,136,255,','rgba(234,128,255,','rgba(64,196,255,'];
+      ? ['rgba(138,90,16,','rgba(168,120,48,','rgba(100,70,20,']
+      : ['rgba(200,146,42,','rgba(242,208,120,','rgba(90,62,16,'];
   }
-
-  for (let i = 0; i < 50; i++) {
-    particles.push({
-      x: Math.random() * 1600, y: Math.random() * 900,
-      r: Math.random() * 1.6 + 0.3,
-      vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
-      alpha: Math.random() * 0.45 + 0.12,
-      pulse: Math.random() * Math.PI * 2,
-      pulseSpeed: Math.random() * 0.018 + 0.006,
-      ci: Math.floor(Math.random() * 3)
-    });
-  }
-
+  for (let i = 0; i < 44; i++) ps.push({
+    x: Math.random()*1400, y: Math.random()*900,
+    r: Math.random()*1.4+.3, vx: (Math.random()-.5)*.2, vy: (Math.random()-.5)*.2,
+    a: Math.random()*.35+.08, p: Math.random()*Math.PI*2,
+    ps: Math.random()*.015+.005, ci: Math.floor(Math.random()*3)
+  });
   function draw() {
-    ctx.clearRect(0, 0, W, H);
-    const c = colors();
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy; p.pulse += p.pulseSpeed;
-      if (p.x < -5) p.x = W+5; if (p.x > W+5) p.x = -5;
-      if (p.y < -5) p.y = H+5; if (p.y > H+5) p.y = -5;
-      const a = p.alpha * (0.55 + 0.45 * Math.sin(p.pulse));
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = c[p.ci] + a + ')'; ctx.fill();
+    ctx.clearRect(0,0,W,H);
+    const cl = cols();
+    ps.forEach(p => {
+      p.x+=p.vx; p.y+=p.vy; p.p+=p.ps;
+      if(p.x<-5)p.x=W+5; if(p.x>W+5)p.x=-5;
+      if(p.y<-5)p.y=H+5; if(p.y>H+5)p.y=-5;
+      const a=p.a*(0.55+0.45*Math.sin(p.p));
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=cl[p.ci]+a+')'; ctx.fill();
     });
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i+1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 85) {
-          ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = c[0] + (0.06 * (1 - d/85)) + ')'; ctx.lineWidth = 0.4; ctx.stroke();
-        }
-      }
+    for(let i=0;i<ps.length;i++) for(let j=i+1;j<ps.length;j++){
+      const dx=ps[i].x-ps[j].x, dy=ps[i].y-ps[j].y, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<78){ctx.beginPath();ctx.moveTo(ps[i].x,ps[i].y);ctx.lineTo(ps[j].x,ps[j].y);
+      ctx.strokeStyle=cl[0]+(0.05*(1-d/78))+')';ctx.lineWidth=.4;ctx.stroke();}
     }
     requestAnimationFrame(draw);
   }
   draw();
 })();
 
-// ---- Theme toggle — roda antes do ficha.js ----
-(function() {
-  const btn  = document.getElementById('theme-btn');
-  const html = document.documentElement;
-  const saved = localStorage.getItem('dnd-theme') || 'dark';
-  html.setAttribute('data-theme', saved);
-  btn.textContent = saved === 'dark' ? '☀' : '☽';
-  btn.addEventListener('click', function() {
-    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    btn.textContent = next === 'dark' ? '☀' : '☽';
-    localStorage.setItem('dnd-theme', next);
+// Theme
+(function(){
+  const btn=document.getElementById('theme-btn'), html=document.documentElement;
+  const saved=localStorage.getItem('dnd-theme')||'dark';
+  html.setAttribute('data-theme',saved); btn.textContent=saved==='dark'?'☀':'☽';
+  btn.addEventListener('click',()=>{
+    const n=html.getAttribute('data-theme')==='dark'?'light':'dark';
+    html.setAttribute('data-theme',n); btn.textContent=n==='dark'?'☀':'☽';
+    localStorage.setItem('dnd-theme',n);
   });
 })();
 
-// ---- Portal fade + page reveal ----
-document.addEventListener('DOMContentLoaded', function() {
-  // O ficha.js vai popular o #page, depois disso removemos o portal
-  const observer = new MutationObserver(function(mutations) {
-    const page = document.getElementById('page');
-    if (page && page.children.length && !page.querySelector('.loading')) {
-      setTimeout(() => {
-        const portal = document.getElementById('portal-screen');
-        if (portal) portal.classList.add('fade-out');
-        page.style.animation = 'fadeIn 0.6s ease both';
-      }, 600);
-      observer.disconnect();
+// Portal
+document.addEventListener('DOMContentLoaded',()=>{
+  const obs=new MutationObserver(()=>{
+    const pg=document.getElementById('page');
+    if(pg&&pg.children.length&&!pg.querySelector('.loading')){
+      setTimeout(()=>{const p=document.getElementById('portal-screen');if(p)p.classList.add('fade-out');},700);
+      obs.disconnect();
     }
   });
-  const page = document.getElementById('page');
-  if (page) observer.observe(page, { childList: true, subtree: true });
+  const pg=document.getElementById('page');
+  if(pg)obs.observe(pg,{childList:true,subtree:true});
+  setTimeout(()=>{const p=document.getElementById('portal-screen');if(p&&!p.classList.contains('fade-out'))p.classList.add('fade-out');},3200);
+});
+</script>
+<!-- ══ MODAL DE HABILIDADES ══ -->
+<div id="skill-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">Habilidade</div>
+      <button class="modal-close" id="modal-close-btn" title="Fechar">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
 
-  // Fallback: remove portal após 3s
-  setTimeout(() => {
-    const portal = document.getElementById('portal-screen');
-    if (portal && !portal.classList.contains('fade-out')) portal.classList.add('fade-out');
-  }, 3000);
+<script>
+// Fechar modal ao clicar fora ou no X
+document.getElementById('modal-close-btn').addEventListener('click', () => {
+  document.getElementById('skill-modal').classList.add('hidden');
+});
+document.getElementById('skill-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('skill-modal')) {
+    document.getElementById('skill-modal').classList.add('hidden');
+  }
+});
+// ESC fecha o modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('skill-modal').classList.add('hidden');
 });
 </script>
 
