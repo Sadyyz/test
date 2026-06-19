@@ -2,7 +2,9 @@
 // GET  /api/ficha?id=mikhail   -> retorna os dados salvos da ficha
 // POST /api/ficha?id=mikhail   -> salva os dados (body = JSON da ficha)
 
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = Redis.fromEnv();
 
 export default async function handler(req, res) {
   const { id } = req.query;
@@ -15,7 +17,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const data = await kv.get(key);
+      const data = await redis.get(key);
       if (!data) return res.status(404).json({ error: 'Ficha não encontrada' });
       return res.status(200).json(data);
     } catch (err) {
@@ -29,7 +31,7 @@ export default async function handler(req, res) {
       if (!body || typeof body !== 'object') {
         return res.status(400).json({ error: 'Corpo da requisição inválido' });
       }
-      await kv.set(key, body);
+      await redis.set(key, body);
       return res.status(200).json({ ok: true });
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao salvar ficha', details: String(err) });
