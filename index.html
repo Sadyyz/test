@@ -70,53 +70,20 @@ body::before{
 }
 .page.visible{opacity:1;transform:translateY(0)}
 
-/* ====== HEADER ====== */
-.site-header {
-  text-align: center;
-  margin-bottom: 60px;
-  position: relative;
-}
-
-/* Sigil / Mandala central */
-.sigil-wrap {
-  position: relative;
-  display: inline-block;
-  margin-bottom: 28px;
-}
-.sigil-outer {
-  width: 110px; height: 110px;
-  animation: sigil-spin-slow 20s linear infinite;
-}
-.sigil-inner {
-  position: absolute;
-  inset: 22px;
-  animation: sigil-spin-slow 12s linear infinite reverse;
-}
-@keyframes sigil-spin-slow { to { transform: rotate(360deg); } }
-
-.sigil-glow {
-  position: absolute;
-  inset: -20px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--gold-hot) 0%, transparent 65%);
-  opacity: 0.18;
-  animation: portalPulse 3s ease-in-out infinite;
-  pointer-events: none;
-}
-
-h1 {
-  font-family: 'Cinzel Decorative', serif;
-  font-size: clamp(1.8rem, 6vw, 3.2rem);
-  font-weight: 900;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-hot) 50%, var(--gold) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 20px var(--gold));
-  line-height: 1.1;
-  animation: titleReveal 1s ease 0.5s both;
+/* Hero */
+.hero{padding:72px 0 52px;text-align:center}
+.hero-rule{display:flex;align-items:center;gap:0;margin:0 auto 44px;max-width:440px}
+.hero-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.hero-gem{width:7px;height:7px;background:var(--gold);transform:rotate(45deg);box-shadow:0 0 10px var(--gold);margin:0 12px;flex-shrink:0}
+.crest{position:relative;display:inline-block;margin-bottom:32px}
+.quincy-star{width:120px;height:120px;filter:drop-shadow(0 0 8px rgba(200,146,42,.4))}
+.crest-glow{position:absolute;inset:-24px;border-radius:50%;background:radial-gradient(circle,rgba(200,146,42,.15) 0%,transparent 65%);animation:breath 4s ease-in-out infinite;pointer-events:none}
+.eyebrow{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.6em;text-transform:uppercase;color:var(--ink-dim);display:block;margin-bottom:12px;animation:fadeIn .8s ease 1s both}
+h1{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,3.4rem);font-weight:900;letter-spacing:.07em;text-transform:uppercase;
+  background:linear-gradient(155deg,var(--gold-hot) 0%,var(--gold-lt) 35%,var(--gold) 65%,var(--gold-dim) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 22px rgba(200,146,42,.35));line-height:1.05;
+  animation:titleReveal 1.2s ease .6s both;
 }
 @keyframes titleReveal{from{opacity:0;letter-spacing:.4em;filter:blur(8px)}to{opacity:1;letter-spacing:.07em}}
 .title-sub{font-family:'IM Fell English',serif;font-style:italic;font-size:.98rem;color:var(--ink-dim);letter-spacing:.16em;display:block;margin-top:12px;animation:fadeIn .8s ease 1.2s both}
@@ -200,35 +167,48 @@ h1 {
 <button class="theme-btn" id="theme-btn">☽</button>
 
 <div class="page" id="page">
-  <!-- Header -->
-  <header class="site-header">
-    <!-- Sigil animado -->
-    <div class="sigil-wrap">
-      <div class="sigil-glow"></div>
-      <svg class="sigil-outer" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="55,5 105,30 105,80 55,105 5,80 5,30" stroke="url(#sg1)" stroke-width="1.5" fill="none" stroke-dasharray="6 3"/>
-        <circle cx="55" cy="55" r="50" stroke="url(#sg1)" stroke-width="0.6" fill="none" opacity="0.4" stroke-dasharray="2 6"/>
+  <header class="hero">
+    <div class="hero-rule"><div class="hero-line"></div><div class="hero-gem"></div><div class="hero-line"></div></div>
+    <div class="crest">
+      <div class="crest-glow"></div>
+      <svg class="quincy-star" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="sg1" x1="0" y1="0" x2="110" y2="110" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#b388ff"/>
-            <stop offset="50%" stop-color="#ea80ff"/>
-            <stop offset="100%" stop-color="#40c4ff"/>
+          <linearGradient id="qg1" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stop-color="#f5dd90"/>
+            <stop offset="45%"  stop-color="#c8922a"/>
+            <stop offset="100%" stop-color="#f5dd90"/>
           </linearGradient>
-          <filter id="qglow">
-            <feGaussianBlur stdDeviation="2.5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <radialGradient id="qrg1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="rgba(240,192,80,0.18)"/>
+            <stop offset="100%" stop-color="rgba(200,146,42,0)"/>
+          </radialGradient>
+          <filter id="qglow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
+          <clipPath id="qclip"><circle cx="100" cy="100" r="92"/></clipPath>
         </defs>
-      </svg>
-      <svg class="sigil-inner" viewBox="0 0 66 66" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:22px;width:66px;height:66px;">
-        <polygon points="33,3 63,18 63,48 33,63 3,48 3,18" stroke="url(#sg2)" stroke-width="1" fill="none"/>
-        <text x="33" y="39" text-anchor="middle" font-family="'Cinzel Decorative', serif" font-size="20" font-weight="900" fill="url(#sg2)" style="filter:drop-shadow(0 0 8px #b388ff)">⚔</text>
-        <defs>
-          <linearGradient id="sg2" x1="0" y1="0" x2="66" y2="66" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#ea80ff"/>
-            <stop offset="100%" stop-color="#40c4ff"/>
-          </linearGradient>
-        </defs>
+        <circle cx="100" cy="100" r="100" fill="url(#qrg1)"/>
+        <circle cx="100" cy="100" r="92" fill="none" stroke="url(#qg1)" stroke-width="1.4" opacity=".65"/>
+        <g clip-path="url(#qclip)" fill="url(#qg1)" filter="url(#qglow)">
+          <path transform="rotate(0,100,100)"   d="M100,100 C104,82 112,55 108,10 C128,22 158,38 183,62 C170,64 154,68 100,100Z"/>
+          <path transform="rotate(0,100,100)"   d="M100,100 C96,82  88,55  92,10 C72,22  42,38  17,62  C30,64  46,68  100,100Z"/>
+          <path transform="rotate(0,100,100)"   d="M100,100 C101.5,86 101.5,60 100,8 C98.5,60 98.5,86 100,100Z"/>
+          <path transform="rotate(72,100,100)"  d="M100,100 C104,82 112,55 108,10 C128,22 158,38 183,62 C170,64 154,68 100,100Z"/>
+          <path transform="rotate(72,100,100)"  d="M100,100 C96,82  88,55  92,10 C72,22  42,38  17,62  C30,64  46,68  100,100Z"/>
+          <path transform="rotate(72,100,100)"  d="M100,100 C101.5,86 101.5,60 100,8 C98.5,60 98.5,86 100,100Z"/>
+          <path transform="rotate(144,100,100)" d="M100,100 C104,82 112,55 108,10 C128,22 158,38 183,62 C170,64 154,68 100,100Z"/>
+          <path transform="rotate(144,100,100)" d="M100,100 C96,82  88,55  92,10 C72,22  42,38  17,62  C30,64  46,68  100,100Z"/>
+          <path transform="rotate(144,100,100)" d="M100,100 C101.5,86 101.5,60 100,8 C98.5,60 98.5,86 100,100Z"/>
+          <path transform="rotate(216,100,100)" d="M100,100 C104,82 112,55 108,10 C128,22 158,38 183,62 C170,64 154,68 100,100Z"/>
+          <path transform="rotate(216,100,100)" d="M100,100 C96,82  88,55  92,10 C72,22  42,38  17,62  C30,64  46,68  100,100Z"/>
+          <path transform="rotate(216,100,100)" d="M100,100 C101.5,86 101.5,60 100,8 C98.5,60 98.5,86 100,100Z"/>
+          <path transform="rotate(288,100,100)" d="M100,100 C104,82 112,55 108,10 C128,22 158,38 183,62 C170,64 154,68 100,100Z"/>
+          <path transform="rotate(288,100,100)" d="M100,100 C96,82  88,55  92,10 C72,22  42,38  17,62  C30,64  46,68  100,100Z"/>
+          <path transform="rotate(288,100,100)" d="M100,100 C101.5,86 101.5,60 100,8 C98.5,60 98.5,86 100,100Z"/>
+        </g>
+        <circle cx="100" cy="100" r="7"  fill="url(#qg1)" opacity=".95"/>
+        <circle cx="100" cy="100" r="13" fill="none" stroke="url(#qg1)" stroke-width="1.2" opacity=".5"/>
       </svg>
     </div>
     <span class="eyebrow">Pergaminhos do Destino</span>
