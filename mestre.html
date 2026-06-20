@@ -1114,14 +1114,46 @@ function bsRenderEditor(){
   document.getElementById('bs-editor-close').addEventListener('click', bsCloseEditor);
   document.getElementById('bs-editor-cancel').addEventListener('click', bsCloseEditor);
   document.getElementById('bs-editor-save').addEventListener('click', bsSaveEditor);
-  document.getElementById('bs-add-acao').addEventListener('click', ()=>{ s.acoes.push({nome:'',descricao:''}); bsRenderEditor(); });
-  document.getElementById('bs-add-habilidade').addEventListener('click', ()=>{ s.habilidades.push({nome:'',descricao:''}); bsRenderEditor(); });
+  document.getElementById('bs-add-acao').addEventListener('click', ()=>{
+    const idx = s.acoes.length;
+    s.acoes.push({nome:'',dano:'',descricao:''});
+    const container = document.getElementById('bs-acoes-list');
+    // Remove "Nenhum item ainda." placeholder if present
+    if(container.querySelector('div[style*="font-style:italic"]')) container.innerHTML='';
+    const div = document.createElement('div');
+    div.innerHTML = bsListEditorRows([{nome:'',dano:'',descricao:''}],'acoes').replace(/data-idx="0"/g,`data-idx="${idx}"`);
+    const row = div.firstElementChild;
+    container.appendChild(row);
+    // Bind events on new row
+    row.querySelector('.bs-item-nome').addEventListener('input', e=>{ s.acoes[idx].nome=e.target.value; });
+    row.querySelector('.bs-item-dano').addEventListener('input', e=>{ s.acoes[idx].dano=e.target.value; });
+    row.querySelector('.bs-item-desc').addEventListener('input', e=>{ s.acoes[idx].descricao=e.target.value; });
+    row.querySelector('.bs-item-del').addEventListener('click', ()=>{ s.acoes.splice(idx,1); row.remove(); if(!container.children.length) container.innerHTML=bsListEditorRows([],'acoes'); });
+    row.querySelector('.bs-item-nome').focus();
+  });
+  document.getElementById('bs-add-habilidade').addEventListener('click', ()=>{
+    const idx = s.habilidades.length;
+    s.habilidades.push({nome:'',descricao:''});
+    const container = document.getElementById('bs-habilidades-list');
+    if(container.querySelector('div[style*="font-style:italic"]')) container.innerHTML='';
+    const div = document.createElement('div');
+    div.innerHTML = bsListEditorRows([{nome:'',descricao:''}],'habilidades').replace(/data-idx="0"/g,`data-idx="${idx}"`);
+    const row = div.firstElementChild;
+    container.appendChild(row);
+    row.querySelector('.bs-item-nome').addEventListener('input', e=>{ s.habilidades[idx].nome=e.target.value; });
+    row.querySelector('.bs-item-desc').addEventListener('input', e=>{ s.habilidades[idx].descricao=e.target.value; });
+    row.querySelector('.bs-item-del').addEventListener('click', ()=>{ s.habilidades.splice(idx,1); row.remove(); if(!container.children.length) container.innerHTML=bsListEditorRows([],'habilidades'); });
+    row.querySelector('.bs-item-nome').focus();
+  });
 
   el.querySelectorAll('.bs-item-del').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const kind = btn.dataset.kind, idx = Number(btn.dataset.idx);
       s[kind].splice(idx,1);
-      bsRenderEditor();
+      const row = btn.closest(`.bs-${kind}-row`);
+      const container = row.parentElement;
+      row.remove();
+      if(!container.children.length) container.innerHTML=bsListEditorRows([],kind);
     });
   });
   el.querySelectorAll('.bs-item-nome').forEach(inp=>{

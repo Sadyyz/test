@@ -567,9 +567,13 @@ async function renderBossArena(bossEntry){
           const ad=await ar.json();
           if(ad.avatar){
             img.src=ad.avatar;img.style.display='block';ph.style.display='none';
+          }else{
+            img.src='';img.style.display='none';ph.style.display='flex';
           }
         }
       }catch{}
+    }else{
+      img.src='';img.style.display='none';ph.style.display='flex';
     }
 
     // HP
@@ -637,6 +641,7 @@ function renderPlayersBottom(list){
 let lastRodada=null;
 let lastTurnoAtual=null;
 let lastBossId=null;
+let lastBossVisHash=null;
 
 async function renderCombat(state){
   const arena=document.getElementById('bs-arena');
@@ -676,10 +681,8 @@ async function renderCombat(state){
   const iniciativa=Array.isArray(state.iniciativa)?state.iniciativa:[];
   const bossEntry=iniciativa.find(e=>e.tipo==='boss'||e.tipo==='inimigo');
   const newBossId=bossEntry?.bossId||null;
-  if(newBossId!==lastBossId){
-    lastBossId=newBossId;
-    await renderBossArena(bossEntry||null);
-  }
+  await renderBossArena(bossEntry||null);
+  lastBossId=newBossId;
 
   // Players
   renderPlayersBottom(fichas);
