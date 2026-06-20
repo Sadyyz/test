@@ -445,6 +445,7 @@ function render() {
       <button class="tab-btn" data-tab="habilidades">Habilidades</button>
       <button class="tab-btn" data-tab="magias">Magias</button>
       <button class="tab-btn" data-tab="dados">Dados</button>
+      <button class="tab-btn" data-tab="historia">História</button>
       <button class="tab-btn" data-tab="notas">Notas</button>
     </nav>
 
@@ -753,9 +754,103 @@ function render() {
     <!-- ══════════════════════════
          ABA: NOTAS
     ══════════════════════════ -->
+    <div class="tab-panel" data-panel="historia">
+
+      <!-- BLOCO: Narrativa de origem -->
+      <div class="section-label">Origem &amp; Passado</div>
+      <div class="hist-origin-block">
+        <div class="hist-meta-grid">
+          <div class="hist-meta-item">
+            <span class="hist-meta-label">Antecedente</span>
+            <input type="text" class="hist-meta-input" data-field="antecedente" value="${esc(s.antecedente)}" placeholder="Ex: Nobre Caído">
+          </div>
+          <div class="hist-meta-item">
+            <span class="hist-meta-label">Raça</span>
+            <input type="text" class="hist-meta-input" data-field="raca" value="${esc(s.raca)}" placeholder="Ex: Tiefling">
+          </div>
+          <div class="hist-meta-item">
+            <span class="hist-meta-label">Alinhamento</span>
+            <input type="text" class="hist-meta-input" data-field="alinhamento" value="${esc(s.alinhamento)}" placeholder="Ex: Leal e Neutro">
+          </div>
+          <div class="hist-meta-item">
+            <span class="hist-meta-label">Divindade / Patrono</span>
+            <input type="text" class="hist-meta-input" data-field="hist_divindade" value="${esc(s.hist_divindade)}" placeholder="Ex: Levistus">
+          </div>
+        </div>
+        <div class="hist-narrative">
+          <span class="hist-meta-label">História do personagem</span>
+          <textarea class="hist-textarea" data-field="antecedenteTexto" placeholder="Escreva aqui a história completa do personagem — sua origem, família, o evento que mudou tudo, o que o motivou a aventurar…">${esc(s.antecedenteTexto)}</textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO: Traços de personalidade -->
+      <div class="section-label">Personalidade</div>
+      <div class="hist-traits-grid">
+        <div class="hist-trait-card" data-accent="gold">
+          <div class="hist-trait-icon">◈</div>
+          <span class="hist-trait-label">Traços de Personalidade</span>
+          <textarea class="hist-trait-area" data-field="hist_tracos" placeholder="Como este personagem age? Manias, hábitos, forma de falar…">${esc(s.hist_tracos)}</textarea>
+        </div>
+        <div class="hist-trait-card" data-accent="cyan">
+          <div class="hist-trait-icon">✦</div>
+          <span class="hist-trait-label">Ideal</span>
+          <textarea class="hist-trait-area" data-field="hist_ideal" placeholder="O que move este personagem? O princípio que ele nunca abandona…">${esc(s.hist_ideal)}</textarea>
+        </div>
+        <div class="hist-trait-card" data-accent="green">
+          <div class="hist-trait-icon">⚯</div>
+          <span class="hist-trait-label">Vínculo</span>
+          <textarea class="hist-trait-area" data-field="hist_vinculo" placeholder="Uma pessoa, lugar ou objeto de importância vital para ele…">${esc(s.hist_vinculo)}</textarea>
+        </div>
+        <div class="hist-trait-card" data-accent="red">
+          <div class="hist-trait-icon">☽</div>
+          <span class="hist-trait-label">Fraqueza</span>
+          <textarea class="hist-trait-area" data-field="hist_fraqueza" placeholder="Uma falha de caráter, fobia ou ponto fraco que pode ser explorado…">${esc(s.hist_fraqueza)}</textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO: Aparência -->
+      <div class="section-label">Aparência Física</div>
+      <div class="hist-appearance-grid">
+        <div class="hist-app-item">
+          <span class="hist-meta-label">Idade</span>
+          <input type="text" class="hist-meta-input" data-field="hist_idade" value="${esc(s.hist_idade)}" placeholder="Ex: 28 anos">
+        </div>
+        <div class="hist-app-item">
+          <span class="hist-meta-label">Altura</span>
+          <input type="text" class="hist-meta-input" data-field="hist_altura" value="${esc(s.hist_altura)}" placeholder="Ex: 1,85m">
+        </div>
+        <div class="hist-app-item">
+          <span class="hist-meta-label">Peso</span>
+          <input type="text" class="hist-meta-input" data-field="hist_peso" value="${esc(s.hist_peso)}" placeholder="Ex: 82kg">
+        </div>
+        <div class="hist-app-item">
+          <span class="hist-meta-label">Olhos</span>
+          <input type="text" class="hist-meta-input" data-field="hist_olhos" value="${esc(s.hist_olhos)}" placeholder="Ex: Prata gelada">
+        </div>
+        <div class="hist-app-item">
+          <span class="hist-meta-label">Cabelo</span>
+          <input type="text" class="hist-meta-input" data-field="hist_cabelo" value="${esc(s.hist_cabelo)}" placeholder="Ex: Preto com mechas brancas">
+        </div>
+        <div class="hist-app-item">
+          <span class="hist-meta-label">Pele / Traços</span>
+          <input type="text" class="hist-meta-input" data-field="hist_pele" value="${esc(s.hist_pele)}" placeholder="Ex: Azulada, chifres curvos">
+        </div>
+        <div class="hist-app-item hist-app-full">
+          <span class="hist-meta-label">Descrição Visual</span>
+          <textarea class="hist-textarea hist-textarea--sm" data-field="hist_aparencia" placeholder="Descrição geral da aparência: marcas, cicatrizes, forma de se vestir…">${esc(s.hist_aparencia)}</textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO: Relações -->
+      <div class="section-label">Relações &amp; Facções</div>
+      <div class="hist-relations" id="hist-relations-list">
+        ${buildRelacoes(s.hist_relacoes)}
+      </div>
+      <button class="hist-add-btn" id="hist-add-rel" type="button">＋ Adicionar Relação</button>
+
+    </div>
+
     <div class="tab-panel" data-panel="notas">
-      <div class="section-label">História / Antecedente</div>
-      <textarea class="bg-box" id="f-historia" data-field="antecedenteTexto" placeholder="Escreva aqui a história do personagem…">${esc(s.antecedenteTexto)}</textarea>
       <div class="section-label">Anotações</div>
       <textarea class="notes-area" id="notes" placeholder="Escreva aqui suas anotações de sessão…">${esc(s.notas)}</textarea>
     </div>
@@ -763,6 +858,99 @@ function render() {
 
   attachEvents();
   setActiveTab(activeTab);
+}
+
+// ══════════════════════════════════════════════════
+//  HISTÓRIA — helpers
+// ══════════════════════════════════════════════════
+
+function buildRelacoes(relacoes) {
+  if (!Array.isArray(relacoes) || relacoes.length === 0) {
+    return `<p class="hist-empty">Nenhuma relação registrada ainda.</p>`;
+  }
+  return relacoes.map((r, i) => `
+    <div class="hist-rel-card" data-idx="${i}">
+      <div class="hist-rel-header">
+        <input type="text" class="hist-rel-nome" data-rel-idx="${i}" data-rel-field="nome"
+          value="${esc(r.nome)}" placeholder="Nome da pessoa / organização">
+        <select class="hist-rel-tipo" data-rel-idx="${i}" data-rel-field="tipo">
+          ${['Aliado','Inimigo','Neutro','Família','Mentor','Rival','Organização','Desconhecido']
+            .map(t => `<option value="${t}" ${r.tipo===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+        <button class="hist-rel-del" data-rel-idx="${i}" type="button" title="Remover">✕</button>
+      </div>
+      <textarea class="hist-rel-desc" data-rel-idx="${i}" data-rel-field="descricao"
+        placeholder="Descreva a relação, história em comum, última vez que se viram…">${esc(r.descricao)}</textarea>
+    </div>
+  `).join('');
+}
+
+function attachHistoriaEvents() {
+  // inputs e textareas simples — data-field
+  document.querySelectorAll('#page [data-field]').forEach(el => {
+    const field = el.dataset.field;
+    if (!field) return;
+    el.addEventListener('input', () => {
+      state[field] = el.value;
+      scheduleSave();
+    });
+  });
+
+  // Botão adicionar relação
+  const addBtn = document.getElementById('hist-add-rel');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      if (!Array.isArray(state.hist_relacoes)) state.hist_relacoes = [];
+      state.hist_relacoes.push({ nome: '', tipo: 'Neutro', descricao: '' });
+      rerenderRelacoes();
+      scheduleSave();
+    });
+  }
+
+  // Delegação nos cards de relação
+  attachRelEventDelegation();
+}
+
+function rerenderRelacoes() {
+  const list = document.getElementById('hist-relations-list');
+  if (!list) return;
+  list.innerHTML = buildRelacoes(state.hist_relacoes);
+  attachRelEventDelegation();
+}
+
+function attachRelEventDelegation() {
+  const list = document.getElementById('hist-relations-list');
+  if (!list) return;
+
+  list.querySelectorAll('[data-rel-idx]').forEach(el => {
+    const i = parseInt(el.dataset.relIdx);
+    const field = el.dataset.relField;
+
+    if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && field) {
+      el.addEventListener('input', () => {
+        if (!Array.isArray(state.hist_relacoes)) return;
+        state.hist_relacoes[i][field] = el.value;
+        scheduleSave();
+      });
+    }
+    if (el.tagName === 'SELECT' && field) {
+      el.addEventListener('change', () => {
+        if (!Array.isArray(state.hist_relacoes)) return;
+        state.hist_relacoes[i][field] = el.value;
+        scheduleSave();
+      });
+    }
+  });
+
+  list.querySelectorAll('.hist-rel-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.relIdx);
+      if (!Array.isArray(state.hist_relacoes)) return;
+      state.hist_relacoes.splice(i, 1);
+      rerenderRelacoes();
+      scheduleSave();
+    });
+  });
 }
 
 function setActiveTab(name) {
@@ -789,6 +977,9 @@ function applyLevelChange(novoNivel) {
 function attachEvents() {
   // Tabs
   document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
+
+  // História
+  attachHistoriaEvents();
 
   // Campos de texto simples (nome, subtítulo, raça, classe, antecedente, alinhamento, história, etc.)
   document.querySelectorAll('input[data-field], textarea[data-field]').forEach(el => {

@@ -1034,3 +1034,307 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 }
 #f-historia:focus { border-color: var(--gold) !important; box-shadow: 0 0 14px var(--glow-g), var(--card-s) !important; }
 #f-historia::placeholder { color: var(--ink-dim); opacity: .5; }
+
+/* =========================================================
+   ABA HISTÓRIA — layout completo
+   ========================================================= */
+
+/* ---- ORIGEM / META GRID ---- */
+.hist-origin-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.hist-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media(max-width:640px){ .hist-meta-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:380px){ .hist-meta-grid { grid-template-columns: 1fr; } }
+
+.hist-meta-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 10px 14px 12px;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  transition: border-color .25s, box-shadow .25s;
+  box-shadow: var(--card-s);
+}
+.hist-meta-item:hover { border-color: var(--gold); box-shadow: 0 0 12px var(--glow-g); }
+
+.hist-meta-label {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: .55rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 5px;
+  transition: color .3s;
+}
+.hist-meta-item:hover .hist-meta-label { color: var(--gold); }
+
+.hist-meta-input {
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  color: var(--ink);
+  font-family: 'IM Fell English', serif;
+  font-size: .9rem;
+  padding: 2px 0;
+  transition: border-color .25s;
+}
+.hist-meta-input:focus { outline: none; border-bottom-color: var(--gold) !important; }
+.hist-meta-input::placeholder { color: var(--ink-dim); opacity: .4; font-style: italic; }
+
+/* Narrativa longa */
+.hist-narrative { display: flex; flex-direction: column; gap: 6px; }
+
+.hist-textarea {
+  width: 100%;
+  min-height: 140px;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-left: 3px solid var(--gold) !important;
+  box-shadow: var(--card-s) !important;
+  color: var(--ink);
+  font-family: 'IM Fell English', serif;
+  font-size: .9rem;
+  font-style: italic;
+  line-height: 1.8;
+  padding: 14px 18px;
+  resize: vertical;
+  outline: none;
+  transition: border-color .3s, box-shadow .3s;
+}
+.hist-textarea:focus { border-color: var(--gold) !important; box-shadow: 0 0 14px var(--glow-g), var(--card-s) !important; }
+.hist-textarea::placeholder { color: var(--ink-dim); opacity: .4; }
+.hist-textarea--sm { min-height: 80px; }
+
+/* ---- TRAITS GRID ---- */
+.hist-traits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+@media(max-width:540px){ .hist-traits-grid { grid-template-columns: 1fr; } }
+
+.hist-trait-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 14px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  transition: border-color .25s, box-shadow .25s, transform .2s;
+  box-shadow: var(--card-s);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Faixa colorida no topo por accent */
+.hist-trait-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  transition: opacity .3s;
+}
+.hist-trait-card[data-accent="gold"]::before  { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.hist-trait-card[data-accent="cyan"]::before  { background: linear-gradient(90deg, transparent, var(--teal-lt, #40c4ff), transparent); }
+.hist-trait-card[data-accent="green"]::before { background: linear-gradient(90deg, transparent, #69f0ae, transparent); }
+.hist-trait-card[data-accent="red"]::before   { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+
+.hist-trait-card:hover { border-color: var(--gold); box-shadow: 0 0 16px var(--glow-g), var(--card-s); transform: translateY(-2px); }
+
+.hist-trait-icon {
+  font-size: 1rem;
+  color: var(--gold);
+  line-height: 1;
+  transition: text-shadow .3s;
+}
+.hist-trait-card:hover .hist-trait-icon { text-shadow: 0 0 10px var(--gold); }
+
+.hist-trait-label {
+  font-family: 'Cinzel', serif;
+  font-size: .58rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  transition: color .3s;
+}
+.hist-trait-card:hover .hist-trait-label { color: var(--gold); }
+
+.hist-trait-area {
+  width: 100%;
+  min-height: 90px;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  color: var(--ink);
+  font-family: 'IM Fell English', serif;
+  font-size: .86rem;
+  font-style: italic;
+  line-height: 1.7;
+  padding: 4px 0;
+  resize: vertical;
+  outline: none;
+  transition: border-color .25s;
+}
+.hist-trait-area:focus { border-bottom-color: var(--gold) !important; }
+.hist-trait-area::placeholder { color: var(--ink-dim); opacity: .38; }
+
+/* ---- APARÊNCIA ---- */
+.hist-appearance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+@media(max-width:540px){ .hist-appearance-grid { grid-template-columns: repeat(2,1fr); } }
+
+.hist-app-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 10px 14px 12px;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  transition: border-color .25s, box-shadow .25s;
+  box-shadow: var(--card-s);
+}
+.hist-app-item:hover { border-color: var(--gold); box-shadow: 0 0 12px var(--glow-g); }
+.hist-app-item:hover .hist-meta-label { color: var(--gold); }
+.hist-app-full { grid-column: 1 / -1; }
+
+/* ---- RELAÇÕES ---- */
+.hist-relations {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.hist-empty {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  color: var(--ink-dim);
+  font-size: .88rem;
+  padding: 20px 0;
+  text-align: center;
+  opacity: .6;
+}
+
+.hist-rel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  transition: border-color .25s, box-shadow .25s;
+  box-shadow: var(--card-s);
+  animation: cardAppear .3s ease both;
+}
+.hist-rel-card:hover { border-color: var(--gold); box-shadow: 0 0 14px var(--glow-g), var(--card-s); }
+
+.hist-rel-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.hist-rel-nome {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  color: var(--gold-lt);
+  font-family: 'Cinzel', serif;
+  font-size: .82rem;
+  letter-spacing: .08em;
+  padding: 2px 4px;
+  outline: none;
+  transition: border-color .25s, color .25s;
+}
+.hist-rel-nome:focus { border-bottom-color: var(--gold) !important; }
+.hist-rel-nome::placeholder { color: var(--ink-dim); opacity: .4; font-family: 'IM Fell English', serif; font-size: .85rem; }
+
+.hist-rel-tipo {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--ink-dim);
+  font-family: 'Cinzel', serif;
+  font-size: .6rem;
+  letter-spacing: .1em;
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .25s, color .25s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.hist-rel-tipo:focus,
+.hist-rel-tipo:hover { border-color: var(--gold); color: var(--ink); }
+
+.hist-rel-del {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--ink-dim);
+  width: 26px; height: 26px;
+  font-size: .8rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: all .2s;
+}
+.hist-rel-del:hover { border-color: var(--red); color: var(--red); box-shadow: 0 0 8px rgba(255,77,109,.3); }
+
+.hist-rel-desc {
+  width: 100%;
+  min-height: 72px;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  color: var(--ink-dim);
+  font-family: 'IM Fell English', serif;
+  font-size: .86rem;
+  font-style: italic;
+  line-height: 1.7;
+  padding: 4px 0;
+  resize: vertical;
+  outline: none;
+  width: 100%;
+  transition: border-color .25s;
+}
+.hist-rel-desc:focus { border-bottom-color: var(--gold) !important; }
+.hist-rel-desc::placeholder { color: var(--ink-dim); opacity: .38; }
+
+/* Botão adicionar */
+.hist-add-btn {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--ink-dim);
+  font-family: 'Cinzel', serif;
+  font-size: .65rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  width: 100%;
+  cursor: pointer;
+  transition: all .3s;
+  margin-bottom: 8px;
+}
+.hist-add-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 12px var(--glow-g);
+  background: rgba(184,144,80,.04);
+}

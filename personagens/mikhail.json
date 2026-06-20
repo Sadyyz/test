@@ -82,7 +82,37 @@
     { "nome": "Brasão da Casa Levistus", "info": "item de valor sentimental" }
   ],
 
-  "antecedenteTexto": "Outrora herdeiro de uma casa nobre infernal, Mikhail abandonou seu título ao firmar um pacto com um patrono das sombras.",
+  "antecedenteTexto": "Outrora herdeiro de uma casa nobre infernal, Mikhail abandonou seu título ao firmar um pacto com um patrono das sombras. Nascido com o sangue de Levistus nas veias, cresceu entre conspirações e lâminas sorridentes. A queda da casa Haschwalth — arquitetada por um aliado que ele ainda não identificou — o deixou sem nome, sem lar, e com uma dívida de sangue que ainda não sabe como pagar.",
+
+  "hist_divindade": "Levistus, Príncipe do Gelo",
+  "hist_tracos": "Fala pouco, observa muito. Tem o hábito de girar um anel de gelo que conjura no dedo indicador quando está pensando. Trata aliados com formalidade fria, raramente usa nomes próprios — chama todos por seus títulos ou funções.",
+  "hist_ideal": "A ordem é o único antídoto para o caos. Enquanto houver uma hierarquia a servir — mesmo que imperfeita — o mundo funciona. Ele busca reconstruir sua casa não por vaidade, mas porque acredita que a nobreza tem um dever com os que estão abaixo.",
+  "hist_vinculo": "O brasão da Casa Haschwalth, único objeto que salvou das chamas. Também guarda o nome do traidor em seu coração como uma ferida aberta — um dia encontrará esta pessoa.",
+  "hist_fraqueza": "Incapaz de admitir fraqueza ou pedir ajuda. A frieza que usa como armadura frequentemente afasta aqueles que tentam se aproximar. Desconfia profundamente de qualquer oferta de amizade — toda aliança, para ele, tem um preço oculto.",
+  "hist_idade": "34 anos",
+  "hist_altura": "1,91m",
+  "hist_peso": "88kg",
+  "hist_olhos": "Íris prata com pupila felina; brilham levemente em azul no frio intenso",
+  "hist_cabelo": "Preto, liso, preso atrás",
+  "hist_pele": "Azul-acinzentada, pele fria ao toque; dois chifres curvados para trás, cauda longa",
+  "hist_aparencia": "Alto e de postura sempre ereta, quase rígida. Usa armadura escura com detalhes em prata que lembram gelo rachado. O rosto é anguloso, raramente expressivo. Uma cicatriz horizontal cruza sua sobrancelha esquerda — lembrança da noite em que a casa caiu.",
+  "hist_relacoes": [
+    {
+      "nome": "Ser Aldric Vane",
+      "tipo": "Rival",
+      "descricao": "Ex-mentor de Mikhail e atual sucessor auto-proclamado dos títulos Haschwalth. Mikhail suspeita que Vane foi o arquiteto da queda da casa, mas não tem provas ainda. Última vez que se viram: dois anos atrás, num tribunal em Waterdeep. Vane sorriu."
+    },
+    {
+      "nome": "Mira — A Ferralheira",
+      "tipo": "Aliado",
+      "descricao": "Anã que armou Mikhail após a queda da casa, sem cobrar. Diz que 'devia uma' ao pai dele. Nunca explicou o quê. Mikhail confia nela mais do que admite."
+    },
+    {
+      "nome": "Levistus",
+      "tipo": "Mentor",
+      "descricao": "Patrono e divindade ligada ao sangue da família. A relação não é de devoção — é de contrato. Levistus oferece poder, Mikhail oferece serviço. Nenhum dos dois se ilude sobre os termos."
+    }
+  ],
 
   "notas": "",
 
