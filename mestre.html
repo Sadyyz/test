@@ -509,6 +509,7 @@ function cbRenderList(){
         ${hpBlock}
       </div>
       <button class="btn-sm btn ${isTurn?'primary':''}" data-action="turn" data-idx="${i}" style="padding:6px 12px;margin-top:2px">${isTurn?'Na vez ✓':'É a vez'}</button>
+      ${(isBoss && isTurn)?`<button class="btn-sm btn danger" data-action="attack" data-idx="${i}" style="padding:6px 12px;margin-top:2px">⚔ Atacar</button>`:''}
       <button data-action="remove" data-idx="${i}" title="Remover" style="background:none;border:none;color:var(--crimson-lt);cursor:pointer;font-size:1rem;padding:4px 6px;opacity:.7;margin-top:2px">✕</button>
     </div>`;
   }).join('')}</div>`;
@@ -543,6 +544,8 @@ function cbAttachListListeners(){
         cbState.turnoAtual = cbState.iniciativa[idx].id;
         cbRenderList();
         cbMarkDirty();
+      } else if(action==='attack'){
+        cbOpenAttack(idx);
       }
     }
   });
@@ -668,6 +671,179 @@ function cbOpenPicker(title, options, onPick){
   });
   overlay.querySelector('#cb-pick-cancel').addEventListener('click',()=>overlay.remove());
   overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+// ── Rolagem de fórmula de dano tipo "2d6+3", "1d8", "4", "d20-1" ───────────
+function cbRollFormula(formula){
+  if(!formula || !String(formula).trim()) return null;
+  const cleaned = String(formula).toLowerCase().replace(/\s+/g,'');
+  const m = cleaned.match(/^(\d*)d(\d+)([+-]\d+)?$/);
+  if(m){
+    const qty = m[1] ? parseInt(m[1],10) : 1;
+    const die = parseInt(m[2],10);
+    const mod = m[3] ? parseInt(m[3],10) : 0;
+    if(qty<1 || qty>100 || die<1) return null;
+    let total = 0;
+    const rolls = [];
+    for(let i=0;i<qty;i++){ const v = 1+Math.floor(Math.random()*die); rolls.push(v); total += v; }
+    total += mod;
+    return { total: Math.max(0,total), detail: `${rolls.join('+')}${mod?(mod>0?'+'+mod:mod):''}` };
+  }
+  // valor fixo simples, ex: "7"
+  const fixed = parseInt(cleaned,10);
+  if(Number.isFinite(fixed)) return { total: Math.max(0,fixed), detail: 'fixo' };
+  return null;
+}
+
+// ── Modal: usar ataque do boss (escolhe ação cadastrada → rola/edita dano → escolhe alvos) ──
+async function cbOpenAttack(bossEntryIdx){
+  const entry = cbState.iniciativa[bossEntryIdx];
+  if(!entry || !entry.bossId){ toast('Este combatente não tem uma ficha de boss vinculada.', true); return; }
+
+  let boss = (cbBossesCache||[]).find(b=>b.id===entry.bossId);
+  if(!boss){
+    try{
+      const r = await fetch(`/api/boss?id=${encodeURIComponent(entry.bossId)}`);
+      if(r.ok) boss = await r.json();
+    }catch{}
+  }
+  if(!boss){ toast('Não foi possível carregar a ficha deste boss.', true); return; }
+
+  const acoes = boss.acoes || [];
+  if(acoes.length===0){
+    toast('Esta criatura ainda não tem ações cadastradas (aba Bosses).', true);
+    return;
+  }
+
+  const jogadoresNaIniciativa = (cbState.iniciativa||[]).filter(e=>e.tipo==='jogador');
+  if(jogadoresNaIniciativa.length===0){
+    toast('Não há jogadores na iniciativa para atacar.', true);
+    return;
+  }
+  await cbLoadPlayerHp();
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(6,4,7,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+
+  let selectedActionIdx = 0;
+  let rolledTotal = null;
+  let rolledDetail = '';
+
+  function actionOptionsHtml(){
+    return acoes.map((a,i)=>`<button class="cb-atk-action-opt" data-idx="${i}" style="text-align:left;background:${i===selectedActionIdx?'var(--surface2)':'var(--bg2)'};border:1px solid ${i===selectedActionIdx?'var(--gold)':'var(--border)'};color:var(--ink);padding:10px 14px;cursor:pointer;font-family:'IM Fell English',serif;font-size:.9rem;transition:all .2s;display:block;width:100%">
+      <div style="font-family:'Cinzel',serif;font-size:.82rem;color:${i===selectedActionIdx?'var(--gold-hot)':'var(--ink)'}">${esc(a.nome||'(sem nome)')}${a.dano?` <span style="color:var(--crimson-lt);font-size:.74rem">· ${esc(a.dano)}</span>`:''}</div>
+      ${a.descricao?`<div style="font-size:.74rem;color:var(--ink-dim);margin-top:3px">${esc(a.descricao)}</div>`:''}
+    </button>`).join('');
+  }
+
+  function targetsHtml(){
+    return jogadoresNaIniciativa.map(j=>{
+      const ficha = cbFichasCache[j.id];
+      const hpInfo = ficha && ficha.core ? `${ficha.core.hpAtual}/${ficha.core.hpMax} HP` : '';
+      return `<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);cursor:pointer">
+        <input type="checkbox" class="cb-atk-target" data-id="${esc(j.id)}" style="flex-shrink:0">
+        <span style="flex:1;font-family:'IM Fell English',serif;font-size:.9rem;color:var(--ink)">${esc(j.nome)}</span>
+        <span style="font-size:.72rem;color:var(--ink-dim);font-family:'Cinzel',serif">${hpInfo}</span>
+      </label>`;
+    }).join('');
+  }
+
+  function renderModal(){
+    const currentAction = acoes[selectedActionIdx];
+    overlay.innerHTML = `<div style="width:100%;max-width:440px;background:var(--surface);border:1px solid var(--crimson);padding:26px 24px;box-shadow:0 8px 40px rgba(0,0,0,.7);margin:auto">
+      <div style="font-family:'Cinzel Decorative',serif;font-size:1.05rem;color:var(--crimson-lt);margin-bottom:4px">⚔ ${esc(boss.nome)} ataca</div>
+      <div style="font-size:.78rem;color:var(--ink-dim);font-style:italic;margin-bottom:18px">Escolha a ação, confirme o dano e marque os alvos.</div>
+
+      <p class="section-label" style="margin-bottom:10px">Ação</p>
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;margin-bottom:18px">
+        ${actionOptionsHtml()}
+      </div>
+
+      <p class="section-label" style="margin-bottom:10px">Dano</p>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <input type="number" id="cb-atk-dano-input" value="${rolledTotal??''}" placeholder="0" style="width:90px;background:var(--bg2);border:1px solid var(--crimson);color:var(--crimson-lt);padding:9px;text-align:center;font-family:'Cinzel',serif;font-size:1.1rem;outline:none">
+        <button class="btn btn-sm" id="cb-atk-roll-btn" ${currentAction&&currentAction.dano?'':'disabled'}>🎲 Rolar ${currentAction&&currentAction.dano?esc(currentAction.dano):''}</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--ink-dim);min-height:1.2em;margin-bottom:18px">${rolledDetail?('rolagem: '+esc(rolledDetail)):(currentAction&&currentAction.dano?'':'esta ação não tem fórmula cadastrada — digite o dano manualmente')}</div>
+
+      <p class="section-label" style="margin-bottom:10px">Alvos</p>
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:22px">
+        ${targetsHtml()}
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-sm" id="cb-atk-cancel">Cancelar</button>
+        <button class="btn primary btn-sm" id="cb-atk-confirm">Aplicar Dano</button>
+      </div>
+    </div>`;
+
+    overlay.querySelectorAll('.cb-atk-action-opt').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedActionIdx = Number(btn.dataset.idx);
+        rolledTotal = null;
+        rolledDetail = '';
+        renderModal();
+      });
+    });
+    const rollBtn = overlay.querySelector('#cb-atk-roll-btn');
+    if(rollBtn){
+      rollBtn.addEventListener('click', ()=>{
+        const result = cbRollFormula(currentAction.dano);
+        if(!result){ toast('Fórmula de dano inválida nesta ação.', true); return; }
+        rolledTotal = result.total;
+        rolledDetail = result.detail;
+        renderModal();
+      });
+    }
+    overlay.querySelector('#cb-atk-cancel').addEventListener('click', ()=>overlay.remove());
+    overlay.querySelector('#cb-atk-confirm').addEventListener('click', async ()=>{
+      const danoInput = document.getElementById('cb-atk-dano-input');
+      const dano = Number(danoInput.value);
+      if(!Number.isFinite(dano) || dano<0){ toast('Informe um valor de dano válido.', true); return; }
+      const targets = [...overlay.querySelectorAll('.cb-atk-target:checked')].map(cb=>cb.dataset.id);
+      if(targets.length===0){ toast('Selecione ao menos um alvo.', true); return; }
+
+      const confirmBtn = overlay.querySelector('#cb-atk-confirm');
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span class="spin">⧖</span> Aplicando…';
+
+      await cbApplyDamage(targets, dano, currentAction ? currentAction.nome : 'Ataque', boss.nome);
+      overlay.remove();
+    });
+  }
+
+  renderModal();
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+// Aplica dano a uma lista de ids de jogador, salvando a ficha atualizada via /api/ficha
+async function cbApplyDamage(targetIds, dano, acaoNome, atacanteNome){
+  const results = [];
+  for(const id of targetIds){
+    const ficha = cbFichasCache[id];
+    if(!ficha || !ficha.core){ results.push({id, ok:false}); continue; }
+    const novoHp = Math.max(0, (Number(ficha.core.hpAtual)||0) - dano);
+    ficha.core.hpAtual = novoHp;
+    try{
+      const r = await fetch(`/api/ficha?id=${encodeURIComponent(id)}`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ficha)
+      });
+      results.push({ id, ok:r.ok, nome:ficha.nome, novoHp, hpMax:ficha.core.hpMax });
+    }catch{
+      results.push({ id, ok:false, nome:ficha.nome });
+    }
+  }
+  const sucesso = results.filter(r=>r.ok);
+  const falha = results.filter(r=>!r.ok);
+  if(sucesso.length>0){
+    const nomes = sucesso.map(r=>`${r.nome} (${r.novoHp}/${r.hpMax})`).join(', ');
+    toast(`${atacanteNome} usou ${acaoNome}: ${dano} de dano em ${nomes}.`);
+  }
+  if(falha.length>0){
+    toast(`Falha ao aplicar dano em ${falha.length} alvo(s).`, true);
+  }
+  cbRenderList();
 }
 
 function initCombateTab(){
@@ -845,13 +1021,14 @@ function bsAtributoRow(label, key){
 }
 
 function bsListEditorRows(arr, kind){
-  // kind: 'acoes' | 'habilidades' — itens {nome, descricao}
+  // kind: 'acoes' | 'habilidades' — itens {nome, descricao} (ações também têm 'dano': fórmula opcional, ex "2d6+3")
   if(!arr || arr.length===0){
     return `<div style="font-size:.8rem;color:var(--ink-dim);font-style:italic;padding:8px 0">Nenhum item ainda.</div>`;
   }
   return arr.map((item,i)=>`<div class="bs-${kind}-row" data-idx="${i}" style="border:1px solid var(--border);background:var(--bg2);padding:10px 12px;margin-bottom:8px">
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <input type="text" class="bs-item-nome" data-kind="${kind}" data-idx="${i}" value="${esc(item.nome||'')}" placeholder="Nome" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.8rem;outline:none">
+      ${kind==='acoes'?`<input type="text" class="bs-item-dano" data-kind="${kind}" data-idx="${i}" value="${esc(item.dano||'')}" placeholder="Dano (ex: 2d6+3)" title="Fórmula de dano (opcional)" style="width:130px;background:var(--bg);border:1px solid var(--crimson);color:var(--crimson-lt);padding:7px 10px;font-family:'Cinzel',serif;font-size:.78rem;outline:none">`:''}
       <button class="bs-item-del" data-kind="${kind}" data-idx="${i}" style="background:none;border:none;color:var(--crimson-lt);cursor:pointer;font-size:.95rem;padding:0 6px">✕</button>
     </div>
     <textarea class="bs-item-desc" data-kind="${kind}" data-idx="${i}" placeholder="Descrição" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--ink-2);padding:7px 10px;font-family:'IM Fell English',serif;font-size:.85rem;outline:none;resize:vertical">${esc(item.descricao||'')}</textarea>
@@ -947,6 +1124,9 @@ function bsRenderEditor(){
   });
   el.querySelectorAll('.bs-item-nome').forEach(inp=>{
     inp.addEventListener('input', ()=>{ s[inp.dataset.kind][Number(inp.dataset.idx)].nome = inp.value; });
+  });
+  el.querySelectorAll('.bs-item-dano').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ s[inp.dataset.kind][Number(inp.dataset.idx)].dano = inp.value; });
   });
   el.querySelectorAll('.bs-item-desc').forEach(inp=>{
     inp.addEventListener('input', ()=>{ s[inp.dataset.kind][Number(inp.dataset.idx)].descricao = inp.value; });
