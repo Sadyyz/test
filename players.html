@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modo RPG — D&D Bankai</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{
+  --bg:#0a0809;--bg2:#100d12;--surface:#161219;--surface2:#1e1825;
+  --border:#2c2238;--ink:#ede0c8;--ink-2:#b8a890;--ink-dim:#6a5a48;
+  --gold:#c8922a;--gold-lt:#e8be68;--gold-hot:#f2d078;--gold-dim:#5a3e10;
+  --crimson:#7a1828;--crimson-lt:#b83040;--crimson-glow:rgba(122,24,40,.25);
+  --glow-g:rgba(200,146,42,.2);--card-s:0 2px 20px rgba(0,0,0,.75);
+  --rune-op:.018;--pulse-color:rgba(200,146,42,.12);
+}
+[data-theme="light"]{
+  --bg:#f4ede0;--bg2:#ece4d4;--surface:#fdf8f0;--surface2:#f5eddc;
+  --border:#c8a870;--ink:#18100a;--ink-2:#5a4030;--ink-dim:#8a6a50;
+  --gold:#8a5a10;--gold-lt:#aa7830;--gold-hot:#7a4808;--gold-dim:#e8d4b0;
+  --crimson:#6a0f1e;--crimson-lt:#9a1830;--crimson-glow:rgba(106,15,30,.12);
+  --glow-g:rgba(138,90,16,.1);--card-s:0 2px 20px rgba(60,30,0,.08);
+  --rune-op:.035;--pulse-color:rgba(138,90,16,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);font-family:'IM Fell English',Georgia,serif;
+  min-height:100vh;overflow-x:hidden;transition:background .5s,color .5s;
+}
+body::before{
+  content:"ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛋᛏᛒᛖᛗᛚᛜᛞᛟ ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛋᛏᛒᛖᛗᛚᛜᛞᛟ";
+  position:fixed;inset:0;font-size:1.4rem;letter-spacing:.6em;line-height:4em;
+  color:var(--gold);opacity:var(--rune-op);word-break:break-all;pointer-events:none;z-index:0;padding:32px;
+  animation:runeShift 70s linear infinite;
+}
+@keyframes runeShift{0%,100%{transform:translateY(0)}50%{transform:translateY(-4%)}}
+#cosmos{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* Topo */
+.top-bar{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;background:rgba(10,8,9,.85);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--border);
+}
+.top-title{
+  font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--gold);text-shadow:0 0 12px var(--glow-g);
+}
+.top-right{display:flex;align-items:center;gap:10px}
+.live-badge{
+  display:flex;align-items:center;gap:6px;padding:4px 10px;
+  border:1px solid var(--gold-dim);color:var(--gold);
+  font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.3em;text-transform:uppercase;
+  background:rgba(200,146,42,.06);
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse-dot 1.6s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.live-badge.offline{border-color:var(--ink-dim);color:var(--ink-dim)}
+.live-badge.offline .live-dot{background:var(--ink-dim);animation:none}
+.live-badge.combat{border-color:var(--crimson);color:var(--crimson-lt)}
+.live-badge.combat .live-dot{background:var(--crimson-lt)}
+
+#theme-btn{
+  background:var(--surface);border:1px solid var(--border);color:var(--gold);
+  width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:.85rem;
+  display:flex;align-items:center;justify-content:center;transition:all .3s;
+}
+#theme-btn:hover{border-color:var(--gold);transform:scale(1.1) rotate(20deg)}
+
+/* Page */
+.page{position:relative;z-index:2;max-width:1060px;margin:0 auto;padding:78px 20px 80px}
+
+/* ── SEÇÃO COMBATE ATIVO ─────────────────────────────────────────────── */
+#combat-section{display:none;margin-bottom:40px}
+#combat-section.show{display:block}
+
+.combat-banner{
+  background:linear-gradient(135deg,rgba(122,24,40,.18),rgba(184,48,64,.08));
+  border:1px solid var(--crimson);
+  padding:18px 22px 22px;margin-bottom:24px;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+}
+.combat-top{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.combat-title{
+  font-family:'Cinzel Decorative',serif;font-size:1.1rem;font-weight:900;
+  color:var(--crimson-lt);text-shadow:0 0 16px var(--crimson-glow);letter-spacing:.08em;
+}
+.round-badge{
+  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--ink-dim);padding:4px 12px;border:1px solid var(--border);
+}
+.round-badge span{color:var(--gold-lt);font-size:.8rem;font-family:'Cinzel Decorative',serif}
+
+/* Ordem de iniciativa */
+.initiative-list{display:flex;flex-direction:column;gap:6px}
+.init-item{
+  display:flex;align-items:center;gap:12px;padding:10px 16px;
+  background:var(--surface);border:1px solid var(--border);
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+  transition:all .3s;
+}
+.init-item.active{
+  border-color:var(--gold);background:var(--surface2);
+  box-shadow:0 0 18px var(--glow-g);animation:activePulse 2s ease-in-out infinite;
+}
+@keyframes activePulse{0%,100%{box-shadow:0 0 18px var(--glow-g)}50%{box-shadow:0 0 32px var(--glow-g)}}
+.init-item.enemy{border-color:var(--crimson)}
+.init-item.enemy.active{border-color:var(--crimson-lt);animation:enemyPulse 2s ease-in-out infinite}
+@keyframes enemyPulse{0%,100%{box-shadow:0 0 18px var(--crimson-glow)}50%{box-shadow:0 0 32px var(--crimson-glow)}}
+.init-num{
+  font-family:'Cinzel',serif;font-size:.75rem;color:var(--ink-dim);
+  min-width:26px;text-align:center;
+}
+.init-item.active .init-num{color:var(--gold-lt)}
+.init-name{flex:1;font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.1em;color:var(--ink)}
+.init-item.active .init-name{color:var(--gold-hot)}
+.init-item.enemy .init-name{color:var(--crimson-lt)}
+.init-arrow{color:var(--gold);font-size:.9rem;opacity:0;transition:opacity .3s}
+.init-item.active .init-arrow{opacity:1}
+
+/* Boss card em combate */
+.boss-combat-card{
+  background:var(--surface2);border:1px solid var(--crimson);
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+  overflow:hidden;margin-top:14px;
+}
+.boss-combat-inner{
+  display:grid;grid-template-columns:auto 1fr;gap:0;align-items:stretch;
+}
+.boss-avatar-combat{
+  width:120px;height:120px;object-fit:cover;display:block;
+  filter:grayscale(20%);
+}
+.boss-avatar-placeholder-combat{
+  width:120px;height:120px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.5rem;color:var(--crimson-lt);opacity:.5;
+}
+.boss-combat-info{padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.boss-combat-name{
+  font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--crimson-lt);
+  letter-spacing:.06em;text-shadow:0 0 14px var(--crimson-glow);
+}
+.boss-combat-hp{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.boss-hp-label{font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim)}
+.boss-hp-val{
+  font-family:'Cinzel Decorative',serif;font-size:1.3rem;color:var(--crimson-lt);
+  text-shadow:0 0 10px var(--crimson-glow);
+}
+.boss-hp-bar-wrap{flex:1;min-width:80px;height:7px;background:var(--surface);border:1px solid var(--border)}
+.boss-hp-bar{height:100%;background:linear-gradient(90deg,var(--crimson),var(--crimson-lt));transition:width .5s ease}
+
+/* ── SEÇÃO FICHAS ────────────────────────────────────────────────────── */
+.section-label{
+  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.45em;text-transform:uppercase;
+  color:var(--ink-dim);margin-bottom:18px;display:flex;align-items:center;gap:12px;
+}
+.section-label::before,.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+
+/* Grid de fichas */
+.players-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;
+  margin-bottom:40px;
+}
+.player-card{
+  background:var(--surface);border:1px solid var(--border);
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+  overflow:hidden;transition:all .3s;position:relative;text-decoration:none;display:block;color:inherit;
+}
+.player-card:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.5),0 0 22px var(--glow-g)}
+.player-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity .3s}
+.player-card:hover::before{opacity:1}
+
+.player-avatar-row{
+  height:100px;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;
+}
+.player-avatar-row img{width:100%;height:100%;object-fit:cover;object-position:top}
+.player-avatar-placeholder{font-size:2.4rem;opacity:.3;color:var(--gold)}
+.player-active-glow{
+  position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(200,146,42,.18),transparent 70%);
+  opacity:0;transition:opacity .3s;pointer-events:none;
+}
+.player-card.is-turn .player-active-glow{opacity:1}
+
+.player-body{padding:14px 16px}
+.player-name{
+  font-family:'Cinzel',serif;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gold-lt);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.player-card.is-turn .player-name{color:var(--gold-hot)}
+.player-subtitle{font-size:.75rem;color:var(--ink-dim);font-style:italic;margin-bottom:10px}
+.player-stats{display:flex;gap:12px;flex-wrap:wrap}
+.pstat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pstat-val{font-family:'Cinzel',serif;font-size:1rem;color:var(--ink);line-height:1}
+.pstat-lbl{font-family:'Cinzel',serif;font-size:.44rem;letter-spacing:.25em;text-transform:uppercase;color:var(--ink-dim)}
+
+/* HP bar no card */
+.player-hp-row{margin-top:10px;display:flex;align-items:center;gap:8px}
+.player-hp-text{font-family:'Cinzel',serif;font-size:.75rem;color:var(--ink-2);white-space:nowrap}
+.player-hp-bar-wrap{flex:1;height:5px;background:var(--surface2);border:1px solid var(--border)}
+.player-hp-bar{height:100%;transition:width .4s ease,background .4s}
+
+/* Turno badge */
+.turn-badge{
+  position:absolute;top:8px;right:8px;padding:3px 8px;
+  background:var(--gold);color:var(--bg);
+  font-family:'Cinzel',serif;font-size:.46rem;letter-spacing:.25em;text-transform:uppercase;
+}
+
+/* Estados: vazio / loading / erro / sem combate */
+.empty-state{
+  text-align:center;padding:80px 0;
+  font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--ink-dim);animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.empty-state.static{animation:none;opacity:.6}
+.empty-icon{font-size:2.4rem;display:block;margin-bottom:14px;opacity:.3}
+
+/* Sem combate */
+#standby{text-align:center;padding:40px 0 20px}
+.standby-ring{
+  width:90px;height:90px;border:1px dashed var(--border);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+  font-size:1.8rem;opacity:.3;animation:slowSpin 20s linear infinite;
+}
+@keyframes slowSpin{to{transform:rotate(360deg)}}
+.standby-text{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.38em;text-transform:uppercase;color:var(--ink-dim)}
+
+/* Footer */
+.footer{
+  text-align:center;margin-top:48px;padding-top:22px;border-top:1px solid var(--border);
+  font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ink-dim);position:relative;
+}
+.footer::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.3}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:560px){
+  .players-grid{grid-template-columns:1fr 1fr}
+  .page{padding:70px 14px 60px}
+}
+@media(max-width:360px){
+  .players-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<canvas id="cosmos"></canvas>
+
+<header class="top-bar">
+  <div class="top-title">⚔ Modo RPG</div>
+  <div class="top-right">
+    <div class="live-badge offline" id="live-badge">
+      <span class="live-dot"></span>
+      <span id="live-text">Aguardando…</span>
+    </div>
+    <button id="theme-btn" title="Alternar tema">☽</button>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- Combate Ativo -->
+  <section id="combat-section">
+    <div class="combat-banner">
+      <div class="combat-top">
+        <span class="combat-title">⚔ Combate em Curso</span>
+        <span class="round-badge">Rodada <span id="round-num">1</span></span>
+      </div>
+      <div class="initiative-list" id="initiative-list"></div>
+      <div id="boss-combat-wrap"></div>
+    </div>
+  </section>
+
+  <!-- Fichas dos Jogadores -->
+  <section id="players-section">
+    <div class="section-label">Aventureiros</div>
+    <div class="players-grid" id="players-grid">
+      <div class="empty-state">⧖ Carregando pergaminhos…</div>
+    </div>
+  </section>
+
+  <!-- Standby (sem sessão / combate) -->
+  <div id="standby" style="display:none">
+    <div class="standby-ring">⧖</div>
+    <p class="standby-text">Aguardando o Mestre iniciar o combate</p>
+  </div>
+
+  <footer class="footer">D&D Bankai &nbsp;✦&nbsp; Modo RPG &nbsp;✦&nbsp; Tela dos Jogadores</footer>
+</main>
+
+<script>
+// ── Partículas ────────────────────────────────────────────────────────────────
+(function(){
+  const c=document.getElementById('cosmos'),ctx=c.getContext('2d');
+  let W,H,ps=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  function cols(){
+    return document.documentElement.getAttribute('data-theme')==='light'
+      ?['rgba(138,90,16,','rgba(168,120,48,','rgba(100,70,20,']
+      :['rgba(200,146,42,','rgba(242,208,120,','rgba(90,62,16,'];
+  }
+  for(let i=0;i<44;i++)ps.push({
+    x:Math.random()*1400,y:Math.random()*900,
+    r:Math.random()*1.4+.3,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,
+    a:Math.random()*.3+.07,p:Math.random()*Math.PI*2,
+    ps:Math.random()*.015+.005,ci:Math.floor(Math.random()*3)
+  });
+  function draw(){
+    ctx.clearRect(0,0,W,H);const cl=cols();
+    ps.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.p+=p.ps;
+      if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;
+      if(p.y<-5)p.y=H+5;if(p.y>H+5)p.y=-5;
+      const a=p.a*(0.55+0.45*Math.sin(p.p));
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=cl[p.ci]+a+')';ctx.fill();
+    });
+    for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){
+      const dx=ps[i].x-ps[j].x,dy=ps[i].y-ps[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<80){ctx.beginPath();ctx.moveTo(ps[i].x,ps[i].y);ctx.lineTo(ps[j].x,ps[j].y);
+      ctx.strokeStyle=cl[0]+(0.05*(1-d/80))+')';ctx.lineWidth=.4;ctx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+(function(){
+  const btn=document.getElementById('theme-btn'),html=document.documentElement;
+  const saved=localStorage.getItem('dnd-theme')||'dark';
+  html.setAttribute('data-theme',saved);btn.textContent=saved==='dark'?'☀':'☽';
+  btn.addEventListener('click',()=>{
+    const n=html.getAttribute('data-theme')==='dark'?'light':'dark';
+    html.setAttribute('data-theme',n);btn.textContent=n==='dark'?'☀':'☽';
+    localStorage.setItem('dnd-theme',n);
+  });
+})();
+
+// ── Estado ────────────────────────────────────────────────────────────────────
+let lastCombatHash='';
+let lastPlayersHash='';
+let combatAtivo=false;
+let fichas=[];
+let currentTurno=null;
+
+// ── Live Badge ────────────────────────────────────────────────────────────────
+function setBadge(mode){
+  const badge=document.getElementById('live-badge');
+  const text=document.getElementById('live-text');
+  badge.className='live-badge';
+  if(mode==='live'){badge.classList.add('live');text.textContent='Ao Vivo'}
+  else if(mode==='combat'){badge.classList.add('combat');text.textContent='⚔ Em Combate'}
+  else if(mode==='offline'){badge.classList.add('offline');text.textContent='Offline'}
+  else{badge.classList.add('offline');text.textContent='Aguardando…'}
+}
+
+// ── Utilitários ───────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function hpColor(pct){
+  return pct>60
+    ?'linear-gradient(90deg,#1a7a20,#28a830)'
+    :pct>25
+    ?'linear-gradient(90deg,#a04010,#d06020)'
+    :'linear-gradient(90deg,#600000,#900010)';
+}
+
+function hpPct(atual,max){return Math.max(0,Math.min(100,((Number(atual)||0)/(Math.max(1,Number(max)||1)))*100))}
+
+// ── Render: Combate ───────────────────────────────────────────────────────────
+async function renderCombat(state){
+  const section=document.getElementById('combat-section');
+  const standby=document.getElementById('standby');
+
+  if(!state||!state.ativo){
+    section.classList.remove('show');
+    standby.style.display='';
+    combatAtivo=false;
+    currentTurno=null;
+    setBadge('live');
+    return;
+  }
+
+  combatAtivo=true;
+  currentTurno=state.turnoAtual;
+  section.classList.add('show');
+  standby.style.display='none';
+  setBadge('combat');
+
+  document.getElementById('round-num').textContent=state.rodada||1;
+
+  const list=document.getElementById('initiative-list');
+  const iniciativa=Array.isArray(state.iniciativa)?state.iniciativa:[];
+
+  list.innerHTML=iniciativa.map(entry=>{
+    const isActive=state.turnoAtual&&entry.id===state.turnoAtual;
+    const isEnemy=entry.tipo==='boss'||entry.tipo==='inimigo';
+    return `<div class="init-item${isActive?' active':''}${isEnemy?' enemy':''}">
+      <span class="init-num">${entry.iniciativa||'—'}</span>
+      <span class="init-name">${esc(entry.nome||'?')}</span>
+      <span class="init-arrow">▶</span>
+    </div>`;
+  }).join('');
+
+  // Render boss em combate se houver boss na iniciativa
+  const bossEntry=iniciativa.find(e=>e.tipo==='boss'||e.tipo==='inimigo');
+  const bossWrap=document.getElementById('boss-combat-wrap');
+
+  if(bossEntry&&bossEntry.bossId){
+    try{
+      const r=await fetch(`/api/boss?id=${bossEntry.bossId}`);
+      if(r.ok){
+        const b=await r.json();
+        // só mostra o que o mestre liberou
+        const showNome=b.visibilidade&&b.visibilidade.nome;
+        const showHp=b.visibilidade&&b.visibilidade.hp;
+        const showImg=b.visibilidade&&b.visibilidade.imagem;
+
+        let avatarHtml='<div class="boss-avatar-placeholder-combat">☠</div>';
+        if(showImg){
+          try{
+            const ar=await fetch(`/api/boss-avatar?id=${b.id}`);
+            if(ar.ok){const ad=await ar.json();if(ad.avatar)avatarHtml=`<img class="boss-avatar-combat" src="${ad.avatar}" alt="">`;}
+          }catch{}
+        }
+
+        const pct=hpPct(b.hpAtual,b.hpMax);
+        const hpBlock=showHp?`
+          <div class="boss-combat-hp">
+            <span class="boss-hp-label">HP</span>
+            <span class="boss-hp-val">${b.hpAtual} / ${b.hpMax}</span>
+            <div class="boss-hp-bar-wrap"><div class="boss-hp-bar" style="width:${pct}%;background:${hpColor(pct)}"></div></div>
+          </div>`:'';
+
+        bossWrap.innerHTML=`<div class="boss-combat-card">
+          <div class="boss-combat-inner">
+            ${avatarHtml}
+            <div class="boss-combat-info">
+              <div class="boss-combat-name">${showNome?esc(b.nome):'???'}</div>
+              ${hpBlock}
+            </div>
+          </div>
+        </div>`;
+      }else{bossWrap.innerHTML=''}
+    }catch{bossWrap.innerHTML=''}
+  }else{
+    bossWrap.innerHTML='';
+  }
+}
+
+// ── Render: Fichas dos jogadores ──────────────────────────────────────────────
+function renderPlayers(list){
+  const grid=document.getElementById('players-grid');
+
+  if(!list||list.length===0){
+    grid.innerHTML='<div class="empty-state static"><span class="empty-icon">📜</span>Nenhum aventureiro cadastrado</div>';
+    return;
+  }
+
+  grid.innerHTML=list.map(p=>{
+    const isTurn=combatAtivo&&currentTurno&&p.id===currentTurno;
+    const core=p.core||{};
+    const hpAtual=Number(core.hpAtual)||0;
+    const hpMax=Number(core.hpMax)||1;
+    const pct=hpPct(hpAtual,hpMax);
+    const nivel=p.nivel||1;
+    const classe=p.classe||'';
+    const subtitulo=[nivel?`Nível ${nivel}`:'',classe].filter(Boolean).join(' · ');
+
+    const avatarEl=p._avatarSrc
+      ?`<img src="${p._avatarSrc}" alt="${esc(p.nome)}" style="width:100%;height:100%;object-fit:cover;object-position:top">`
+      :`<span class="player-avatar-placeholder">⚔</span>`;
+
+    return `<a class="player-card${isTurn?' is-turn':''}" href="ficha.html?id=${esc(p.id)}" target="_blank" rel="noopener">
+      ${isTurn?'<div class="turn-badge">Seu Turno</div>':''}
+      <div class="player-avatar-row">
+        ${avatarEl}
+        <div class="player-active-glow"></div>
+      </div>
+      <div class="player-body">
+        <div class="player-name">${esc(p.nome||'Aventureiro')}</div>
+        ${subtitulo?`<div class="player-subtitle">${esc(subtitulo)}</div>`:''}
+        <div class="player-stats">
+          ${core.ca?`<div class="pstat"><span class="pstat-val">${core.ca}</span><span class="pstat-lbl">CA</span></div>`:''}
+          ${core.iniciativa!==undefined?`<div class="pstat"><span class="pstat-val">${core.iniciativa>=0?'+':''}${core.iniciativa}</span><span class="pstat-lbl">Init</span></div>`:''}
+          ${core.bonusProf?`<div class="pstat"><span class="pstat-val">+${core.bonusProf}</span><span class="pstat-lbl">Prof</span></div>`:''}
+        </div>
+        <div class="player-hp-row">
+          <span class="player-hp-text">${hpAtual} / ${hpMax} HP</span>
+          <div class="player-hp-bar-wrap">
+            <div class="player-hp-bar" style="width:${pct}%;background:${hpColor(pct)}"></div>
+          </div>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+// ── Poll: combate ─────────────────────────────────────────────────────────────
+async function pollCombat(){
+  try{
+    const r=await fetch('/api/combat');
+    if(!r.ok)return;
+    const data=await r.json();
+    const h=JSON.stringify(data);
+    if(h!==lastCombatHash){
+      lastCombatHash=h;
+      await renderCombat(data);
+      renderPlayers(fichas); // re-render para atualizar destaque de turno
+    }
+  }catch{setBadge('offline')}
+}
+
+// ── Poll: fichas ──────────────────────────────────────────────────────────────
+async function pollPlayers(){
+  try{
+    const mr=await fetch('/api/manifest');
+    if(!mr.ok)return;
+    const manifest=await mr.json();
+    if(!Array.isArray(manifest)||manifest.length===0){
+      fichas=[];renderPlayers([]);return;
+    }
+
+    const h=JSON.stringify(manifest.map(m=>m.id+m.nome));
+    const changed=(h!==lastPlayersHash);
+    if(!changed&&fichas.length===manifest.length){
+      // Apenas re-poll HP se fichas já carregadas
+      await refreshHp(manifest);
+      return;
+    }
+
+    lastPlayersHash=h;
+    setBadge(combatAtivo?'combat':'live');
+
+    // Carrega fichas completas em paralelo
+    const results=await Promise.allSettled(
+      manifest.map(async m=>{
+        const r=await fetch(`/api/ficha?id=${m.id}`);
+        if(!r.ok)return null;
+        return r.json();
+      })
+    );
+
+    fichas=results
+      .filter(r=>r.status==='fulfilled'&&r.value)
+      .map(r=>r.value);
+
+    // Carrega avatares
+    await Promise.allSettled(fichas.map(async f=>{
+      try{
+        const r=await fetch(`/api/avatar?id=${f.id}`);
+        if(r.ok){const d=await r.json();if(d.avatar)f._avatarSrc=d.avatar;}
+      }catch{}
+    }));
+
+    renderPlayers(fichas);
+  }catch{setBadge('offline')}
+}
+
+async function refreshHp(manifest){
+  let updated=false;
+  await Promise.allSettled(fichas.map(async(f,i)=>{
+    try{
+      const r=await fetch(`/api/ficha?id=${f.id}`);
+      if(!r.ok)return;
+      const fresh=await r.json();
+      const oldHp=JSON.stringify(f.core);
+      const newHp=JSON.stringify(fresh.core);
+      if(oldHp!==newHp){fichas[i]={...fichas[i],...fresh,_avatarSrc:fichas[i]._avatarSrc};updated=true;}
+    }catch{}
+  }));
+  if(updated)renderPlayers(fichas);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init(){
+  setBadge('live');
+  await Promise.allSettled([pollCombat(),pollPlayers()]);
+
+  // Poll a cada 4s (combate) e 10s (fichas)
+  setInterval(pollCombat,4000);
+  setInterval(pollPlayers,10000);
+}
+
+init();
+</script>
+</body>
+</html>

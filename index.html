@@ -136,6 +136,22 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,3.4rem);font-w
 .card-new:hover{border-color:var(--gold);border-style:solid;background:var(--glow-g);color:var(--gold-hot);box-shadow:0 0 22px var(--glow-g);transform:translateX(6px)}
 .card-new .plus{font-size:1.1rem;line-height:1}
 
+/* Card "Jardim do Mestre" */
+.master-section{margin-bottom:36px}
+.card-master{
+  display:block;text-decoration:none;cursor:pointer;color:var(--ink);background:var(--surface);
+  border:1.5px solid var(--gold-dim);padding:18px 28px 18px 34px;overflow:hidden;position:relative;
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
+  transition:all .28s;box-shadow:0 0 18px var(--glow-g),var(--card-s);
+  opacity:0;animation:cardIn .6s ease both;animation-delay:.05s;
+}
+.card-master::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,transparent,var(--gold-hot),transparent);opacity:.7}
+.card-master:hover{border-color:var(--gold-hot);background:var(--surface2);box-shadow:0 0 34px var(--glow-g),var(--card-s);transform:translateX(10px)}
+.master-icon{font-size:1.1rem;margin-right:10px;color:var(--gold-hot);text-shadow:0 0 10px rgba(200,146,42,.6)}
+.card-master .card-name{color:var(--gold-hot)}
+.card-master .card-arrow{position:absolute;right:20px;top:50%;transform:translateY(-50%);color:var(--gold-hot);opacity:.7;font-size:1rem;transition:all .25s}
+.card-master:hover .card-arrow{opacity:1;transform:translateY(-50%) translateX(6px)}
+
 /* Modal: Nova Ficha */
 .modal-overlay{
   position:fixed;inset:0;z-index:500;background:rgba(6,4,7,.78);backdrop-filter:blur(3px);
@@ -265,6 +281,16 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,3.4rem);font-w
     <span class="title-sub">Grimório de Personagens</span>
   </header>
 
+  <div class="master-section">
+    <p class="section-label">Domínios secretos</p>
+    <div class="card-master" id="master-card">
+      <span class="master-icon">♛</span>
+      <span class="card-name">Jardim do Mestre</span>
+      <div class="card-sub">Acesso restrito — apenas o Mestre do Jogo</div>
+      <span class="card-arrow">⟶</span>
+    </div>
+  </div>
+
   <p class="section-label">Escolha seu herói</p>
   <div class="list" id="list"><div class="loading">⧖ Convocando heróis…</div></div>
 
@@ -286,6 +312,56 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,3.4rem);font-w
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="master-modal">
+  <div class="modal-box">
+    <div class="modal-title">♛ Jardim do Mestre</div>
+    <div class="modal-hint">Este domínio é restrito ao Mestre do Jogo. Digite a senha para entrar.</div>
+    <label class="modal-label" for="master-pass-input">Senha</label>
+    <input type="password" id="master-pass-input" class="modal-input" maxlength="40" placeholder="••••••••" autocomplete="off">
+    <div class="modal-error" id="master-modal-error"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" id="master-modal-cancel" type="button">Cancelar</button>
+      <button class="modal-btn primary" id="master-modal-confirm" type="button">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const MASTER_PASSWORD = 'BANKAI';
+  const card    = document.getElementById('master-card');
+  const modal   = document.getElementById('master-modal');
+  const input   = document.getElementById('master-pass-input');
+  const error   = document.getElementById('master-modal-error');
+  const confirm = document.getElementById('master-modal-confirm');
+  const cancel  = document.getElementById('master-modal-cancel');
+
+  function open(){
+    error.textContent = '';
+    input.value = '';
+    modal.classList.add('show');
+    setTimeout(()=>input.focus(), 50);
+  }
+  function close(){ modal.classList.remove('show'); }
+  function tryEnter(){
+    if (input.value === MASTER_PASSWORD) {
+      location.href = 'mestre.html';
+    } else {
+      error.textContent = 'Senha incorreta. O Jardim permanece fechado.';
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  card.addEventListener('click', open);
+  cancel.addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('show')) close(); });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') tryEnter(); });
+  confirm.addEventListener('click', tryEnter);
+})();
+</script>
 
 <script>
 (function(){

@@ -44,6 +44,21 @@
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
 }
 .back-btn:hover { border-color: var(--gold); color: var(--gold-hot); transform: translateX(-3px); }
+
+.rpg-mode-btn {
+  position: fixed; top: 20px; right: 72px; z-index: 200;
+  background: var(--surface); border: 1px solid var(--crimson-lt); color: var(--crimson-lt);
+  padding: 9px 16px; font-family: 'Cinzel', serif; font-size: .56rem;
+  letter-spacing: .22em; text-transform: uppercase; cursor: pointer;
+  text-decoration: none; display: none; align-items: center; gap: 7px;
+  transition: all .3s; box-shadow: 0 0 12px rgba(122,24,40,.25), var(--card-s);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.rpg-mode-btn.show { display: flex; }
+.rpg-mode-btn:hover { border-color: var(--crimson); color: var(--crimson); transform: translateX(3px); box-shadow: 0 0 20px rgba(122,24,40,.4), var(--card-s); }
+@media (max-width: 560px) {
+  .rpg-mode-btn { top: auto; bottom: 70px; right: 16px; left: 16px; justify-content: center; }
+}
 </style>
 </head>
 <body>
@@ -78,6 +93,7 @@
 
 <canvas id="cosmos"></canvas>
 <a class="back-btn" href="index.html">← Grimório</a>
+<a class="rpg-mode-btn" id="rpg-mode-btn" target="_blank" rel="noopener">⚔ Modo RPG</a>
 <button id="theme-btn" title="Alternar tema">☽</button>
 
 <div class="page" id="page">

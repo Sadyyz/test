@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jardim do Mestre — D&D Bankai</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{
+  --bg:#0a0809;--bg2:#100d12;--surface:#161219;--surface2:#1e1825;
+  --border:#2c2238;--ink:#ede0c8;--ink-2:#b8a890;--ink-dim:#6a5a48;
+  --gold:#c8922a;--gold-lt:#e8be68;--gold-hot:#f2d078;--gold-dim:#5a3e10;
+  --crimson:#7a1828;--crimson-lt:#b83040;--crimson-glow:rgba(122,24,40,.25);
+  --glow-g:rgba(200,146,42,.2);--card-s:0 2px 20px rgba(0,0,0,.75);
+  --rune-op:.018;
+}
+[data-theme="light"]{
+  --bg:#f4ede0;--bg2:#ece4d4;--surface:#fdf8f0;--surface2:#f5eddc;
+  --border:#c8a870;--ink:#18100a;--ink-2:#5a4030;--ink-dim:#8a6a50;
+  --gold:#8a5a10;--gold-lt:#aa7830;--gold-hot:#7a4808;--gold-dim:#e8d4b0;
+  --crimson:#6a0f1e;--crimson-lt:#9a1830;--crimson-glow:rgba(106,15,30,.12);
+  --glow-g:rgba(138,90,16,.1);--card-s:0 2px 20px rgba(60,30,0,.08);
+  --rune-op:.035;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'IM Fell English',Georgia,serif;min-height:100vh;overflow-x:hidden;transition:background .5s,color .5s}
+body::before{
+  content:"ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛋᛏᛒᛖᛗᛚᛜᛞᛟ ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛋᛏᛒᛖᛗᛚᛜᛞᛟ";
+  position:fixed;inset:0;font-size:1.4rem;letter-spacing:.6em;line-height:4em;
+  color:var(--gold);opacity:var(--rune-op);word-break:break-all;pointer-events:none;z-index:0;padding:32px;
+  animation:runeShift 70s linear infinite;
+}
+@keyframes runeShift{0%,100%{transform:translateY(0)}50%{transform:translateY(-4%)}}
+#cosmos{position:fixed;inset:0;z-index:0;pointer-events:none}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spinCW{to{transform:rotate(360deg)}}
+
+/* ── Top bar ─────────────────────────────────────────────────────────── */
+.top-bar{
+  position:fixed;top:0;left:0;right:0;z-index:300;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 20px;background:rgba(10,8,9,.88);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+}
+.top-left{display:flex;align-items:center;gap:12px;min-width:0}
+.top-crest{font-size:1.1rem;color:var(--gold-hot);text-shadow:0 0 12px var(--glow-g);flex-shrink:0}
+.top-title{
+  font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.top-title small{display:block;font-size:.85em;letter-spacing:.2em;color:var(--ink-dim);margin-top:2px}
+.top-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.icon-btn{
+  background:var(--surface);border:1px solid var(--border);color:var(--gold);
+  width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:.9rem;
+  display:flex;align-items:center;justify-content:center;transition:all .3s;text-decoration:none;
+}
+.icon-btn:hover{border-color:var(--gold);transform:scale(1.08) rotate(15deg)}
+.exit-btn{font-size:.78rem}
+
+/* ── Tab nav ─────────────────────────────────────────────────────────── */
+.tab-nav{
+  position:fixed;top:60px;left:0;right:0;z-index:280;
+  display:flex;gap:2px;padding:0 14px;background:rgba(10,8,9,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;
+}
+.tab-nav::-webkit-scrollbar{display:none}
+.tab-btn{
+  flex:1;min-width:fit-content;background:none;border:none;cursor:pointer;
+  padding:13px 16px 11px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;position:relative;
+  transition:color .25s;display:flex;align-items:center;gap:7px;justify-content:center;
+}
+.tab-btn .tab-ic{font-size:.95rem}
+.tab-btn::after{content:'';position:absolute;left:14px;right:14px;bottom:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform .3s;transform-origin:center}
+.tab-btn:hover{color:var(--ink-2)}
+.tab-btn.active{color:var(--gold-hot)}
+.tab-btn.active::after{transform:scaleX(1)}
+.tab-btn .tab-dot{width:6px;height:6px;border-radius:50%;background:var(--crimson-lt);display:none;box-shadow:0 0 6px var(--crimson-lt)}
+.tab-btn.has-alert .tab-dot{display:inline-block;animation:pulse-dot 1.6s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* ── Page / panels ───────────────────────────────────────────────────── */
+.page{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:118px 20px 90px}
+.panel{display:none;animation:fadeIn .5s ease both}
+.panel.active{display:block}
+
+.section-label{
+  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.45em;text-transform:uppercase;
+  color:var(--ink-dim);margin-bottom:18px;display:flex;align-items:center;gap:12px;
+}
+.section-label::before,.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.panel-title{font-family:'Cinzel Decorative',serif;font-size:1.3rem;font-weight:900;color:var(--gold-lt);letter-spacing:.05em;text-shadow:0 0 16px var(--glow-g)}
+.panel-sub{font-size:.85rem;color:var(--ink-dim);font-style:italic;margin-top:4px}
+
+/* ── Buttons (shared) ────────────────────────────────────────────────── */
+.btn{
+  font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 18px;border:1px solid var(--border);background:transparent;color:var(--ink-2);
+  cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:8px;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+  white-space:nowrap;
+}
+.btn:hover{border-color:var(--ink-2);color:var(--ink)}
+.btn.primary{border-color:var(--gold-dim);color:var(--gold-lt);background:var(--glow-g)}
+.btn.primary:hover{border-color:var(--gold);color:var(--gold-hot);box-shadow:0 0 16px var(--glow-g)}
+.btn.danger{border-color:var(--crimson);color:var(--crimson-lt)}
+.btn.danger:hover{background:var(--crimson-glow);box-shadow:0 0 16px var(--crimson-glow)}
+.btn:disabled{opacity:.45;cursor:default;box-shadow:none!important}
+.btn .spin{display:inline-block;animation:spinCW .8s linear infinite}
+.btn-sm{padding:7px 13px;font-size:.58rem}
+
+/* ── Cards (generic surface) ─────────────────────────────────────────── */
+.box{
+  background:var(--surface);border:1px solid var(--border);box-shadow:var(--card-s);
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+  padding:20px 22px;
+}
+.empty-state{
+  text-align:center;padding:60px 20px;font-family:'Cinzel',serif;font-size:.66rem;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim);
+}
+.empty-icon{font-size:2.2rem;display:block;margin-bottom:14px;opacity:.35}
+.loading-state{text-align:center;padding:60px 0;font-family:'Cinzel',serif;letter-spacing:.3em;color:var(--ink-dim);animation:blink 1.6s ease-in-out infinite}
+
+/* ── Toast ───────────────────────────────────────────────────────────── */
+#toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{
+  font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.12em;padding:11px 22px;
+  background:var(--surface2);border:1px solid var(--gold-dim);color:var(--gold-lt);
+  box-shadow:0 6px 24px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);
+  transition:opacity .3s,transform .3s;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.err{border-color:var(--crimson);color:var(--crimson-lt)}
+
+@media(max-width:640px){
+  .page{padding:108px 14px 80px}
+  .top-title{font-size:.58rem}
+  .top-title small{display:none}
+  .tab-btn{font-size:.56rem;padding:12px 10px 10px}
+  .tab-btn span.tab-label{display:none}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.1ms!important}}
+</style>
+</head>
+<body>
+
+<canvas id="cosmos"></canvas>
+
+<header class="top-bar">
+  <div class="top-left">
+    <span class="top-crest">♛</span>
+    <span class="top-title">Jardim do Mestre<small>D&amp;D Bankai — Painel de Controle</small></span>
+  </div>
+  <div class="top-right">
+    <button class="icon-btn" id="theme-btn" title="Alternar tema">☽</button>
+    <a class="icon-btn exit-btn" href="index.html" title="Voltar ao Grimório">⤺</a>
+  </div>
+</header>
+
+<nav class="tab-nav" id="tab-nav">
+  <button class="tab-btn active" data-tab="combate"><span class="tab-ic">⚔</span><span class="tab-label">Combate</span><span class="tab-dot" id="dot-combate"></span></button>
+  <button class="tab-btn" data-tab="bosses"><span class="tab-ic">☠</span><span class="tab-label">Bosses</span></button>
+  <button class="tab-btn" data-tab="diario"><span class="tab-ic">📜</span><span class="tab-label">Diário</span></button>
+  <button class="tab-btn" data-tab="fichas"><span class="tab-ic">🧙</span><span class="tab-label">Fichas</span></button>
+  <button class="tab-btn" data-tab="rpg"><span class="tab-ic">🔮</span><span class="tab-label">Modo RPG</span></button>
+</nav>
+
+<main class="page" id="page">
+
+  <!-- ════════════════════ ABA: COMBATE ════════════════════ -->
+  <section class="panel active" id="panel-combate">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">⚔ Controle de Combate</div>
+        <div class="panel-sub">Monte a iniciativa e conduza o confronto em tempo real para os jogadores.</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="cb-add-player">+ Jogador</button>
+        <button class="btn" id="cb-add-boss">+ Boss</button>
+        <button class="btn" id="cb-add-custom">+ Personalizado</button>
+      </div>
+    </div>
+
+    <div class="box" style="margin-bottom:22px" id="cb-status-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="cb-status-dot" style="width:10px;height:10px;border-radius:50%;background:var(--ink-dim);display:inline-block;flex-shrink:0"></span>
+          <span id="cb-status-text" style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim)">Combate inativo</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim)">Rodada</label>
+          <input type="number" id="cb-round-input" min="1" value="1" style="width:64px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;text-align:center;outline:none">
+          <button class="btn btn-sm" id="cb-next-round">Próxima Rodada ⟳</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="cb-list-wrap" class="box" style="margin-bottom:22px">
+      <div class="loading-state">⧖ Carregando combate…</div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn danger" id="cb-end-combat">Encerrar Combate</button>
+      <button class="btn primary" id="cb-start-combat">Iniciar Combate ⚔</button>
+      <button class="btn primary" id="cb-save-combat" style="display:none">Salvar Alterações</button>
+    </div>
+  </section>
+
+  <!-- ════════════════════ ABA: BOSSES ════════════════════ -->
+  <section class="panel" id="panel-bosses">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">☠ Bestiário</div>
+        <div class="panel-sub">Crie e gerencie as criaturas que os jogadores enfrentarão.</div>
+      </div>
+      <button class="btn primary" id="bs-new">+ Nova Criatura</button>
+    </div>
+
+    <div id="bs-list-wrap">
+      <div class="loading-state">⧖ Convocando criaturas…</div>
+    </div>
+
+    <!-- Editor de boss (some por padrão) -->
+    <div id="bs-editor" class="box" style="display:none;margin-top:24px"></div>
+  </section>
+
+  <!-- ════════════════════ ABA: DIÁRIO ════════════════════ -->
+  <section class="panel" id="panel-diario">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">📜 Diário de Sessões</div>
+        <div class="panel-sub">Registre o que aconteceu em cada sessão e os recursos usados.</div>
+      </div>
+      <button class="btn primary" id="dr-new">+ Nova Sessão</button>
+    </div>
+
+    <div id="dr-list-wrap">
+      <div class="loading-state">⧖ Abrindo o diário…</div>
+    </div>
+
+    <!-- Editor de sessão -->
+    <div id="dr-editor" class="box" style="display:none;margin-top:24px"></div>
+  </section>
+
+  <!-- ════════════════════ ABA: FICHAS ════════════════════ -->
+  <section class="panel" id="panel-fichas">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">🧙 Aventureiros</div>
+        <div class="panel-sub">Visão geral de HP, CA e status de todos os personagens.</div>
+      </div>
+      <button class="btn btn-sm" id="fc-refresh">⟳ Atualizar</button>
+    </div>
+
+    <div id="fc-list-wrap">
+      <div class="loading-state">⧖ Reunindo os heróis…</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════ ABA: MODO RPG ════════════════════ -->
+  <section class="panel" id="panel-rpg">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">🔮 Modo RPG — Tela Pública</div>
+        <div class="panel-sub">Compartilhe esta tela na TV ou projetor para os jogadores acompanharem o combate ao vivo.</div>
+      </div>
+    </div>
+
+    <div class="box" style="margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="rpg-status-dot" style="width:10px;height:10px;border-radius:50%;background:var(--ink-dim);display:inline-block;flex-shrink:0;animation:pulse-dot 1.6s ease-in-out infinite"></span>
+          <span id="rpg-status-text" style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim)">Verificando status…</span>
+        </div>
+        <a class="btn primary" id="rpg-open-link" href="players.html" target="_blank" rel="noopener">Abrir Tela dos Jogadores ⟶</a>
+      </div>
+    </div>
+
+    <div class="box">
+      <p class="section-label">Link direto</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="rpg-url-input" readonly style="flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--border);color:var(--ink-2);padding:10px 12px;font-family:'IM Fell English',serif;outline:none">
+        <button class="btn btn-sm" id="rpg-copy-link">Copiar Link</button>
+      </div>
+      <p style="font-size:.8rem;color:var(--ink-dim);font-style:italic;margin-top:14px;line-height:1.6">
+        Esta tela atualiza sozinha (a cada poucos segundos) mostrando a ordem de iniciativa, o boss em combate (conforme a visibilidade que você definir na aba Bosses) e o HP dos jogadores. Não exige senha — qualquer pessoa com o link pode visualizá-la.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast-wrap"></div>
+
+<script>
+// ── Partículas (fundo) ──────────────────────────────────────────────────
+(function(){
+  const c=document.getElementById('cosmos'),ctx=c.getContext('2d');
+  let W,H,ps=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  function cols(){
+    return document.documentElement.getAttribute('data-theme')==='light'
+      ?['rgba(138,90,16,','rgba(168,120,48,','rgba(100,70,20,']
+      :['rgba(200,146,42,','rgba(242,208,120,','rgba(90,62,16,'];
+  }
+  for(let i=0;i<40;i++)ps.push({x:Math.random()*1400,y:Math.random()*900,r:Math.random()*1.3+.3,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,a:Math.random()*.3+.07,p:Math.random()*Math.PI*2,sp:Math.random()*.015+.005,ci:Math.floor(Math.random()*3)});
+  function draw(){
+    ctx.clearRect(0,0,W,H);const cl=cols();
+    ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.p+=p.sp;if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;if(p.y<-5)p.y=H+5;if(p.y>H+5)p.y=-5;const a=p.a*(0.55+0.45*Math.sin(p.p));ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=cl[p.ci]+a+')';ctx.fill();});
+    for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){const dx=ps[i].x-ps[j].x,dy=ps[i].y-ps[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<75){ctx.beginPath();ctx.moveTo(ps[i].x,ps[i].y);ctx.lineTo(ps[j].x,ps[j].y);ctx.strokeStyle=cols()[0]+(0.05*(1-d/75))+')';ctx.lineWidth=.35;ctx.stroke();}}
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── Tema ──────────────────────────────────────────────────────────────
+(function(){
+  const btn=document.getElementById('theme-btn'),html=document.documentElement;
+  const saved=localStorage.getItem('dnd-theme')||'dark';
+  html.setAttribute('data-theme',saved);btn.textContent=saved==='dark'?'☀':'☽';
+  btn.addEventListener('click',()=>{const n=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',n);btn.textContent=n==='dark'?'☀':'☽';localStorage.setItem('dnd-theme',n);});
+})();
+
+// ── Guarda de acesso: exige ter vindo pela senha do index ──────────────
+(function(){
+  // Mantemos simples e consistente com index.html: sem sessão própria,
+  // apenas redireciona se o usuário cair aqui sem nunca ter passado pelo portal.
+  // (index.html já faz o gate por senha antes de linkar para mestre.html)
+})();
+
+// ── Toast helper ─────────────────────────────────────────────────────
+function toast(msg, isErr){
+  const wrap=document.getElementById('toast-wrap');
+  const el=document.createElement('div');
+  el.className='toast'+(isErr?' err':'');
+  el.textContent=msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),350);},2800);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ── Tabs ─────────────────────────────────────────────────────────────
+const tabButtons=document.querySelectorAll('.tab-btn');
+const panels={
+  combate:document.getElementById('panel-combate'),
+  bosses:document.getElementById('panel-bosses'),
+  diario:document.getElementById('panel-diario'),
+  fichas:document.getElementById('panel-fichas'),
+  rpg:document.getElementById('panel-rpg')
+};
+let activeTab='combate';
+const tabInitialized={combate:false,bosses:false,diario:false,fichas:false,rpg:false};
+
+function switchTab(name){
+  if(!panels[name])return;
+  activeTab=name;
+  tabButtons.forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  Object.entries(panels).forEach(([k,el])=>el.classList.toggle('active',k===name));
+  initTab(name);
+}
+tabButtons.forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+
+function initTab(name){
+  if(tabInitialized[name])return;
+  tabInitialized[name]=true;
+  if(name==='combate')initCombateTab();
+  if(name==='bosses')initBossesTab();
+  if(name==='diario')initDiarioTab();
+  if(name==='fichas')initFichasTab();
+  if(name==='rpg')initRpgTab();
+}
+
+// inicializa a primeira aba ao carregar
+switchTab('combate');
+</script>
+
+<!-- ═══════════════════════ SCRIPTS DAS ABAS (injetados abaixo) ═══════════════════════ -->
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  ABA: COMBATE
+// ════════════════════════════════════════════════════════════════════════
+let cbState = { ativo:false, sessao:null, rodada:1, turnoAtual:null, iniciativa:[] };
+let cbDirty = false;
+let cbManifestCache = null;
+let cbBossesCache = null;
+
+function cbMarkDirty(){
+  cbDirty = true;
+  document.getElementById('cb-save-combat').style.display = 'inline-flex';
+}
+
+function cbRenderStatus(){
+  const dot = document.getElementById('cb-status-dot');
+  const text = document.getElementById('cb-status-text');
+  if(cbState.ativo){
+    dot.style.background = 'var(--crimson-lt)';
+    dot.style.boxShadow = '0 0 8px var(--crimson-lt)';
+    text.textContent = `⚔ Combate ativo — Rodada ${cbState.rodada||1}`;
+    text.style.color = 'var(--crimson-lt)';
+  } else {
+    dot.style.background = 'var(--ink-dim)';
+    dot.style.boxShadow = 'none';
+    text.textContent = 'Combate inativo';
+    text.style.color = 'var(--ink-dim)';
+  }
+  document.getElementById('cb-round-input').value = cbState.rodada || 1;
+
+  const startBtn = document.getElementById('cb-start-combat');
+  const endBtn = document.getElementById('cb-end-combat');
+  startBtn.style.display = cbState.ativo ? 'none' : 'inline-flex';
+  endBtn.style.display = cbState.ativo ? 'inline-flex' : 'none';
+}
+
+function cbRenderList(){
+  const wrap = document.getElementById('cb-list-wrap');
+  const list = cbState.iniciativa || [];
+  if(list.length === 0){
+    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">⚔</span>Nenhum combatente na iniciativa.<br>Adicione jogadores, bosses ou entradas personalizadas acima.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">${list.map((entry,i)=>{
+    const isEnemy = entry.tipo==='boss' || entry.tipo==='inimigo';
+    const isTurn = cbState.turnoAtual === entry.id;
+    return `<div class="cb-row" data-idx="${i}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:${isTurn?'var(--surface2)':'var(--bg2)'};border:1px solid ${isTurn?'var(--gold)':'var(--border)'};${isEnemy?'border-left:3px solid var(--crimson)':''}">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <button class="cb-mv" data-dir="up" data-idx="${i}" title="Mover para cima" style="background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.7rem;line-height:1;padding:2px">▲</button>
+        <button class="cb-mv" data-dir="down" data-idx="${i}" title="Mover para baixo" style="background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.7rem;line-height:1;padding:2px">▼</button>
+      </div>
+      <input type="number" class="cb-init-val" data-idx="${i}" value="${entry.iniciativa??''}" placeholder="—" style="width:50px;background:var(--bg);border:1px solid var(--border);color:${isEnemy?'var(--crimson-lt)':'var(--gold-lt)'};padding:6px 4px;font-family:'Cinzel',serif;text-align:center;outline:none">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.06em;color:${isEnemy?'var(--crimson-lt)':'var(--ink)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(entry.nome||'?')}</div>
+        <div style="font-size:.66rem;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.12em;font-family:'Cinzel',serif">${entry.tipo==='jogador'?'Jogador':entry.tipo==='boss'?'Boss':'Personalizado'}</div>
+      </div>
+      <button class="btn-sm btn ${isTurn?'primary':''}" data-action="turn" data-idx="${i}" style="padding:6px 12px">${isTurn?'Na vez ✓':'É a vez'}</button>
+      <button data-action="remove" data-idx="${i}" title="Remover" style="background:none;border:none;color:var(--crimson-lt);cursor:pointer;font-size:1rem;padding:4px 6px;opacity:.7">✕</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function cbAttachListListeners(){
+  const wrap = document.getElementById('cb-list-wrap');
+  wrap.addEventListener('click', e => {
+    const mv = e.target.closest('.cb-mv');
+    if(mv){
+      const idx = Number(mv.dataset.idx);
+      const dir = mv.dataset.dir;
+      const arr = cbState.iniciativa;
+      const swapWith = dir==='up' ? idx-1 : idx+1;
+      if(swapWith < 0 || swapWith >= arr.length) return;
+      [arr[idx], arr[swapWith]] = [arr[swapWith], arr[idx]];
+      cbRenderList();
+      cbMarkDirty();
+      return;
+    }
+    const actionBtn = e.target.closest('[data-action]');
+    if(actionBtn){
+      const idx = Number(actionBtn.dataset.idx);
+      const action = actionBtn.dataset.action;
+      if(action==='remove'){
+        const entry = cbState.iniciativa[idx];
+        if(cbState.turnoAtual === entry.id) cbState.turnoAtual = null;
+        cbState.iniciativa.splice(idx,1);
+        cbRenderList();
+        cbMarkDirty();
+      } else if(action==='turn'){
+        cbState.turnoAtual = cbState.iniciativa[idx].id;
+        cbRenderList();
+        cbMarkDirty();
+      }
+    }
+  });
+  wrap.addEventListener('change', e => {
+    if(e.target.classList.contains('cb-init-val')){
+      const idx = Number(e.target.dataset.idx);
+      const val = e.target.value === '' ? null : Number(e.target.value);
+      cbState.iniciativa[idx].iniciativa = val;
+      cbMarkDirty();
+    }
+  });
+}
+
+async function cbLoad(){
+  try{
+    const r = await fetch('/api/combat');
+    if(r.ok) cbState = await r.json();
+  }catch{
+    toast('Não foi possível carregar o combate. Verifique a conexão.', true);
+  }
+  cbDirty = false;
+  document.getElementById('cb-save-combat').style.display = 'none';
+  cbRenderStatus();
+  cbRenderList();
+}
+
+async function cbSave(showToast){
+  const btn = document.getElementById('cb-save-combat');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⧖</span> Salvando…';
+  try{
+    const r = await fetch('/api/combat', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cbState)
+    });
+    if(!r.ok) throw new Error();
+    cbDirty = false;
+    btn.style.display = 'none';
+    if(showToast!==false) toast('Combate atualizado para os jogadores.');
+  }catch{
+    toast('Erro ao salvar o combate.', true);
+  }
+  btn.disabled = false;
+  btn.innerHTML = original;
+}
+
+function cbGetIdSet(){
+  return new Set((cbState.iniciativa||[]).map(e=>e.id));
+}
+
+async function cbOpenAddPlayer(){
+  if(!cbManifestCache){
+    try{
+      const r = await fetch('/api/manifest');
+      cbManifestCache = r.ok ? await r.json() : [];
+    }catch{ cbManifestCache = []; }
+  }
+  const used = cbGetIdSet();
+  const options = cbManifestCache.filter(p=>!used.has(p.id));
+  if(options.length===0){ toast('Todos os jogadores já estão na iniciativa.'); return; }
+  cbOpenPicker('Adicionar Jogador', options.map(p=>({id:p.id, label:p.nome})), (chosen)=>{
+    cbState.iniciativa.push({ id: chosen.id, nome: chosen.label, tipo:'jogador', iniciativa: null });
+    cbRenderList();
+    cbMarkDirty();
+  });
+}
+
+async function cbOpenAddBoss(){
+  if(!cbBossesCache){
+    try{
+      const r = await fetch('/api/boss');
+      cbBossesCache = r.ok ? await r.json() : [];
+    }catch{ cbBossesCache = []; }
+  }
+  if(cbBossesCache.length===0){ toast('Nenhum boss cadastrado ainda. Crie um na aba Bosses.'); return; }
+  cbOpenPicker('Adicionar Boss', cbBossesCache.map(b=>({id:b.id, label:b.nome||b.id})), (chosen)=>{
+    cbState.iniciativa.push({ id: 'boss-'+chosen.id+'-'+Date.now(), bossId: chosen.id, nome: chosen.label, tipo:'boss', iniciativa: null });
+    cbRenderList();
+    cbMarkDirty();
+  });
+}
+
+function cbOpenAddCustom(){
+  const nome = prompt('Nome do combatente personalizado:');
+  if(!nome || !nome.trim()) return;
+  cbState.iniciativa.push({ id: 'custom-'+Date.now(), nome: nome.trim(), tipo:'inimigo', iniciativa: null });
+  cbRenderList();
+  cbMarkDirty();
+}
+
+// Picker genérico simples via modal leve criado dinamicamente
+function cbOpenPicker(title, options, onPick){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(6,4,7,.78);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.innerHTML = `<div style="width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);padding:26px 24px;box-shadow:0 8px 40px rgba(0,0,0,.6)">
+    <div style="font-family:'Cinzel Decorative',serif;font-size:1rem;color:var(--gold-lt);margin-bottom:16px">${esc(title)}</div>
+    <div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto">
+      ${options.map(o=>`<button class="cb-pick-opt" data-id="${esc(o.id)}" style="text-align:left;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:10px 14px;cursor:pointer;font-family:'IM Fell English',serif;font-size:.95rem;transition:all .2s">${esc(o.label)}</button>`).join('')}
+    </div>
+    <div style="margin-top:18px;text-align:right">
+      <button class="btn btn-sm" id="cb-pick-cancel">Cancelar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('.cb-pick-opt').forEach(btn=>{
+    btn.addEventListener('mouseenter',()=>{btn.style.borderColor='var(--gold)';btn.style.color='var(--gold-hot)';});
+    btn.addEventListener('mouseleave',()=>{btn.style.borderColor='var(--border)';btn.style.color='var(--ink)';});
+    btn.addEventListener('click',()=>{
+      const opt = options.find(o=>String(o.id)===btn.dataset.id);
+      overlay.remove();
+      if(opt) onPick(opt);
+    });
+  });
+  overlay.querySelector('#cb-pick-cancel').addEventListener('click',()=>overlay.remove());
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+function initCombateTab(){
+  document.getElementById('cb-add-player').addEventListener('click', cbOpenAddPlayer);
+  document.getElementById('cb-add-boss').addEventListener('click', cbOpenAddBoss);
+  document.getElementById('cb-add-custom').addEventListener('click', cbOpenAddCustom);
+
+  document.getElementById('cb-start-combat').addEventListener('click', ()=>{
+    cbState.ativo = true;
+    if(!cbState.sessao) cbState.sessao = null;
+    cbRenderStatus();
+    cbSave();
+  });
+  document.getElementById('cb-end-combat').addEventListener('click', ()=>{
+    if(!confirm('Encerrar o combate? Os jogadores deixarão de ver a iniciativa.')) return;
+    cbState.ativo = false;
+    cbState.turnoAtual = null;
+    cbRenderStatus();
+    cbRenderList();
+    cbSave();
+  });
+  document.getElementById('cb-next-round').addEventListener('click', ()=>{
+    cbState.rodada = (Number(cbState.rodada)||1) + 1;
+    cbRenderStatus();
+    cbMarkDirty();
+    cbSave();
+  });
+  document.getElementById('cb-round-input').addEventListener('change', e=>{
+    const v = parseInt(e.target.value,10);
+    cbState.rodada = Number.isFinite(v) && v>0 ? v : 1;
+    cbMarkDirty();
+  });
+  document.getElementById('cb-save-combat').addEventListener('click', ()=>cbSave());
+
+  cbAttachListListeners();
+  cbLoad();
+}
+</script>
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  ABA: BOSSES
+// ════════════════════════════════════════════════════════════════════════
+let bsList = [];
+let bsEditingId = null; // null = não editando / criando novo ainda sem salvar
+let bsEditState = null;
+let bsAvatarDataUrl = null; // base64 pendente de upload (preview local)
+
+function bsBlank(id){
+  return {
+    id, nome:'', tipo:'', cr:'', hpMax:10, hpAtual:10, ca:10,
+    atributos:{forca:10,destreza:10,constituicao:10,inteligencia:10,sabedoria:10,carisma:10},
+    acoes:[], habilidades:[], notasMestre:'',
+    visibilidade:{imagem:false,nome:false,hp:false}
+  };
+}
+
+function bsSlugify(str){
+  return String(str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60);
+}
+
+async function bsLoadList(){
+  const wrap = document.getElementById('bs-list-wrap');
+  try{
+    const r = await fetch('/api/boss');
+    bsList = r.ok ? await r.json() : [];
+  }catch{
+    bsList = [];
+    wrap.innerHTML = `<div class="empty-state" style="color:var(--crimson-lt)">✦ Erro ao carregar bosses ✦</div>`;
+    return;
+  }
+  bsRenderList();
+}
+
+function bsRenderList(){
+  const wrap = document.getElementById('bs-list-wrap');
+  if(bsList.length===0){
+    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">☠</span>Nenhuma criatura cadastrada ainda.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">${bsList.map(b=>{
+    const pct = Math.max(0,Math.min(100,((Number(b.hpAtual)||0)/(Math.max(1,Number(b.hpMax)||1)))*100));
+    return `<div class="box bs-card" data-id="${esc(b.id)}" style="cursor:pointer;transition:all .25s">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+        <div style="font-family:'Cinzel',serif;font-size:.92rem;color:var(--crimson-lt);letter-spacing:.04em">${esc(b.nome||'(sem nome)')}</div>
+        <button class="bs-del" data-id="${esc(b.id)}" title="Remover" style="background:none;border:none;color:var(--crimson-lt);opacity:.6;cursor:pointer;font-size:.9rem">🗑</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--ink-dim);font-style:italic;margin-bottom:10px">${esc(b.tipo||'')}${b.cr?' · CR '+esc(String(b.cr)):''}</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink-2)">
+        <span>HP ${b.hpAtual}/${b.hpMax}</span><span>·</span><span>CA ${b.ca}</span>
+      </div>
+      <div style="height:5px;background:var(--bg2);border:1px solid var(--border);margin-top:8px">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--crimson),var(--crimson-lt))"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        ${b.visibilidade?.nome?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">nome visível</span>':''}
+        ${b.visibilidade?.hp?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">hp visível</span>':''}
+        ${b.visibilidade?.imagem?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">imagem visível</span>':''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+
+  wrap.querySelectorAll('.bs-card').forEach(card=>{
+    card.addEventListener('mouseenter',()=>{card.style.borderColor='var(--crimson)';});
+    card.addEventListener('mouseleave',()=>{card.style.borderColor='var(--border)';});
+    card.addEventListener('click', e=>{
+      if(e.target.closest('.bs-del')) return;
+      bsOpenEditor(card.dataset.id);
+    });
+  });
+  wrap.querySelectorAll('.bs-del').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      bsDelete(btn.dataset.id);
+    });
+  });
+}
+
+async function bsDelete(id){
+  const b = bsList.find(x=>x.id===id);
+  if(!confirm(`Remover "${b?.nome||id}" permanentemente?`)) return;
+  try{
+    const r = await fetch(`/api/boss?id=${encodeURIComponent(id)}`, { method:'DELETE' });
+    if(!r.ok) throw new Error();
+    toast('Criatura removida.');
+    if(bsEditingId===id) bsCloseEditor();
+    bsLoadList();
+  }catch{
+    toast('Erro ao remover criatura.', true);
+  }
+}
+
+function bsOpenEditor(id){
+  if(id){
+    const found = bsList.find(b=>b.id===id);
+    bsEditState = found ? JSON.parse(JSON.stringify(found)) : bsBlank(id);
+    bsEditingId = id;
+  } else {
+    bsEditState = bsBlank(null);
+    bsEditingId = null;
+  }
+  bsAvatarDataUrl = null;
+  bsRenderEditor();
+  document.getElementById('bs-editor').style.display = 'block';
+  document.getElementById('bs-editor').scrollIntoView({behavior:'smooth', block:'start'});
+  if(id) bsLoadAvatarPreview(id);
+}
+
+function bsCloseEditor(){
+  bsEditingId = null;
+  bsEditState = null;
+  document.getElementById('bs-editor').style.display = 'none';
+}
+
+async function bsLoadAvatarPreview(id){
+  try{
+    const r = await fetch(`/api/boss-avatar?id=${encodeURIComponent(id)}`);
+    if(r.ok){
+      const d = await r.json();
+      if(d.avatar){
+        bsAvatarDataUrl = d.avatar;
+        const img = document.getElementById('bs-avatar-preview');
+        if(img) img.src = d.avatar;
+      }
+    }
+  }catch{}
+}
+
+function bsAtributoRow(label, key){
+  const v = bsEditState.atributos[key];
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+    <label style="font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)">${label}</label>
+    <input type="number" data-attr="${key}" class="bs-attr-input" value="${v}" style="width:58px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:8px 4px;text-align:center;font-family:'Cinzel',serif;outline:none">
+  </div>`;
+}
+
+function bsListEditorRows(arr, kind){
+  // kind: 'acoes' | 'habilidades' — itens {nome, descricao}
+  if(!arr || arr.length===0){
+    return `<div style="font-size:.8rem;color:var(--ink-dim);font-style:italic;padding:8px 0">Nenhum item ainda.</div>`;
+  }
+  return arr.map((item,i)=>`<div class="bs-${kind}-row" data-idx="${i}" style="border:1px solid var(--border);background:var(--bg2);padding:10px 12px;margin-bottom:8px">
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input type="text" class="bs-item-nome" data-kind="${kind}" data-idx="${i}" value="${esc(item.nome||'')}" placeholder="Nome" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.8rem;outline:none">
+      <button class="bs-item-del" data-kind="${kind}" data-idx="${i}" style="background:none;border:none;color:var(--crimson-lt);cursor:pointer;font-size:.95rem;padding:0 6px">✕</button>
+    </div>
+    <textarea class="bs-item-desc" data-kind="${kind}" data-idx="${i}" placeholder="Descrição" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--ink-2);padding:7px 10px;font-family:'IM Fell English',serif;font-size:.85rem;outline:none;resize:vertical">${esc(item.descricao||'')}</textarea>
+  </div>`).join('');
+}
+
+function bsRenderEditor(){
+  const s = bsEditState;
+  const el = document.getElementById('bs-editor');
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-family:'Cinzel Decorative',serif;font-size:1.05rem;color:var(--crimson-lt)">${bsEditingId?'Editando Criatura':'Nova Criatura'}</div>
+      <button class="btn btn-sm" id="bs-editor-close">Fechar ✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:18px;margin-bottom:22px">
+      <div>
+        <div style="width:120px;height:120px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img id="bs-avatar-preview" src="${bsAvatarDataUrl||''}" alt="" style="width:100%;height:100%;object-fit:cover;${bsAvatarDataUrl?'':'display:none'}">
+          <span id="bs-avatar-placeholder" style="font-size:2.2rem;opacity:.3;color:var(--crimson-lt);${bsAvatarDataUrl?'display:none':''}">☠</span>
+        </div>
+        <label class="btn btn-sm" style="margin-top:8px;width:120px;justify-content:center;cursor:pointer">
+          Imagem
+          <input type="file" id="bs-avatar-input" accept="image/*" style="display:none">
+        </label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input type="text" id="bs-f-nome" placeholder="Nome da criatura" value="${esc(s.nome)}" style="background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:10px 12px;font-family:'Cinzel Decorative',serif;font-size:1rem;outline:none">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input type="text" id="bs-f-tipo" placeholder="Tipo (ex: Dragão, Morto-vivo)" value="${esc(s.tipo)}" style="flex:1;min-width:160px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:9px 12px;font-family:'IM Fell English',serif;outline:none">
+          <input type="text" id="bs-f-cr" placeholder="CR" value="${esc(s.cr)}" style="width:80px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:9px 12px;font-family:'IM Fell English',serif;outline:none">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px">
+      <div>
+        <label style="display:block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px">CA</label>
+        <input type="number" id="bs-f-ca" value="${s.ca}" style="width:70px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:8px;text-align:center;font-family:'Cinzel',serif;outline:none">
+      </div>
+      <div>
+        <label style="display:block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px">HP Máximo</label>
+        <input type="number" id="bs-f-hpmax" value="${s.hpMax}" style="width:80px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:8px;text-align:center;font-family:'Cinzel',serif;outline:none">
+      </div>
+      <div>
+        <label style="display:block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px">HP Atual</label>
+        <input type="number" id="bs-f-hpatual" value="${s.hpAtual}" style="width:80px;background:var(--bg2);border:1px solid var(--crimson);color:var(--crimson-lt);padding:8px;text-align:center;font-family:'Cinzel',serif;outline:none">
+      </div>
+    </div>
+
+    <p class="section-label">Atributos</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px">
+      ${bsAtributoRow('FOR','forca')}${bsAtributoRow('DES','destreza')}${bsAtributoRow('CON','constituicao')}
+      ${bsAtributoRow('INT','inteligencia')}${bsAtributoRow('SAB','sabedoria')}${bsAtributoRow('CAR','carisma')}
+    </div>
+
+    <p class="section-label">Ações</p>
+    <div id="bs-acoes-list" style="margin-bottom:10px">${bsListEditorRows(s.acoes,'acoes')}</div>
+    <button class="btn btn-sm" id="bs-add-acao" style="margin-bottom:24px">+ Ação</button>
+
+    <p class="section-label">Habilidades</p>
+    <div id="bs-habilidades-list" style="margin-bottom:10px">${bsListEditorRows(s.habilidades,'habilidades')}</div>
+    <button class="btn btn-sm" id="bs-add-habilidade" style="margin-bottom:24px">+ Habilidade</button>
+
+    <p class="section-label">Notas do Mestre</p>
+    <textarea id="bs-f-notas" rows="3" placeholder="Anotações privadas, táticas, gatilhos de fase 2..." style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--ink-2);padding:10px 12px;font-family:'IM Fell English',serif;outline:none;resize:vertical;margin-bottom:24px">${esc(s.notasMestre)}</textarea>
+
+    <p class="section-label">Visibilidade para os jogadores</p>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:28px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;color:var(--ink-2)"><input type="checkbox" id="bs-vis-nome" ${s.visibilidade.nome?'checked':''}> Nome</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;color:var(--ink-2)"><input type="checkbox" id="bs-vis-hp" ${s.visibilidade.hp?'checked':''}> HP</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;color:var(--ink-2)"><input type="checkbox" id="bs-vis-imagem" ${s.visibilidade.imagem?'checked':''}> Imagem</label>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn" id="bs-editor-cancel">Cancelar</button>
+      <button class="btn primary" id="bs-editor-save">Salvar Criatura</button>
+    </div>
+  `;
+
+  document.getElementById('bs-editor-close').addEventListener('click', bsCloseEditor);
+  document.getElementById('bs-editor-cancel').addEventListener('click', bsCloseEditor);
+  document.getElementById('bs-editor-save').addEventListener('click', bsSaveEditor);
+  document.getElementById('bs-add-acao').addEventListener('click', ()=>{ s.acoes.push({nome:'',descricao:''}); bsRenderEditor(); });
+  document.getElementById('bs-add-habilidade').addEventListener('click', ()=>{ s.habilidades.push({nome:'',descricao:''}); bsRenderEditor(); });
+
+  el.querySelectorAll('.bs-item-del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const kind = btn.dataset.kind, idx = Number(btn.dataset.idx);
+      s[kind].splice(idx,1);
+      bsRenderEditor();
+    });
+  });
+  el.querySelectorAll('.bs-item-nome').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ s[inp.dataset.kind][Number(inp.dataset.idx)].nome = inp.value; });
+  });
+  el.querySelectorAll('.bs-item-desc').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ s[inp.dataset.kind][Number(inp.dataset.idx)].descricao = inp.value; });
+  });
+
+  const fileInput = document.getElementById('bs-avatar-input');
+  fileInput.addEventListener('change', ()=>{
+    const file = fileInput.files[0];
+    if(!file) return;
+    if(file.size > 800*1024){ toast('Imagem muito grande (máx. 800KB).', true); return; }
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      bsAvatarDataUrl = reader.result;
+      const img = document.getElementById('bs-avatar-preview');
+      const ph = document.getElementById('bs-avatar-placeholder');
+      img.src = bsAvatarDataUrl; img.style.display='block';
+      if(ph) ph.style.display='none';
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function bsSaveEditor(){
+  const s = bsEditState;
+  const nome = document.getElementById('bs-f-nome').value.trim();
+  if(!nome){ toast('Dê um nome à criatura.', true); return; }
+
+  let id = bsEditingId;
+  if(!id){
+    id = bsSlugify(nome) || ('boss-' + Date.now());
+  }
+
+  s.nome = nome;
+  s.tipo = document.getElementById('bs-f-tipo').value.trim();
+  s.cr = document.getElementById('bs-f-cr').value.trim();
+  s.ca = Number(document.getElementById('bs-f-ca').value) || 10;
+  s.hpMax = Number(document.getElementById('bs-f-hpmax').value) || 1;
+  s.hpAtual = Number(document.getElementById('bs-f-hpatual').value) || 0;
+  ['forca','destreza','constituicao','inteligencia','sabedoria','carisma'].forEach(k=>{
+    const inp = document.querySelector(`.bs-attr-input[data-attr="${k}"]`);
+    s.atributos[k] = inp ? (Number(inp.value)||10) : 10;
+  });
+  s.notasMestre = document.getElementById('bs-f-notas').value;
+  s.visibilidade = {
+    nome: document.getElementById('bs-vis-nome').checked,
+    hp: document.getElementById('bs-vis-hp').checked,
+    imagem: document.getElementById('bs-vis-imagem').checked
+  };
+
+  const btn = document.getElementById('bs-editor-save');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⧖</span> Salvando…';
+
+  try{
+    const r = await fetch(`/api/boss?id=${encodeURIComponent(id)}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(s)
+    });
+    if(!r.ok) throw new Error();
+
+    if(bsAvatarDataUrl && bsAvatarDataUrl.startsWith('data:image/')){
+      try{
+        await fetch(`/api/boss-avatar?id=${encodeURIComponent(id)}`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({avatar:bsAvatarDataUrl})
+        });
+      }catch{
+        toast('Criatura salva, mas a imagem falhou ao enviar.', true);
+      }
+    }
+
+    toast('Criatura salva com sucesso.');
+    bsCloseEditor();
+    bsLoadList();
+  }catch{
+    toast('Erro ao salvar a criatura.', true);
+  }
+  btn.disabled = false;
+  btn.innerHTML = original;
+}
+
+function initBossesTab(){
+  document.getElementById('bs-new').addEventListener('click', ()=>bsOpenEditor(null));
+  bsLoadList();
+}
+</script>
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  ABA: DIÁRIO
+// ════════════════════════════════════════════════════════════════════════
+let drList = [];
+let drEditingNumero = null;
+let drEditState = null;
+
+function drBlank(numero){
+  return { numero, titulo:'', data:'', resumo:'', eventos:[], recursos:{} };
+}
+
+async function drLoadList(){
+  const wrap = document.getElementById('dr-list-wrap');
+  try{
+    const r = await fetch('/api/diario');
+    drList = r.ok ? await r.json() : [];
+  }catch{
+    drList = [];
+    wrap.innerHTML = `<div class="empty-state" style="color:var(--crimson-lt)">✦ Erro ao carregar o diário ✦</div>`;
+    return;
+  }
+  drRenderList();
+}
+
+function drRenderList(){
+  const wrap = document.getElementById('dr-list-wrap');
+  if(drList.length===0){
+    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">📜</span>Nenhuma sessão registrada ainda.</div>`;
+    return;
+  }
+  const ordered = [...drList].sort((a,b)=>(b.numero||0)-(a.numero||0));
+  wrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">${ordered.map(s=>`
+    <div class="box dr-card" data-numero="${s.numero}" style="cursor:pointer;transition:all .25s;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="min-width:0">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <span style="font-family:'Cinzel Decorative',serif;font-size:.62rem;color:var(--gold-dim);letter-spacing:.1em">SESSÃO ${s.numero}</span>
+          <span style="font-family:'Cinzel',serif;font-size:.95rem;color:var(--gold-lt)">${esc(s.titulo||'(sem título)')}</span>
+        </div>
+        ${s.data?`<div style="font-size:.74rem;color:var(--ink-dim);font-style:italic;margin-top:3px">${esc(s.data)}</div>`:''}
+        ${s.resumo?`<div style="font-size:.82rem;color:var(--ink-2);margin-top:6px;max-width:560px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.resumo)}</div>`:''}
+      </div>
+      <button class="dr-del" data-numero="${s.numero}" title="Remover" style="background:none;border:none;color:var(--crimson-lt);opacity:.6;cursor:pointer;font-size:.95rem;flex-shrink:0">🗑</button>
+    </div>`).join('')}</div>`;
+
+  wrap.querySelectorAll('.dr-card').forEach(card=>{
+    card.addEventListener('mouseenter',()=>{card.style.borderColor='var(--gold)';});
+    card.addEventListener('mouseleave',()=>{card.style.borderColor='var(--border)';});
+    card.addEventListener('click', e=>{
+      if(e.target.closest('.dr-del')) return;
+      drOpenEditor(Number(card.dataset.numero));
+    });
+  });
+  wrap.querySelectorAll('.dr-del').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      drDelete(Number(btn.dataset.numero));
+    });
+  });
+}
+
+function drDelete(numero){
+  // Não há rota DELETE em /api/diario — removemos apenas da visão local (índice) salvando uma versão vazia
+  // é considerado fora do escopo da API atual; orientamos o mestre.
+  toast('Sessões não podem ser excluídas pela API atual — apenas editadas.', true);
+}
+
+function drNextNumero(){
+  if(drList.length===0) return 1;
+  return Math.max(...drList.map(s=>s.numero||0)) + 1;
+}
+
+function drOpenEditor(numero){
+  if(numero){
+    const found = drList.find(s=>s.numero===numero);
+    drEditState = found ? JSON.parse(JSON.stringify(found)) : drBlank(numero);
+    drEditingNumero = numero;
+  } else {
+    drEditState = drBlank(drNextNumero());
+    drEditingNumero = null;
+  }
+  drRenderEditor();
+  document.getElementById('dr-editor').style.display = 'block';
+  document.getElementById('dr-editor').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function drCloseEditor(){
+  drEditingNumero = null;
+  drEditState = null;
+  document.getElementById('dr-editor').style.display = 'none';
+}
+
+function drEventosRows(){
+  const ev = drEditState.eventos || [];
+  if(ev.length===0) return `<div style="font-size:.8rem;color:var(--ink-dim);font-style:italic;padding:8px 0">Nenhum evento registrado.</div>`;
+  return ev.map((e,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start">
+    <textarea class="dr-evento-input" data-idx="${i}" rows="1" placeholder="O que aconteceu…" style="flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--ink-2);padding:8px 10px;font-family:'IM Fell English',serif;font-size:.88rem;outline:none;resize:vertical">${esc(typeof e==='string'?e:(e.texto||''))}</textarea>
+    <button class="dr-evento-del" data-idx="${i}" style="background:none;border:none;color:var(--crimson-lt);cursor:pointer;font-size:.95rem;padding:6px">✕</button>
+  </div>`).join('');
+}
+
+function drRenderEditor(){
+  const s = drEditState;
+  const el = document.getElementById('dr-editor');
+  const recursosText = JSON.stringify(s.recursos||{}, null, 2);
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-family:'Cinzel Decorative',serif;font-size:1.05rem;color:var(--gold-lt)">${drEditingNumero?'Editando Sessão '+s.numero:'Nova Sessão'}</div>
+      <button class="btn btn-sm" id="dr-editor-close">Fechar ✕</button>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+      <div>
+        <label style="display:block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px">Número</label>
+        <input type="number" id="dr-f-numero" value="${s.numero}" min="1" style="width:80px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:9px;text-align:center;font-family:'Cinzel',serif;outline:none">
+      </div>
+      <div style="flex:1;min-width:200px">
+        <label style="display:block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px">Título</label>
+        <input type="text" id="dr-f-titulo" value="${esc(s.titulo)}" placeholder="Ex: A Queda de Vane" style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:9px 12px;font-family:'Cinzel',serif;outline:none">
+      </div>
+      <div>
+        <label style="display:block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px">Data</label>
+        <input type="text" id="dr-f-data" value="${esc(s.data)}" placeholder="dd/mm/aaaa" style="width:130px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:9px 12px;font-family:'IM Fell English',serif;outline:none">
+      </div>
+    </div>
+
+    <p class="section-label">Resumo</p>
+    <textarea id="dr-f-resumo" rows="4" placeholder="Resumo geral da sessão para os jogadores relembrarem…" style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--ink-2);padding:10px 12px;font-family:'IM Fell English',serif;outline:none;resize:vertical;margin-bottom:24px">${esc(s.resumo)}</textarea>
+
+    <p class="section-label">Eventos</p>
+    <div id="dr-eventos-list" style="margin-bottom:10px">${drEventosRows()}</div>
+    <button class="btn btn-sm" id="dr-add-evento" style="margin-bottom:24px">+ Evento</button>
+
+    <p class="section-label">Recursos (JSON livre — itens, NPCs, links, etc.)</p>
+    <textarea id="dr-f-recursos" rows="5" placeholder='{ "itens": [], "npcs": [] }' style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--ink-2);padding:10px 12px;font-family:monospace;font-size:.82rem;outline:none;resize:vertical;margin-bottom:8px">${esc(recursosText)}</textarea>
+    <div id="dr-recursos-err" style="font-size:.74rem;color:var(--crimson-lt);font-style:italic;min-height:1.2em;margin-bottom:20px"></div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn" id="dr-editor-cancel">Cancelar</button>
+      <button class="btn primary" id="dr-editor-save">Salvar Sessão</button>
+    </div>
+  `;
+
+  document.getElementById('dr-editor-close').addEventListener('click', drCloseEditor);
+  document.getElementById('dr-editor-cancel').addEventListener('click', drCloseEditor);
+  document.getElementById('dr-editor-save').addEventListener('click', drSaveEditor);
+  document.getElementById('dr-add-evento').addEventListener('click', ()=>{
+    s.eventos.push('');
+    drRenderEditor();
+  });
+  el.querySelectorAll('.dr-evento-del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ s.eventos.splice(Number(btn.dataset.idx),1); drRenderEditor(); });
+  });
+  el.querySelectorAll('.dr-evento-input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ s.eventos[Number(inp.dataset.idx)] = inp.value; });
+  });
+}
+
+async function drSaveEditor(){
+  const s = drEditState;
+  const numero = parseInt(document.getElementById('dr-f-numero').value, 10);
+  if(!Number.isFinite(numero) || numero<1){ toast('Número de sessão inválido.', true); return; }
+
+  const recursosRaw = document.getElementById('dr-f-recursos').value.trim();
+  let recursos = {};
+  const errEl = document.getElementById('dr-recursos-err');
+  errEl.textContent = '';
+  if(recursosRaw){
+    try{ recursos = JSON.parse(recursosRaw); }
+    catch{
+      errEl.textContent = 'JSON inválido em "Recursos" — corrija antes de salvar.';
+      return;
+    }
+  }
+
+  s.numero = numero;
+  s.titulo = document.getElementById('dr-f-titulo').value.trim();
+  s.data = document.getElementById('dr-f-data').value.trim();
+  s.resumo = document.getElementById('dr-f-resumo').value;
+  s.eventos = (s.eventos||[]).filter(e=>String(e).trim()!=='');
+  s.recursos = recursos;
+
+  const btn = document.getElementById('dr-editor-save');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⧖</span> Salvando…';
+
+  try{
+    const r = await fetch(`/api/diario?sessao=${numero}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(s)
+    });
+    if(!r.ok) throw new Error();
+    toast('Sessão salva com sucesso.');
+    drCloseEditor();
+    drLoadList();
+  }catch{
+    toast('Erro ao salvar a sessão.', true);
+  }
+  btn.disabled = false;
+  btn.innerHTML = original;
+}
+
+function initDiarioTab(){
+  document.getElementById('dr-new').addEventListener('click', ()=>drOpenEditor(null));
+  drLoadList();
+}
+</script>
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  ABA: FICHAS
+// ════════════════════════════════════════════════════════════════════════
+function fcHpColor(pct){
+  return pct>60 ? 'linear-gradient(90deg,#1a7a20,#28a830)'
+    : pct>25 ? 'linear-gradient(90deg,#a04010,#d06020)'
+    : 'linear-gradient(90deg,#600000,#900010)';
+}
+function fcHpPct(atual,max){ return Math.max(0,Math.min(100,((Number(atual)||0)/(Math.max(1,Number(max)||1)))*100)); }
+
+async function fcLoad(){
+  const wrap = document.getElementById('fc-list-wrap');
+  wrap.innerHTML = `<div class="loading-state">⧖ Reunindo os heróis…</div>`;
+  let manifest = [];
+  try{
+    const r = await fetch('/api/manifest');
+    manifest = r.ok ? await r.json() : [];
+  }catch{
+    wrap.innerHTML = `<div class="empty-state" style="color:var(--crimson-lt)">✦ Erro ao carregar fichas ✦</div>`;
+    return;
+  }
+  if(!manifest || manifest.length===0){
+    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">🧙</span>Nenhum personagem cadastrado.</div>`;
+    return;
+  }
+
+  const results = await Promise.allSettled(manifest.map(async m=>{
+    const r = await fetch(`/api/ficha?id=${m.id}`);
+    if(!r.ok) return null;
+    return r.json();
+  }));
+  const fichas = results.filter(r=>r.status==='fulfilled' && r.value).map(r=>r.value);
+
+  await Promise.allSettled(fichas.map(async f=>{
+    try{
+      const r = await fetch(`/api/avatar?id=${f.id}`);
+      if(r.ok){ const d = await r.json(); if(d.avatar) f._avatarSrc = d.avatar; }
+    }catch{}
+  }));
+
+  if(fichas.length===0){
+    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">🧙</span>Nenhuma ficha pôde ser carregada.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">${fichas.map(p=>{
+    const core = p.core || {};
+    const hpAtual = Number(core.hpAtual)||0, hpMax = Number(core.hpMax)||1;
+    const pct = fcHpPct(hpAtual, hpMax);
+    const subtitulo = [p.nivel?`Nível ${p.nivel}`:'', p.classe||''].filter(Boolean).join(' · ');
+    const avatarEl = p._avatarSrc
+      ? `<img src="${p._avatarSrc}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top">`
+      : `<span style="font-size:2.2rem;opacity:.3;color:var(--gold)">⚔</span>`;
+    return `<a class="box" href="ficha.html?id=${esc(p.id)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:block;padding:0;overflow:hidden;transition:all .25s">
+      <div style="height:90px;background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden">${avatarEl}</div>
+      <div style="padding:14px 16px">
+        <div style="font-family:'Cinzel',serif;font-size:.88rem;letter-spacing:.06em;color:var(--gold-lt)">${esc(p.nome||'Aventureiro')}</div>
+        ${subtitulo?`<div style="font-size:.74rem;color:var(--ink-dim);font-style:italic;margin:2px 0 10px">${esc(subtitulo)}</div>`:'<div style="margin-bottom:10px"></div>'}
+        <div style="display:flex;gap:14px;margin-bottom:10px">
+          ${core.ca?`<div style="text-align:center"><div style="font-family:'Cinzel',serif;font-size:.95rem">${core.ca}</div><div style="font-size:.5rem;letter-spacing:.2em;color:var(--ink-dim);text-transform:uppercase">CA</div></div>`:''}
+          ${core.iniciativa!==undefined?`<div style="text-align:center"><div style="font-family:'Cinzel',serif;font-size:.95rem">${core.iniciativa>=0?'+':''}${core.iniciativa}</div><div style="font-size:.5rem;letter-spacing:.2em;color:var(--ink-dim);text-transform:uppercase">Init</div></div>`:''}
+        </div>
+        <div style="font-size:.78rem;color:var(--ink-2);margin-bottom:4px">${hpAtual} / ${hpMax} HP</div>
+        <div style="height:5px;background:var(--bg2);border:1px solid var(--border)"><div style="height:100%;width:${pct}%;background:${fcHpColor(pct)}"></div></div>
+      </div>
+    </a>`;
+  }).join('')}</div>`;
+
+  wrap.querySelectorAll('.box').forEach(card=>{
+    card.addEventListener('mouseenter',()=>{card.style.borderColor='var(--gold)';});
+    card.addEventListener('mouseleave',()=>{card.style.borderColor='var(--border)';});
+  });
+}
+
+function initFichasTab(){
+  document.getElementById('fc-refresh').addEventListener('click', fcLoad);
+  fcLoad();
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  ABA: MODO RPG
+// ════════════════════════════════════════════════════════════════════════
+async function rpgRefreshStatus(){
+  const dot = document.getElementById('rpg-status-dot');
+  const text = document.getElementById('rpg-status-text');
+  try{
+    const r = await fetch('/api/combat');
+    if(!r.ok) throw new Error();
+    const state = await r.json();
+    if(state && state.ativo){
+      dot.style.background = 'var(--crimson-lt)';
+      text.textContent = `⚔ Combate ativo — Rodada ${state.rodada||1}`;
+      text.style.color = 'var(--crimson-lt)';
+    } else {
+      dot.style.background = 'var(--gold)';
+      text.textContent = 'Sem combate — tela em modo de espera';
+      text.style.color = 'var(--gold-lt)';
+    }
+  }catch{
+    dot.style.background = 'var(--ink-dim)';
+    text.textContent = 'Não foi possível verificar o status';
+    text.style.color = 'var(--ink-dim)';
+  }
+}
+
+function initRpgTab(){
+  const url = new URL('players.html', window.location.href).toString();
+  document.getElementById('rpg-url-input').value = url;
+  document.getElementById('rpg-open-link').href = url;
+  document.getElementById('rpg-copy-link').addEventListener('click', async ()=>{
+    try{
+      await navigator.clipboard.writeText(url);
+      toast('Link copiado.');
+    }catch{
+      const inp = document.getElementById('rpg-url-input');
+      inp.select();
+      document.execCommand('copy');
+      toast('Link copiado.');
+    }
+  });
+  rpgRefreshStatus();
+  setInterval(rpgRefreshStatus, 5000);
+}
+</script>
+</body>
+</html>
