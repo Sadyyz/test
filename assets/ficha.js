@@ -1219,6 +1219,26 @@ async function saveState() {
   setTimeout(() => { btn.textContent = 'SALVAR'; btn.className = ''; status.classList.remove('visible'); }, 2600);
 }
 
+// Verifica se há combate ativo no Hub do Mestre; se sim, mostra o botão "⚔ Modo RPG"
+async function checkRpgMode() {
+  if (!FICHA_ID) return;
+  const btn = document.getElementById('rpg-mode-btn');
+  if (!btn) return;
+  try {
+    const r = await fetch('/api/combat');
+    if (!r.ok) return;
+    const combat = await r.json();
+    if (combat && combat.ativo) {
+      btn.href = `players.html?id=${FICHA_ID}`;
+      btn.classList.add('show');
+    } else {
+      btn.classList.remove('show');
+    }
+  } catch {
+    // API offline: mantém o botão oculto
+  }
+}
+
 (async function init() {
   state = await loadState();
   if (!state) {
@@ -1234,6 +1254,7 @@ async function saveState() {
   }
   render();
   loadAvatar(); // carrega avatar da API de forma assíncrona
+  checkRpgMode();
   const btn = document.getElementById('save-btn');
   btn.style.display = 'block';
   btn.addEventListener('click', saveState);
