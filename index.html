@@ -122,6 +122,52 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,3.4rem);font-w
 
 .loading{font-family:'Cinzel',serif;letter-spacing:.3em;color:var(--ink-dim);text-align:center;padding:60px 0;animation:blink 1.6s ease-in-out infinite}
 
+/* Card "Nova Ficha" */
+.card-new{
+  display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;cursor:pointer;
+  color:var(--gold);background:transparent;border:1.5px dashed var(--gold-dim);
+  padding:16px 28px;overflow:hidden;font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
+  transition:all .28s;opacity:0;animation:cardIn .6s ease both;animation-delay:.55s;
+}
+.card-new:hover{border-color:var(--gold);border-style:solid;background:var(--glow-g);color:var(--gold-hot);box-shadow:0 0 22px var(--glow-g);transform:translateX(6px)}
+.card-new .plus{font-size:1.1rem;line-height:1}
+
+/* Modal: Nova Ficha */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;background:rgba(6,4,7,.78);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s ease;
+}
+.modal-overlay.show{opacity:1;visibility:visible}
+.modal-box{
+  width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);
+  padding:32px 28px;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.6);
+  clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px));
+  transform:translateY(14px) scale(.98);transition:transform .35s ease;
+}
+.modal-overlay.show .modal-box{transform:translateY(0) scale(1)}
+.modal-title{font-family:'Cinzel Decorative',serif;font-size:1.1rem;font-weight:700;color:var(--gold-lt);letter-spacing:.06em;margin-bottom:6px}
+.modal-hint{font-size:.82rem;color:var(--ink-dim);font-style:italic;margin-bottom:22px;line-height:1.5}
+.modal-label{display:block;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px}
+.modal-input{
+  width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--ink);
+  padding:12px 14px;font-family:'IM Fell English',serif;font-size:1.02rem;outline:none;transition:border-color .25s,box-shadow .25s;
+}
+.modal-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow-g)}
+.modal-error{color:var(--crimson-lt);font-size:.78rem;margin-top:8px;min-height:1em;font-style:italic}
+.modal-actions{display:flex;gap:10px;margin-top:26px;justify-content:flex-end}
+.modal-btn{
+  font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;
+  padding:11px 20px;border:1px solid var(--border);background:transparent;color:var(--ink-2);cursor:pointer;
+  transition:all .25s;
+}
+.modal-btn:hover{border-color:var(--ink-2);color:var(--ink)}
+.modal-btn.primary{border-color:var(--gold-dim);color:var(--gold-lt);background:var(--glow-g)}
+.modal-btn.primary:hover{border-color:var(--gold);color:var(--gold-hot);box-shadow:0 0 16px var(--glow-g)}
+.modal-btn.primary:disabled{opacity:.5;cursor:default;box-shadow:none}
+.modal-btn.primary .spin{display:inline-block;animation:spinCW .8s linear infinite}
+
 /* Footer */
 .footer{
   text-align:center;margin-top:64px;padding-top:28px;border-top:1px solid var(--border);
@@ -224,6 +270,20 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,3.4rem);font-w
   </footer>
 </div>
 
+<div class="modal-overlay" id="new-modal">
+  <div class="modal-box">
+    <div class="modal-title">Forjar Nova Ficha</div>
+    <div class="modal-hint">Dê um nome ao seu herói. Tudo o mais — atributos, perícias, magias, história — fica em branco, pronto para ser escrito na ficha.</div>
+    <label class="modal-label" for="new-name-input">Nome do personagem</label>
+    <input type="text" id="new-name-input" class="modal-input" maxlength="60" placeholder="Ex: Sasy, Ryuzaki..." autocomplete="off">
+    <div class="modal-error" id="new-modal-error"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" id="new-modal-cancel" type="button">Cancelar</button>
+      <button class="modal-btn primary" id="new-modal-confirm" type="button">Criar Ficha</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   const c=document.getElementById('cosmos'),ctx=c.getContext('2d');
@@ -252,11 +312,221 @@ window.addEventListener('load',()=>{
   setTimeout(()=>{document.getElementById('portal').classList.add('out');document.getElementById('page').classList.add('visible');},1500);
 });
 
-fetch('manifest.json').then(r=>r.json()).then(list=>{
-  const el=document.getElementById('list');
-  if(!list.length){el.innerHTML='<p style="color:var(--ink-dim);text-align:center;padding:40px;font-style:italic;">Nenhum herói no grimório.</p>';return;}
-  el.innerHTML=list.map(p=>`<a class="card" href="ficha.html?id=${p.id}"><div class="card-corner"></div><div class="card-name">${p.nome}</div><div class="card-sub">${p.subtitulo||''}</div><span class="card-arrow">⟶</span></a>`).join('');
-}).catch(()=>{document.getElementById('list').innerHTML='<p style="color:var(--crimson-lt);text-align:center;padding:40px;font-family:Cinzel,serif;">✦ Erro ao abrir o grimório ✦</p>';});
+// ══════════════════════════════════════════════════
+//  GRIMÓRIO: lista de personagens (manifest.json estático + manifest dinâmico)
+// ══════════════════════════════════════════════════
+
+function cardHTML(p){
+  return `<a class="card" href="ficha.html?id=${p.id}"><div class="card-corner"></div><div class="card-name">${p.nome}</div><div class="card-sub">${p.subtitulo||''}</div><span class="card-arrow">⟶</span></a>`;
+}
+
+function newCardHTML(){
+  return `<div class="card-new" id="new-card"><span class="plus">+</span> Nova Ficha</div>`;
+}
+
+function localExtras(){
+  try { return JSON.parse(localStorage.getItem('dnd-manifest-extra')||'[]'); }
+  catch { return []; }
+}
+
+function saveLocalExtra(p){
+  const arr = localExtras();
+  arr.push(p);
+  localStorage.setItem('dnd-manifest-extra', JSON.stringify(arr));
+}
+
+async function loadManifest(){
+  let base = [];
+  try { base = await fetch('manifest.json').then(r=>r.json()); } catch {}
+
+  let dynamic = [];
+  try {
+    const r = await fetch('/api/manifest');
+    if (r.ok) dynamic = await r.json();
+  } catch {}
+
+  // Mescla com extras locais (fichas criadas offline, sem API), evitando duplicar ids
+  const allIds = new Set([...base, ...dynamic].map(p=>p.id));
+  const extras = localExtras().filter(p=>!allIds.has(p.id));
+
+  return [...base, ...dynamic, ...extras];
+}
+
+function renderList(list){
+  const el = document.getElementById('list');
+  const cards = list.map(cardHTML).join('');
+  el.innerHTML = cards + newCardHTML();
+  document.getElementById('new-card').addEventListener('click', openNewModal);
+}
+
+loadManifest().then(list=>{
+  renderList(list);
+}).catch(()=>{
+  document.getElementById('list').innerHTML='<p style="color:var(--crimson-lt);text-align:center;padding:40px;font-family:Cinzel,serif;">✦ Erro ao abrir o grimório ✦</p>'+newCardHTML();
+  document.getElementById('new-card').addEventListener('click', openNewModal);
+});
+
+// ══════════════════════════════════════════════════
+//  CRIAÇÃO DE FICHA EM BRANCO
+// ══════════════════════════════════════════════════
+
+function slugify(str){
+  return String(str||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,60);
+}
+
+// Mesmo "shape" de personagens/mikhail.json, porém todo zerado/vazio —
+// assim ficha.js (que espera essas chaves) funciona sem precisar de nenhum
+// tratamento especial para fichas novas.
+function blankFicha(id, nome){
+  return {
+    id,
+    nome,
+    subtitulo: '',
+    nivel: 1,
+    classe: '',
+    raca: '',
+    antecedente: '',
+    alinhamento: '',
+
+    atributos: {
+      forca: 10, destreza: 10, constituicao: 10,
+      inteligencia: 10, sabedoria: 10, carisma: 10
+    },
+
+    core: {
+      ca: 10, iniciativa: 0, deslocamento: 9,
+      hpMax: 10, hpAtual: 10, hpTemp: 0, bonusProf: 2
+    },
+
+    salvaguardas: {
+      forca: { prof:false }, destreza: { prof:false }, constituicao: { prof:false },
+      inteligencia: { prof:false }, sabedoria: { prof:false }, carisma: { prof:false }
+    },
+
+    pericias: {
+      'Acrobacia':        { attr:'destreza',      prof:false },
+      'Arcanismo':         { attr:'inteligencia',  prof:false },
+      'Atletismo':         { attr:'forca',         prof:false },
+      'Atuação':           { attr:'carisma',       prof:false },
+      'Enganação':         { attr:'carisma',       prof:false },
+      'Furtividade':       { attr:'destreza',      prof:false },
+      'História':          { attr:'inteligencia',  prof:false },
+      'Intimidação':       { attr:'carisma',       prof:false },
+      'Intuição':          { attr:'sabedoria',     prof:false },
+      'Investigação':      { attr:'inteligencia',  prof:false },
+      'Lidar com Animais': { attr:'sabedoria',     prof:false },
+      'Medicina':          { attr:'sabedoria',     prof:false },
+      'Natureza':          { attr:'inteligencia',  prof:false },
+      'Percepção':         { attr:'sabedoria',     prof:false },
+      'Persuasão':         { attr:'carisma',       prof:false },
+      'Prestidigitação':   { attr:'destreza',      prof:false },
+      'Religião':          { attr:'inteligencia',  prof:false },
+      'Sobrevivência':     { attr:'sabedoria',     prof:false }
+    },
+
+    ataques: [],
+
+    magias: { slots: [], conhecidas: [] },
+
+    features: [],
+
+    equipamento: [],
+
+    antecedenteTexto: '',
+    hist_divindade: '',
+    hist_tracos: '',
+    hist_ideal: '',
+    hist_vinculo: '',
+    hist_fraqueza: '',
+    hist_idade: '',
+    hist_altura: '',
+    hist_peso: '',
+    hist_olhos: '',
+    hist_cabelo: '',
+    hist_pele: '',
+    hist_aparencia: '',
+    hist_relacoes: [],
+
+    notas: '',
+
+    dinheiro: { ouro: 0, prata: 0, cobre: 0 },
+
+    mortesSalvas: { sucessos: 0, falhas: 0 }
+  };
+}
+
+const newModal   = document.getElementById('new-modal');
+const newInput   = document.getElementById('new-name-input');
+const newError   = document.getElementById('new-modal-error');
+const newConfirm = document.getElementById('new-modal-confirm');
+const newCancel  = document.getElementById('new-modal-cancel');
+
+function openNewModal(){
+  newError.textContent = '';
+  newInput.value = '';
+  newModal.classList.add('show');
+  setTimeout(()=>newInput.focus(), 50);
+}
+function closeNewModal(){
+  newModal.classList.remove('show');
+}
+
+newCancel.addEventListener('click', closeNewModal);
+newModal.addEventListener('click', e=>{ if(e.target===newModal) closeNewModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && newModal.classList.contains('show')) closeNewModal(); });
+newInput.addEventListener('keydown', e=>{ if(e.key==='Enter') confirmNewFicha(); });
+newConfirm.addEventListener('click', confirmNewFicha);
+
+async function confirmNewFicha(){
+  const nome = newInput.value.trim();
+  if(!nome){
+    newError.textContent = 'Digite um nome para o personagem.';
+    newInput.focus();
+    return;
+  }
+
+  newConfirm.disabled = true;
+  newConfirm.innerHTML = '<span class="spin">⧖</span> Forjando…';
+  newError.textContent = '';
+
+  let entry = null;
+
+  // 1) tenta registrar no manifest dinâmico via API (compartilhado entre jogadores)
+  try {
+    const r = await fetch('/api/manifest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome })
+    });
+    if (r.ok) entry = await r.json();
+  } catch {}
+
+  // 2) fallback: gera localmente (sem API/sem internet) e guarda no localStorage
+  if (!entry) {
+    const id = slugify(nome) || ('personagem-' + Date.now());
+    entry = { id, nome, subtitulo: '' };
+    saveLocalExtra(entry);
+  }
+
+  const ficha = blankFicha(entry.id, nome);
+
+  // Salva a ficha em branco: tenta API, e cai pro localStorage (mesmo padrão do ficha.js)
+  try {
+    await fetch(`/api/ficha?id=${entry.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ficha)
+    });
+  } catch {}
+  localStorage.setItem('ficha_' + entry.id, JSON.stringify(ficha));
+
+  location.href = `ficha.html?id=${entry.id}`;
+}
 </script>
 </body>
 </html>

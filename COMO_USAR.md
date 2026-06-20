@@ -7,13 +7,15 @@ Agora: 1 único `ficha.html` (o "motor") + 1 arquivo `.json` pequeno por persona
 ## Estrutura
 ```
 /
-├── index.html              # lista os personagens (lê manifest.json)
-├── manifest.json           # lista de personagens disponíveis
+├── index.html              # lista os personagens (lê manifest.json) + cria fichas novas
+├── manifest.json           # lista estática de personagens (parte do código)
 ├── ficha.html               # template único — renderiza qualquer personagem
 ├── personagens/
 │   └── mikhail.json         # dados-base do Mikhail (usado se a API/KV não tiver nada salvo ainda)
 └── api/
-    └── ficha.js             # API genérica: GET/POST /api/ficha?id=NOME
+    ├── ficha.js             # API genérica: GET/POST /api/ficha?id=NOME
+    ├── avatar.js             # API de avatar: GET/POST/DELETE /api/avatar?id=NOME
+    └── manifest.js           # API da lista dinâmica: GET/POST /api/manifest (fichas criadas pelo site)
 ```
 
 ## Como abrir uma ficha
@@ -23,6 +25,17 @@ ficha.html?id=mikhail
 O `id` na URL decide qual personagem carregar. Não precisa mais de um arquivo HTML por personagem.
 
 ## Como adicionar um personagem novo
+
+### Opção A — Pelo site (recomendado)
+Na página inicial (`index.html`), clique no card tracejado **"+ Nova Ficha"**, digite o nome do personagem e confirme. Isso:
+1. Gera um `id` automaticamente a partir do nome (ex: "Kal Calder" → `kal-calder`).
+2. Cria uma ficha em branco com todos os campos do sistema já estruturados (atributos 10, as 18 perícias padrão de D&D 5e desmarcadas, HP/CA/etc. zerados) — só falta preencher.
+3. Registra o personagem na lista da home automaticamente (via `/api/manifest`, guardado no Vercel KV — aparece pra todo mundo que acessar o site).
+4. Já te leva direto para `ficha.html?id=...` para começar a editar.
+
+Se o Vercel KV não estiver configurado (ou estiver offline), o sistema cai automaticamente para o `localStorage` — a ficha funciona normalmente, só que fica visível apenas no seu navegador.
+
+### Opção B — Manual
 1. Copie `personagens/mikhail.json`, renomeie para `personagens/novo-id.json`
 2. Edite os campos (nome, atributos, perícias, magias, equipamento, etc.)
 3. Adicione uma linha em `manifest.json`:
