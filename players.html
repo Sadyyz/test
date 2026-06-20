@@ -118,59 +118,39 @@ body::before{
   text-shadow:0 0 10px var(--glow-g);z-index:5;
 }
 
-/* ── Left Panel: Menu de Ações (decorativo) */
-#bs-action-menu{
-  position:absolute;left:16px;bottom:80px;z-index:6;
-  width:140px;
-}
-.bs-action-panel{
-  background:rgba(8,4,6,.85);
-  border:1px solid var(--bs-border);
-  border-left:3px solid var(--crimson-lt);
-  padding:4px 0;
-  backdrop-filter:blur(4px);
-}
-/* Ornamental corner stitching */
-.bs-action-panel::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,var(--crimson-lt),transparent);
-}
-.bs-action-panel::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,var(--crimson-lt),transparent);
-}
-.bs-action-item{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 14px;
-  font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.08em;
-  color:var(--ink-2);cursor:default;position:relative;
-  transition:color .2s;border-bottom:1px solid rgba(44,34,56,.5);
-}
-.bs-action-item:last-child{border-bottom:none}
-.bs-action-item.bs-selected{
-  color:var(--gold-hot);background:rgba(200,146,42,.08);
-}
-.bs-action-item.bs-selected::before{
-  content:'▶';position:absolute;left:4px;font-size:.5rem;color:var(--gold);
-}
-.bs-action-item.bs-enemy-action{color:var(--crimson-lt)}
-.bs-action-icon{font-size:.8rem;opacity:.7;min-width:16px;text-align:center}
 
-/* ── Right Panel: Histórico de Combate */
-#bs-log-panel{
-  position:absolute;right:16px;top:50px;bottom:80px;z-index:6;
-  width:220px;display:flex;flex-direction:column;
+
+/* ── Log toggle button */
+#bs-log-toggle{
+  position:absolute;top:12px;right:12px;z-index:20;
+  background:rgba(8,4,6,.82);border:1px solid var(--bs-border);
+  color:var(--gold);font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.2em;
+  padding:5px 12px;cursor:pointer;text-transform:uppercase;
+  transition:background .2s,border-color .2s;
 }
+#bs-log-toggle:hover{background:rgba(122,24,40,.4);border-color:var(--crimson-lt)}
+
+/* ── Log drawer (slide in from right) */
+#bs-log-panel{
+  position:fixed;top:44px;right:0;bottom:0;z-index:300;
+  width:280px;display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .3s ease;
+  pointer-events:none;
+}
+#bs-log-panel.log-open{transform:translateX(0);pointer-events:auto}
 .bs-log-header{
   font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.45em;text-transform:uppercase;
-  color:var(--gold-dim);padding:6px 10px 4px;
-  background:rgba(8,4,6,.85);border:1px solid var(--bs-border);border-bottom:none;
-  display:flex;align-items:center;gap:6px;
+  color:var(--gold-dim);padding:8px 12px 6px;
+  background:rgba(8,4,6,.96);border:1px solid var(--bs-border);border-right:none;border-bottom:none;
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
 }
+.bs-log-header-left{display:flex;align-items:center;gap:6px}
 .bs-log-header-dot{width:5px;height:5px;border-radius:50%;background:var(--crimson-lt);animation:pulse-dot 1.6s ease-in-out infinite}
+#bs-log-close{background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.9rem;padding:0 2px;line-height:1}
+#bs-log-close:hover{color:var(--crimson-lt)}
 #bs-log-scroll{
   flex:1;overflow-y:auto;
-  background:rgba(8,4,6,.82);border:1px solid var(--bs-border);border-top:none;
+  background:rgba(8,4,6,.94);border:1px solid var(--bs-border);border-right:none;border-top:none;
   padding:6px 0;
   scrollbar-width:thin;scrollbar-color:var(--crimson) transparent;
 }
@@ -178,7 +158,7 @@ body::before{
 #bs-log-scroll::-webkit-scrollbar-track{background:transparent}
 #bs-log-scroll::-webkit-scrollbar-thumb{background:var(--crimson)}
 .bs-log-entry{
-  padding:4px 10px;font-family:'IM Fell English',serif;font-size:.68rem;
+  padding:4px 12px;font-family:'IM Fell English',serif;font-size:.68rem;
   color:var(--ink-2);line-height:1.4;border-bottom:1px solid rgba(44,34,56,.3);
 }
 .bs-log-entry:last-child{border-bottom:none}
@@ -191,18 +171,18 @@ body::before{
 
 /* Entrada manual */
 .bs-log-input-row{
-  display:flex;gap:4px;padding:4px;
-  background:rgba(8,4,6,.85);border:1px solid var(--bs-border);border-top:none;
+  display:flex;gap:4px;padding:6px;
+  background:rgba(8,4,6,.96);border:1px solid var(--bs-border);border-right:none;border-top:none;
 }
 #bs-log-input{
   flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);
-  color:var(--ink);font-family:'IM Fell English',serif;font-size:.7rem;padding:4px 7px;
+  color:var(--ink);font-family:'IM Fell English',serif;font-size:.7rem;padding:5px 8px;
   outline:none;
 }
 #bs-log-input:focus{border-color:var(--gold-dim)}
 #bs-log-send{
   background:var(--crimson);border:none;color:var(--ink);font-size:.7rem;
-  padding:4px 8px;cursor:pointer;transition:background .2s;
+  padding:5px 10px;cursor:pointer;transition:background .2s;
 }
 #bs-log-send:hover{background:var(--crimson-lt)}
 
@@ -212,6 +192,7 @@ body::before{
   background:var(--bs-panel);
   border-top:2px solid var(--bs-border);
   position:relative;z-index:8;
+  padding:8px 10px;
 }
 
 /* Ornamental top border */
@@ -233,30 +214,38 @@ body::before{
   opacity:.4;
 }
 
+/* Grid de players — 2 colunas fixas, cresce para 3 em telas maiores */
 .bs-players-row{
-  display:flex;align-items:stretch;overflow-x:auto;
-  padding:0;gap:0;
-  scrollbar-width:none;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:6px;
 }
-.bs-players-row::-webkit-scrollbar{display:none}
+@media(min-width:700px){
+  .bs-players-row{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:1050px){
+  .bs-players-row{grid-template-columns:repeat(4,1fr)}
+}
 
 /* Card de cada player */
 .bs-player-card{
   display:flex;align-items:center;gap:0;
-  flex-shrink:0;min-width:220px;max-width:300px;flex:1;
-  border-right:1px solid rgba(44,34,56,.8);
+  border:1px solid rgba(44,34,56,.8);
   position:relative;transition:background .3s;
+  background:rgba(10,6,8,.6);
+  cursor:pointer;
 }
-.bs-player-card:last-child{border-right:none}
-.bs-player-card.is-turn{background:rgba(200,146,42,.06)}
+.bs-player-card:hover{background:rgba(200,146,42,.05);border-color:rgba(200,146,42,.25)}
+.bs-player-card.is-turn{background:rgba(200,146,42,.08);border-color:rgba(200,146,42,.5)}
 .bs-player-card.is-turn::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--gold),transparent);
 }
+.bs-player-sep{display:none}
 
 /* Avatar */
 .bs-player-avatar{
-  width:52px;height:56px;flex-shrink:0;overflow:hidden;position:relative;
+  width:52px;height:60px;flex-shrink:0;overflow:hidden;position:relative;
 }
 .bs-player-avatar img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
 .bs-player-avatar-placeholder{
@@ -264,7 +253,7 @@ body::before{
   background:var(--surface2);font-size:1.4rem;color:var(--gold);opacity:.4;
 }
 
-/* Turno número (badge no avatar) */
+/* Turno badge */
 .bs-player-turn-badge{
   position:absolute;top:2px;right:2px;background:var(--gold);color:var(--bg);
   font-family:'Cinzel',serif;font-size:.42rem;padding:1px 4px;letter-spacing:.08em;
@@ -272,25 +261,27 @@ body::before{
 
 /* Info do player */
 .bs-player-info{
-  flex:1;padding:6px 10px;display:flex;flex-direction:column;gap:3px;min-width:0;
+  flex:1;padding:7px 10px;display:flex;flex-direction:column;gap:4px;min-width:0;
 }
 .bs-player-name{
-  font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-decoration:underline;text-decoration-color:rgba(200,146,42,.3);text-underline-offset:3px;
 }
+.bs-player-card:hover .bs-player-name{color:var(--gold-lt)}
 .bs-player-card.is-turn .bs-player-name{color:var(--gold-hot)}
 
 /* Barra de HP */
 .bs-stat-row{display:flex;align-items:center;gap:5px}
 .bs-stat-label{
-  font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;
+  font-family:'Cinzel',serif;font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-dim);min-width:18px;
 }
 .bs-stat-val{
-  font-family:'Cinzel',serif;font-size:.68rem;color:var(--ink-2);
-  white-space:nowrap;min-width:60px;
+  font-family:'Cinzel',serif;font-size:.66rem;color:var(--ink-2);
+  white-space:nowrap;min-width:52px;
 }
-.bs-stat-bar-wrap{flex:1;height:5px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.06);min-width:40px}
+.bs-stat-bar-wrap{flex:1;height:5px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.06);min-width:30px}
 .bs-stat-bar{height:100%;transition:width .4s ease,background .4s}
 
 /* HP coloring */
@@ -319,15 +310,10 @@ body::before{
   font-size:1.8rem;opacity:.3;animation:slowSpin 20s linear infinite;
 }
 
-/* Scrollbar log mobile */
-@media(max-width:700px){
-  #bs-log-panel{width:160px;right:8px}
-  #bs-action-menu{width:110px;left:8px}
-  .bs-player-card{min-width:180px}
-}
+/* Mobile adjustments */
 @media(max-width:480px){
-  #bs-log-panel{display:none}
-  #bs-action-menu{display:none}
+  #bs-log-panel{width:100vw}
+  .bs-players-row{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
@@ -365,45 +351,8 @@ body::before{
       </div>
     </div>
 
-    <!-- Painel esquerdo: Menu de Ações (decorativo) -->
-    <div id="bs-action-menu">
-      <div class="bs-action-panel">
-        <div class="bs-action-item bs-selected">
-          <span class="bs-action-icon">⚔</span> Atacar
-        </div>
-        <div class="bs-action-item">
-          <span class="bs-action-icon">✦</span> Habilidade
-        </div>
-        <div class="bs-action-item">
-          <span class="bs-action-icon">🛡</span> Defender
-        </div>
-        <div class="bs-action-item">
-          <span class="bs-action-icon">🎒</span> Item
-        </div>
-        <div class="bs-action-item bs-enemy-action">
-          <span class="bs-action-icon">💨</span> Fugir
-        </div>
-      </div>
-    </div>
-
-    <!-- Painel direito: Histórico de Combate -->
-    <div id="bs-log-panel">
-      <div class="bs-log-header">
-        <span class="bs-log-header-dot"></span>
-        Histórico
-      </div>
-      <div id="bs-log-scroll">
-        <div class="bs-log-entry log-system">
-          <span class="log-icon">⚙</span>
-          <span class="log-time" id="log-init-time"></span>
-          Combate iniciado
-        </div>
-      </div>
-      <div class="bs-log-input-row">
-        <input id="bs-log-input" type="text" placeholder="Narrar ação…" maxlength="120">
-        <button id="bs-log-send">▶</button>
-      </div>
-    </div>
+    <!-- Botão de abrir histórico -->
+    <button id="bs-log-toggle">📜 Histórico</button>
   </div>
 
   <!-- Tira ornamental -->
@@ -416,6 +365,28 @@ body::before{
     </div>
   </div>
 
+</div>
+
+<!-- Log drawer (fixo, fora da arena) -->
+<div id="bs-log-panel">
+  <div class="bs-log-header">
+    <div class="bs-log-header-left">
+      <span class="bs-log-header-dot"></span>
+      Histórico de Combate
+    </div>
+    <button id="bs-log-close">✕</button>
+  </div>
+  <div id="bs-log-scroll">
+    <div class="bs-log-entry log-system">
+      <span class="log-icon">⚙</span>
+      <span class="log-time" id="log-init-time"></span>
+      Combate iniciado
+    </div>
+  </div>
+  <div class="bs-log-input-row">
+    <input id="bs-log-input" type="text" placeholder="Narrar ação…" maxlength="120">
+    <button id="bs-log-send">▶</button>
+  </div>
 </div>
 
 <!-- Tela de standby (fora de combate) -->
@@ -525,6 +496,14 @@ function renderLog(){
   scroll.scrollTop=scroll.scrollHeight;
 }
 
+// Log toggle
+document.getElementById('bs-log-toggle').addEventListener('click',()=>{
+  document.getElementById('bs-log-panel').classList.add('log-open');
+});
+document.getElementById('bs-log-close').addEventListener('click',()=>{
+  document.getElementById('bs-log-panel').classList.remove('log-open');
+});
+
 // Entrada manual
 document.getElementById('bs-log-input').addEventListener('keydown',e=>{
   if(e.key==='Enter')sendLog();
@@ -606,7 +585,6 @@ function renderPlayersBottom(list){
     const hpP=hpPct(hpAtual,hpMax);
     const hpCls=hpColor(hpP);
 
-    // Energia (campo opcional: p.energia = {label:'Mana', atual:40, max:80})
     const en=p.energia||null;
     const enBlock=en?`
       <div class="bs-stat-row">
@@ -619,7 +597,7 @@ function renderPlayersBottom(list){
       ?`<img src="${esc(p._avatarSrc)}" alt="${esc(p.nome)}">`
       :`<div class="bs-player-avatar-placeholder">⚔</div>`;
 
-    return `<div class="bs-player-card${isTurn?' is-turn':''}">
+    return `<div class="bs-player-card${isTurn?' is-turn':''}" data-player-id="${esc(p.id)}" title="Abrir ficha de ${esc(p.nome||'Aventureiro')}">
       <div class="bs-player-avatar">
         ${avatarEl}
         ${isTurn?'<div class="bs-player-turn-badge">VEZ</div>':''}
@@ -634,7 +612,15 @@ function renderPlayersBottom(list){
         ${enBlock}
       </div>
     </div>`;
-  }).join('<div class="bs-player-sep"></div>');
+  }).join('');
+
+  // Click no card abre a ficha do personagem
+  row.querySelectorAll('.bs-player-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+      const id=card.dataset.playerId;
+      if(id) window.open(`ficha.html?id=${encodeURIComponent(id)}`,'_blank');
+    });
+  });
 }
 
 // ── Render: Combate ───────────────────────────────────────────────────────────
@@ -705,9 +691,14 @@ async function pollCombat(){
 // ── Poll: fichas ──────────────────────────────────────────────────────────────
 async function pollPlayers(){
   try{
-    const mr=await fetch('/api/manifest');
-    if(!mr.ok)return;
-    const manifest=await mr.json();
+    const [staticRes,dynRes]=await Promise.allSettled([
+      fetch('manifest.json').then(r=>r.ok?r.json():[]),
+      fetch('/api/manifest').then(r=>r.ok?r.json():[])
+    ]);
+    const staticList=staticRes.status==='fulfilled'&&Array.isArray(staticRes.value)?staticRes.value:[];
+    const dynList=dynRes.status==='fulfilled'&&Array.isArray(dynRes.value)?dynRes.value:[];
+    const seen=new Set();
+    const manifest=[...staticList,...dynList].filter(m=>{if(!m||seen.has(m.id))return false;seen.add(m.id);return true;});
     if(!Array.isArray(manifest)||manifest.length===0){fichas=[];renderPlayersBottom([]);return;}
 
     const h=JSON.stringify(manifest.map(m=>m.id+m.nome));
