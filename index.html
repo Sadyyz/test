@@ -119,6 +119,9 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,7vw,3.4rem);font-w
 .card:hover .card-sub{color:var(--ink-2)}
 .card-arrow{position:absolute;right:20px;top:50%;transform:translateY(-50%) translateX(0);color:var(--gold);opacity:0;font-size:1rem;transition:all .25s}
 .card:hover .card-arrow{opacity:1;transform:translateY(-50%) translateX(6px)}
+.card-delete{position:absolute;right:48px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--crimson-lt);opacity:0;font-size:.95rem;padding:4px 6px;transition:opacity .25s,color .2s;line-height:1;z-index:2}
+.card:hover .card-delete{opacity:.6}
+.card-delete:hover{opacity:1!important;color:var(--crimson)}
 
 .loading{font-family:'Cinzel',serif;letter-spacing:.3em;color:var(--ink-dim);text-align:center;padding:60px 0;animation:blink 1.6s ease-in-out infinite}
 
@@ -316,8 +319,14 @@ window.addEventListener('load',()=>{
 //  GRIMÓRIO: lista de personagens (manifest.json estático + manifest dinâmico)
 // ══════════════════════════════════════════════════
 
-function cardHTML(p){
-  return `<a class="card" href="ficha.html?id=${p.id}"><div class="card-corner"></div><div class="card-name">${p.nome}</div><div class="card-sub">${p.subtitulo||''}</div><span class="card-arrow">⟶</span></a>`;
+// IDs estáticos (manifest.json) — não podem ser deletados pela UI
+const STATIC_IDS = new Set(['mikhail']);
+
+function cardHTML(p, isDynamic){
+  const deleteBtn = isDynamic
+    ? `<button class="card-delete" data-id="${p.id}" title="Remover personagem" aria-label="Remover ${p.nome}">🗑</button>`
+    : '';
+  return `<a class="card" href="ficha.html?id=${p.id}"><div class="card-corner"></div><div class="card-name">${p.nome}</div><div class="card-sub">${p.subtitulo||''}</div>${deleteBtn}<span class="card-arrow">⟶</span></a>`;
 }
 
 function newCardHTML(){
@@ -349,14 +358,51 @@ async function loadManifest(){
   const allIds = new Set([...base, ...dynamic].map(p=>p.id));
   const extras = localExtras().filter(p=>!allIds.has(p.id));
 
-  return [...base, ...dynamic, ...extras];
+  // Retorna com flag isDynamic para saber quais podem ser deletadas
+  return [
+    ...base.map(p => ({ ...p, _static: true })),
+    ...dynamic.map(p => ({ ...p, _dynamic: true })),
+    ...extras.map(p => ({ ...p, _local: true }))
+  ];
+}
+
+async function deletePersonagem(id){
+  if (!confirm(`Remover o personagem "${id}" permanentemente? Esta ação não pode ser desfeita.`)) return;
+
+  // Tenta deletar via API
+  try {
+    const r = await fetch(`/api/manifest?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      alert(`Erro ao remover: ${err.error || r.status}`);
+      return;
+    }
+  } catch {
+    // Sem API (offline): remove só do localStorage
+  }
+
+  // Remove também do localStorage se estiver lá
+  const extras = localExtras().filter(p => p.id !== id);
+  localStorage.setItem('dnd-manifest-extra', JSON.stringify(extras));
+
+  // Re-renderiza
+  loadManifest().then(renderList);
 }
 
 function renderList(list){
   const el = document.getElementById('list');
-  const cards = list.map(cardHTML).join('');
+  const cards = list.map(p => cardHTML(p, !p._static)).join('');
   el.innerHTML = cards + newCardHTML();
   document.getElementById('new-card').addEventListener('click', openNewModal);
+
+  // Delegação de evento para botões de deletar
+  el.addEventListener('click', e => {
+    const btn = e.target.closest('.card-delete');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    deletePersonagem(btn.dataset.id);
+  }, { capture: true });
 }
 
 loadManifest().then(list=>{
