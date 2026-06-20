@@ -347,6 +347,25 @@ function toast(msg, isErr){
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
+// Mescla manifest.json (personagens estáticos, ex: mikhail) + /api/manifest
+// (personagens dinâmicos cadastrados via banco) — mesmo padrão usado no index.html,
+// pra que o Jardim do Mestre enxergue TODOS os personagens, não só os dinâmicos.
+async function loadFullManifest(){
+  let base = [];
+  try { base = await fetch('manifest.json').then(r=>r.json()); } catch {}
+
+  let dynamic = [];
+  try {
+    const r = await fetch('/api/manifest');
+    if (r.ok) dynamic = await r.json();
+  } catch {}
+
+  const baseIds = new Set(base.map(p=>p.id));
+  const dynamicFiltered = dynamic.filter(p=>!baseIds.has(p.id));
+
+  return [...base, ...dynamicFiltered];
+}
+
 // ── Tabs ─────────────────────────────────────────────────────────────
 const tabButtons=document.querySelectorAll('.tab-btn');
 const panels={
@@ -377,9 +396,6 @@ function initTab(name){
   if(name==='fichas')initFichasTab();
   if(name==='rpg')initRpgTab();
 }
-
-// inicializa a primeira aba ao carregar
-switchTab('combate');
 </script>
 
 <!-- ═══════════════════════ SCRIPTS DAS ABAS (injetados abaixo) ═══════════════════════ -->
@@ -527,8 +543,7 @@ function cbGetIdSet(){
 async function cbOpenAddPlayer(){
   if(!cbManifestCache){
     try{
-      const r = await fetch('/api/manifest');
-      cbManifestCache = r.ok ? await r.json() : [];
+      cbManifestCache = await loadFullManifest();
     }catch{ cbManifestCache = []; }
   }
   const used = cbGetIdSet();
@@ -1176,8 +1191,7 @@ async function fcLoad(){
   wrap.innerHTML = `<div class="loading-state">⧖ Reunindo os heróis…</div>`;
   let manifest = [];
   try{
-    const r = await fetch('/api/manifest');
-    manifest = r.ok ? await r.json() : [];
+    manifest = await loadFullManifest();
   }catch{
     wrap.innerHTML = `<div class="empty-state" style="color:var(--crimson-lt)">✦ Erro ao carregar fichas ✦</div>`;
     return;
@@ -1284,6 +1298,12 @@ function initRpgTab(){
   rpgRefreshStatus();
   setInterval(rpgRefreshStatus, 5000);
 }
+</script>
+
+<!-- Boot: roda só depois que TODAS as abas (combate, bosses, diario, fichas, rpg)
+     já foram definidas acima, evitando o ReferenceError que travava o loading. -->
+<script>
+switchTab('combate');
 </script>
 </body>
 </html>
