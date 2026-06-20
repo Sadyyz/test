@@ -324,7 +324,7 @@ const STATIC_IDS = new Set(['mikhail']);
 
 function cardHTML(p, isDynamic){
   const deleteBtn = isDynamic
-    ? `<button class="card-delete" data-id="${p.id}" title="Remover personagem" aria-label="Remover ${p.nome}">🗑</button>`
+    ? `<button class="card-delete" data-id="${p.id}" data-nome="${p.nome.replace(/"/g,'&quot;')}" title="Remover personagem" aria-label="Remover ${p.nome}">🗑</button>`
     : '';
   return `<a class="card" href="ficha.html?id=${p.id}"><div class="card-corner"></div><div class="card-name">${p.nome}</div><div class="card-sub">${p.subtitulo||''}</div>${deleteBtn}<span class="card-arrow">⟶</span></a>`;
 }
@@ -366,8 +366,8 @@ async function loadManifest(){
   ];
 }
 
-async function deletePersonagem(id){
-  if (!confirm(`Remover o personagem "${id}" permanentemente? Esta ação não pode ser desfeita.`)) return;
+async function deletePersonagem(id, nome){
+  if (!confirm(`Remover "${nome}" permanentemente?\n\nEsta ação apaga a ficha e o avatar do Redis. Não pode ser desfeita.`)) return;
 
   // Tenta deletar via API
   try {
@@ -389,20 +389,20 @@ async function deletePersonagem(id){
   loadManifest().then(renderList);
 }
 
+// Listener único de delete — posto fora do renderList para não acumular a cada re-render
+document.getElementById('list').addEventListener('click', e => {
+  const btn = e.target.closest('.card-delete');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  deletePersonagem(btn.dataset.id, btn.dataset.nome);
+}, true);
+
 function renderList(list){
   const el = document.getElementById('list');
   const cards = list.map(p => cardHTML(p, !p._static)).join('');
   el.innerHTML = cards + newCardHTML();
   document.getElementById('new-card').addEventListener('click', openNewModal);
-
-  // Delegação de evento para botões de deletar
-  el.addEventListener('click', e => {
-    const btn = e.target.closest('.card-delete');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    deletePersonagem(btn.dataset.id);
-  }, { capture: true });
 }
 
 loadManifest().then(list=>{
