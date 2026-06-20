@@ -1222,9 +1222,14 @@ async function saveState() {
 (async function init() {
   state = await loadState();
   if (!state) {
+    // Esconde o spinner de loading antes de mostrar o erro
+    const loadingEl = document.querySelector('.loading');
+    if (loadingEl) loadingEl.remove();
+
     document.getElementById('page').innerHTML = `<div class="error">${FICHA_ID
-      ? `Personagem "${FICHA_ID}" não encontrado.<br>Crie personagens/${FICHA_ID}.json`
-      : 'Nenhum personagem especificado.<br>Use: ficha.html?id=mikhail'}</div>`;
+      ? `Personagem <strong>"${FICHA_ID}"</strong> não encontrado.<br>O ID pode estar errado ou a ficha ainda não foi criada.`
+      : 'Nenhum personagem especificado.<br>Use: <code>ficha.html?id=mikhail</code>'
+    }<br><br><a href="index.html" style="color:var(--gold);font-size:.85rem;letter-spacing:.15em;text-decoration:none;border-bottom:1px solid var(--gold-dim)">⟵ Voltar ao Grimório</a></div>`;
     return;
   }
   render();
