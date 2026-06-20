@@ -425,7 +425,12 @@ function saveLocalExtra(p){
 
 async function loadManifest(){
   let base = [];
-  try { base = await fetch('manifest.json').then(r=>r.json()); } catch {}
+  let baseError = null;
+  try {
+    const r = await fetch('manifest.json');
+    if (!r.ok) baseError = `manifest.json respondeu ${r.status}`;
+    else base = await r.json();
+  } catch (err) { baseError = err.message || String(err); }
 
   let dynamic = [];
   try {
@@ -438,11 +443,14 @@ async function loadManifest(){
   const extras = localExtras().filter(p=>!allIds.has(p.id));
 
   // Retorna com flag isDynamic para saber quais podem ser deletadas
-  return [
-    ...base.map(p => ({ ...p, _static: true })),
-    ...dynamic.map(p => ({ ...p, _dynamic: true })),
-    ...extras.map(p => ({ ...p, _local: true }))
-  ];
+  return {
+    list: [
+      ...base.map(p => ({ ...p, _static: true })),
+      ...dynamic.map(p => ({ ...p, _dynamic: true })),
+      ...extras.map(p => ({ ...p, _local: true }))
+    ],
+    baseError
+  };
 }
 
 async function deletePersonagem(id, nome){
@@ -465,7 +473,7 @@ async function deletePersonagem(id, nome){
   localStorage.setItem('dnd-manifest-extra', JSON.stringify(extras));
 
   // Re-renderiza
-  loadManifest().then(renderList);
+  loadManifest().then(({list})=>renderList(list));
 }
 
 // Listener único de delete — posto fora do renderList para não acumular a cada re-render
@@ -484,8 +492,23 @@ function renderList(list){
   document.getElementById('new-card').addEventListener('click', openNewModal);
 }
 
-loadManifest().then(list=>{
-  renderList(list);
+function renderDiagnostic(reason){
+  const isFileProtocol = location.protocol === 'file:';
+  const msg = isFileProtocol
+    ? 'Este arquivo foi aberto direto do disco (file://), e por isso o navegador bloqueia o carregamento de manifest.json. Sirva a pasta por um servidor local (ex: <code>npx serve</code> ou <code>python -m http.server</code>) ou publique no Vercel.'
+    : `Não foi possível carregar manifest.json (${reason || 'erro desconhecido'}). Verifique se o arquivo existe na mesma pasta de index.html e se o servidor está respondendo.`;
+  document.getElementById('list').innerHTML =
+    `<p style="color:var(--crimson-lt);text-align:center;padding:24px 16px;font-family:Cinzel,serif;line-height:1.6;">✦ As fichas não carregaram ✦<br><span style="font-family:'IM Fell English',serif;font-size:.85rem;color:var(--ink-dim);display:block;margin-top:10px;">${msg}</span></p>`
+    + newCardHTML();
+  document.getElementById('new-card').addEventListener('click', openNewModal);
+}
+
+loadManifest().then(({list, baseError})=>{
+  if (list.length === 0 && baseError) {
+    renderDiagnostic(baseError);
+  } else {
+    renderList(list);
+  }
 }).catch(()=>{
   document.getElementById('list').innerHTML='<p style="color:var(--crimson-lt);text-align:center;padding:40px;font-family:Cinzel,serif;">✦ Erro ao abrir o grimório ✦</p>'+newCardHTML();
   document.getElementById('new-card').addEventListener('click', openNewModal);
