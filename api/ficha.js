@@ -6,7 +6,6 @@ import { Redis } from '@upstash/redis';
 
 // A Vercel pode injetar as credenciais com nomes diferentes dependendo de
 // como a integração foi conectada (KV_* é o nome legado, UPSTASH_* é o atual).
-// Aqui a gente tenta os dois, em vez de travar se um deles não existir.
 const REDIS_URL =
   process.env.KV_REST_API_URL ||
   process.env.UPSTASH_REDIS_REST_URL ||
@@ -27,6 +26,10 @@ try {
 } catch (err) {
   initError = String(err);
 }
+
+// Limite de 512KB por ficha (JSON serializado). Protege o Redis de payloads gigantes
+// com centenas de magias, itens ou relacionamentos.
+const MAX_SIZE = 512 * 1024;
 
 export default async function handler(req, res) {
   if (initError) {
@@ -57,6 +60,15 @@ export default async function handler(req, res) {
       if (!body || typeof body !== 'object') {
         return res.status(400).json({ error: 'Corpo da requisição inválido' });
       }
+
+      // Valida tamanho antes de persistir
+      const serialized = JSON.stringify(body);
+      if (serialized.length > MAX_SIZE) {
+        return res.status(413).json({
+          error: `Ficha muito grande. Tamanho atual: ${Math.round(serialized.length / 1024)}KB. Máximo permitido: ${MAX_SIZE / 1024}KB.`
+        });
+      }
+
       await redis.set(key, body);
       return res.status(200).json({ ok: true });
     } catch (err) {
