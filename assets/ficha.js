@@ -348,7 +348,7 @@ const ESCOLAS = ['Abjuração','Adivinhação','Conjuração','Encantamento','Ev
 
 function openSpellModal(idx) {
   const isNew = idx === -1;
-  const m = isNew ? { nome: '', escola: 'Evocação', nivel: 1 } : state.magias.conhecidas[idx];
+  const m = isNew ? { nome: '', escola: 'Evocação', nivel: 1, descricao: '' } : state.magias.conhecidas[idx];
 
   openModal({
     title: isNew ? '✦ Nova Magia' : '✦ Editar Magia',
@@ -358,12 +358,13 @@ function openSpellModal(idx) {
         value: m.escola,
         options: ESCOLAS.map(e => ({ value: e, label: e })) },
       { key: 'nivel',  label: 'Nível (0 = Truque)', type: 'number', placeholder: '0–9', value: String(m.nivel) },
+      { key: 'descricao', label: 'Descrição', type: 'textarea', placeholder: 'Tempo de conjuração, alcance, duração, efeito…', value: m.descricao || '' },
     ],
     onSave(vals) {
       if (!vals.nome) { alert('Nome é obrigatório.'); return false; }
       if (!state.magias) state.magias = { slots: [], conhecidas: [] };
       if (!state.magias.conhecidas) state.magias.conhecidas = [];
-      const obj = { nome: vals.nome, escola: vals.escola, nivel: parseInt(vals.nivel) || 0 };
+      const obj = { nome: vals.nome, escola: vals.escola, nivel: parseInt(vals.nivel) || 0, descricao: vals.descricao || '' };
       if (isNew) state.magias.conhecidas.push(obj);
       else state.magias.conhecidas[idx] = obj;
       render(); scheduleSave();
@@ -695,12 +696,19 @@ function render() {
       ${s.magias?.conhecidas?.length ? `
         <div id="spell-list">
           ${s.magias.conhecidas.map((m, i) => `
-            <div class="spell-row" data-spell-idx="${i}">
-              <span class="spell-nome">${m.nome}</span>
-              <span class="spell-sch">${m.escola} · nível ${m.nivel}</span>
-              <div class="item-actions spell-actions">
-                <button class="btn-edit-item" data-edit-spell="${i}" title="Editar">✎</button>
-                <button class="btn-del-item"  data-del-spell="${i}"  title="Remover">✕</button>
+            <div class="spell-item" id="spell-${i}">
+              <div class="spell-toggle" data-spell-toggle="${i}">
+                <div class="feat-dot"></div>
+                <span class="spell-nome">${m.nome}</span>
+                <span class="spell-sch">${m.escola} · nível ${m.nivel}</span>
+                <div class="item-actions spell-actions">
+                  <button class="btn-edit-item" data-edit-spell="${i}" title="Editar">✎</button>
+                  <button class="btn-del-item"  data-del-spell="${i}"  title="Remover">✕</button>
+                </div>
+                <div class="feat-arrow">▶</div>
+              </div>
+              <div class="spell-body">
+                <div class="feat-desc">${m.descricao ? m.descricao.replace(/\n/g, '<br>') : '<em>Sem descrição cadastrada.</em>'}</div>
               </div>
             </div>`).join('')}
         </div>` : `<div class="empty-hint">Nenhuma magia cadastrada.</div>`}
@@ -1064,6 +1072,13 @@ function attachEvents() {
     // Não expandir se clicou num botão de ação
     if (e.target.closest('.item-actions')) return;
     const item = document.getElementById('feat-' + el.dataset.feat);
+    if (item) item.classList.toggle('open');
+  }));
+
+  // Spell accordion (descrição da magia)
+  document.querySelectorAll('[data-spell-toggle]').forEach(el => el.addEventListener('click', e => {
+    if (e.target.closest('.item-actions')) return;
+    const item = document.getElementById('spell-' + el.dataset.spellToggle);
     if (item) item.classList.toggle('open');
   }));
 
