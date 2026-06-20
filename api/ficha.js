@@ -3,6 +3,18 @@
 // POST /api/ficha?id=mikhail   -> salva os dados (body = JSON da ficha)
 
 import { Redis } from '@upstash/redis';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Carrega fichas estáticas do repositório (ex: personagens/mikhail.json)
+function loadStaticFicha(id) {
+  try {
+    const raw = readFileSync(join(process.cwd(), 'personagens', `${id}.json`), 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 // A Vercel pode injetar as credenciais com nomes diferentes dependendo de
 // como a integração foi conectada (KV_* é o nome legado, UPSTASH_* é o atual).
@@ -47,8 +59,11 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const data = await redis.get(key);
-      if (!data) return res.status(404).json({ error: 'Ficha não encontrada' });
-      return res.status(200).json(data);
+      if (data) return res.status(200).json(data);
+      // Fallback: tenta carregar ficha estática do repositório
+      const staticData = loadStaticFicha(id);
+      if (staticData) return res.status(200).json(staticData);
+      return res.status(404).json({ error: 'Ficha não encontrada' });
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao buscar ficha', details: String(err) });
     }
