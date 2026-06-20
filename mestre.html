@@ -1006,7 +1006,9 @@ async function bsLoadAvatarPreview(id){
       if(d.avatar){
         bsAvatarDataUrl = d.avatar;
         const img = document.getElementById('bs-avatar-preview');
-        if(img) img.src = d.avatar;
+        const ph = document.getElementById('bs-avatar-placeholder');
+        if(img){ img.src = d.avatar; img.style.display='block'; }
+        if(ph){ ph.style.display='none'; }
       }
     }
   }catch{}
