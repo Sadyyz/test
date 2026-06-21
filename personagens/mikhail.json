@@ -1,9 +1,9 @@
 {
   "id": "mikhail",
-  "nome": "Mikhail Haschwalth",
-  "subtitulo": "Tiefling de Levistus — Paladino 3 / Bruxo 1 (Hexblade)",
-  "nivel": 4,
-  "classe": "Paladino 3 / Bruxo 1",
+  "nome": "Mikhail Levistus",
+  "subtitulo": "Tiefling de Levistus — Paladino 2 (Juramento de Vingança) / Bruxo 1 (Hexblade, Pacto da Lâmina)",
+  "nivel": 3,
+  "classe": "Paladino 2 / Bruxo 1",
   "raca": "Tiefling (Levistus)",
   "antecedente": "Nobre Caído",
   "alinhamento": "Leal e Neutro",
@@ -46,33 +46,61 @@
   },
 
   "ataques": [
-    { "nome": "Espada Longa (Hexblade)", "bonus": "+5", "dano": "1d8+3 cortante" },
-    { "nome": "Eldritch Blast", "bonus": "+5", "dano": "1d10 de força" }
+    { "nome": "Espada Longa (Arma de Pacto)", "bonus": "+5", "dano": "1d8+3 cortante" },
+    { "nome": "Eldritch Blast", "bonus": "+5", "dano": "1d10 de força" },
+    { "nome": "Toque Arrepiante", "bonus": "+5", "dano": "1d8 necrótico" }
   ],
 
   "magias": {
     "slots": [
-      { "nivel": 1, "total": 3, "usados": 0 }
+      { "nivel": 1, "total": 1, "usados": 0, "tipo": "Pacto Arcano (Bruxo) — recupera em descanso curto" },
+      { "nivel": 1, "total": 3, "usados": 0, "tipo": "Paladino — recupera em descanso longo" }
     ],
     "conhecidas": [
-      { "nome": "Hex", "escola": "Encantamento", "nivel": 1 },
-      { "nome": "Compelir Duelo", "escola": "Adivinhação", "nivel": 1 },
-      { "nome": "Detectar Magia", "escola": "Adivinhação", "nivel": 1 }
+      { "nome": "Eldritch Blast", "escola": "Evocação", "nivel": 0, "descricao": "Truque de Bruxo. Feixe de energia crepitante: 1d10 de dano de força à distância (18m). 1 feixe no nível 1." },
+      { "nome": "Toque Arrepiante", "escola": "Necromancia", "nivel": 0, "descricao": "Truque de Bruxo. Ataque corpo a corpo: 1d8 necrótico, e o alvo não recupera PV até o início do seu próximo turno." },
+      { "nome": "Hex", "escola": "Encantamento", "nivel": 1, "descricao": "Magia de Bruxo (slot de pacto). Amaldiçoa um alvo: +1d6 de dano necrótico nos seus ataques contra ele e desvantagem num atributo à sua escolha. Concentração, até 1 hora." },
+      { "nome": "Compelir Duelo", "escola": "Adivinhação", "nivel": 1, "descricao": "Magia de Paladino. Força um alvo a fazer um teste de Sabedoria ou ficar com desvantagem para atacar quem não seja você. Ideal para Vingança — isola o alvo principal." },
+      { "nome": "Ferimento Sagrado", "escola": "Evocação", "nivel": 1, "descricao": "Magia de Paladino. Feixe radiante corpo a corpo: 1d6 radiante + cega o alvo em falha no teste de Constituição. Boa opção de dano/controle." }
     ]
   },
 
   "features": [
     {
-      "titulo": "Pacto da Lâmina",
-      "texto": "Pode invocar uma arma de pacto na mão como ação bônus."
+      "titulo": "Pacto da Lâmina (Bruxo 1)",
+      "texto": "Pode invocar uma arma de pacto na mão como ação. Some seu modificador de Carisma à CD de magias do Bruxo (CD 13) e ataques (+5)."
     },
     {
-      "titulo": "Sentido Divino",
-      "texto": "Detecta presenças celestiais, infernais ou mortas-vivas próximas."
+      "titulo": "Maldição Hexblade (Patrono Hexblade)",
+      "texto": "Como ação bônus, amaldiçoa uma criatura visível: +bônus de proficiência no dano de ataques contra ela com a arma de pacto, e ataques críticos contra ela ampliam a faixa de crítico em 1. Dura até o alvo cair a 0 PV, descanso longo, ou nova maldição."
     },
     {
-      "titulo": "Imposição das Mãos",
-      "texto": "Pool de cura de 5 x nível de Paladino por dia."
+      "titulo": "Arma de Pacto Aprimorada (Patrono Hexblade)",
+      "texto": "Pode usar Carisma em vez de Força/Destreza para ataques e dano com a arma de pacto."
+    },
+    {
+      "titulo": "Sentido Divino (Paladino)",
+      "texto": "Detecta presenças celestiais, infernais ou mortas-vivas próximas (1d4+1 vezes/dia, bônus de Carisma)."
+    },
+    {
+      "titulo": "Imposição das Mãos (Paladino)",
+      "texto": "Pool de cura de 10 PV (5 x nível de Paladino) por dia. Pode também curar uma doença ou neutralizar um veneno gastando 5 pontos."
+    },
+    {
+      "titulo": "Estilo de Luta: Combate com Arma Grande (Paladino 2)",
+      "texto": "Ao rolar dano com uma arma corpo a corpo de duas mãos (ou versátil empunhada com as duas mãos), pode rerrolar resultados de 1 ou 2 nos dados de dano, uma vez por dado."
+    },
+    {
+      "titulo": "Smite Divino (Paladino 2)",
+      "texto": "Ao acertar um ataque corpo a corpo, pode gastar um espaço de magia para causar dano radiante extra: 2d8 (+1d8 se o alvo for morto-vivo ou aberração, +1d8 por nível do espaço acima do 1º, até 5d8)."
+    },
+    {
+      "titulo": "Juramento de Vingança — Voto de Inimizade (Paladino 2)",
+      "texto": "Ação bônus: vantagem em jogadas de ataque contra uma criatura por 1 minuto, ou até o alvo cair a 0 PV/ficar inconsciente (usos limitados, recupera em descanso longo)."
+    },
+    {
+      "titulo": "Juramento de Vingança — Punições do Juramento (Paladino 2)",
+      "texto": "Magias de juramento sempre preparadas, sem ocupar espaço de magias conhecidas: Compelir Duelo e Ferimento Sagrado."
     }
   ],
 
