@@ -53,54 +53,54 @@
 
   "magias": {
     "slots": [
-      { "nivel": 1, "total": 1, "usados": 0, "tipo": "Pacto Arcano (Bruxo) — recupera em descanso curto" },
-      { "nivel": 1, "total": 3, "usados": 0, "tipo": "Paladino — recupera em descanso longo" }
+      { "nivel": 1, "total": 1, "usados": 0, "tipo": "Pacto Arcano (Bruxo) — recupera em descanso curto (1h descansando)" },
+      { "nivel": 1, "total": 3, "usados": 0, "tipo": "Paladino — recupera em descanso longo (8h dormindo)" }
     ],
     "conhecidas": [
-      { "nome": "Eldritch Blast", "escola": "Evocação", "nivel": 0, "descricao": "Truque de Bruxo. Feixe de energia crepitante: 1d10 de dano de força à distância (18m). 1 feixe no nível 1." },
-      { "nome": "Toque Arrepiante", "escola": "Necromancia", "nivel": 0, "descricao": "Truque de Bruxo. Ataque corpo a corpo: 1d8 necrótico, e o alvo não recupera PV até o início do seu próximo turno." },
-      { "nome": "Hex", "escola": "Encantamento", "nivel": 1, "descricao": "Magia de Bruxo (slot de pacto). Amaldiçoa um alvo: +1d6 de dano necrótico nos seus ataques contra ele e desvantagem num atributo à sua escolha. Concentração, até 1 hora." },
-      { "nome": "Compelir Duelo", "escola": "Adivinhação", "nivel": 1, "descricao": "Magia de Paladino. Força um alvo a fazer um teste de Sabedoria ou ficar com desvantagem para atacar quem não seja você. Ideal para Vingança — isola o alvo principal." },
-      { "nome": "Ferimento Sagrado", "escola": "Evocação", "nivel": 1, "descricao": "Magia de Paladino. Feixe radiante corpo a corpo: 1d6 radiante + cega o alvo em falha no teste de Constituição. Boa opção de dano/controle." }
+      { "nome": "Eldritch Blast", "escola": "Evocação", "nivel": 0, "descricao": "TRUQUE — pode usar quantas vezes quiser, não gasta espaço de magia. COMO USAR: ação, escolha um alvo a até 18 metros, role seu bônus de ataque mágico (+5). Se acertar: 1d10 de dano de força. É seu ataque à distância principal." },
+      { "nome": "Toque Arrepiante", "escola": "Necromancia", "nivel": 0, "descricao": "TRUQUE — pode usar quantas vezes quiser, não gasta espaço de magia. COMO USAR: ação, ataque corpo a corpo (precisa estar adjacente ao alvo). Se acertar: 1d8 de dano necrótico, e como bônus o alvo não consegue recuperar pontos de vida (de nenhuma forma) até o começo do seu próximo turno. Bom contra inimigos que se curam." },
+      { "nome": "Hex", "escola": "Encantamento", "nivel": 1, "descricao": "MAGIA DE BRUXO — gasta seu espaço de Pacto Arcano. COMO USAR: ação, escolha uma criatura a até 27 metros e escolha um atributo (Força, Destreza, etc). ENQUANTO DURAR (até 1h, exige concentração — se levar dano, faça um teste pra não perder a magia): todo ataque seu que acerte esse alvo causa +1d6 de dano necrótico extra, e o alvo rola com desvantagem nos testes daquele atributo escolhido. DICA: lance no início do combate no inimigo mais perigoso, e depois ataque ele normalmente pra somar o dano extra em cada acerto." },
+      { "nome": "Compelir Duelo", "escola": "Adivinhação", "nivel": 1, "descricao": "MAGIA DE PALADINO (Punição do Juramento — sempre preparada). COMO USAR: ação, escolha uma criatura a até 9 metros que consiga te ver. Ela faz um teste de Sabedoria; se falhar, fica com desvantagem nas jogadas de ataque contra qualquer um que não seja você, por até 1 minuto (exige concentração). ÓTIMO PRA: prender o chefão/inimigo principal grudado em você, protegendo seus aliados mais frágeis." },
+      { "nome": "Ferimento Sagrado", "escola": "Evocação", "nivel": 1, "descricao": "MAGIA DE PALADINO (Punição do Juramento — sempre preparada). COMO USAR: ação, ataque corpo a corpo contra um alvo adjacente. Se acertar: 1d6 de dano radiante, e o alvo faz um teste de Constituição — se falhar, fica cego até o fim do seu próximo turno. ÓTIMO PRA: atrapalhar a pontaria de um inimigo perigoso logo no início do combate." }
     ]
   },
 
   "features": [
     {
       "titulo": "Pacto da Lâmina (Bruxo 1)",
-      "texto": "Pode invocar uma arma de pacto na mão como ação. Some seu modificador de Carisma à CD de magias do Bruxo (CD 13) e ataques (+5)."
+      "texto": "O QUE É: você tem um vínculo mágico com uma arma. COMO USAR: gaste 1 ação (a sua ação do turno) pra fazer essa arma surgir na sua mão — ela pode até desaparecer e voltar quando quiser, então não precisa carregar ela o tempo todo fora de combate. BÔNUS: como você empunha uma arma de pacto, usa Carisma (em vez de Força) pra acertar e causar dano com ela — olha a feature 'Arma de Pacto Aprimorada' logo abaixo, que é o que permite isso. Sua arma de pacto é a Espada Longa."
     },
     {
       "titulo": "Maldição Hexblade (Patrono Hexblade)",
-      "texto": "Como ação bônus, amaldiçoa uma criatura visível: +bônus de proficiência no dano de ataques contra ela com a arma de pacto, e ataques críticos contra ela ampliam a faixa de crítico em 1. Dura até o alvo cair a 0 PV, descanso longo, ou nova maldição."
+      "texto": "O QUE É: uma marca amaldiçoada que você coloca num inimigo pra focar nele. COMO USAR: gaste sua ação bônus (não gasta a ação principal, então dá pra fazer isso e ainda atacar no mesmo turno) e escolha uma criatura que você está vendo. ENQUANTO DURAR: todo ataque seu com a arma de pacto (a Espada Longa) contra esse alvo causa dano extra igual ao seu bônus de proficiência (+2 no momento), e se você tirar um crítico nele, a faixa de crítico aumenta em 1 (ou seja, no nível 1 isso não muda nada ainda, mas fica mais forte depois). ACABA QUANDO: o alvo cai a 0 PV, você descansa longamente, ou você usa a habilidade de novo em outro alvo. DICA: use isso no início do combate contra o inimigo mais perigoso."
     },
     {
       "titulo": "Arma de Pacto Aprimorada (Patrono Hexblade)",
-      "texto": "Pode usar Carisma em vez de Força/Destreza para ataques e dano com a arma de pacto."
+      "texto": "O QUE É: uma habilidade passiva (não precisa 'ativar', já está sempre funcionando). EFEITO: ao atacar com sua arma de pacto (Espada Longa), use seu modificador de Carisma em vez de Força ou Destreza pra calcular tanto o bônus de ataque quanto o de dano. Por isso seu +5 no ataque da espada vem do Carisma, não da Força."
     },
     {
       "titulo": "Sentido Divino (Paladino)",
-      "texto": "Detecta presenças celestiais, infernais ou mortas-vivas próximas (1d4+1 vezes/dia, bônus de Carisma)."
+      "texto": "O QUE É: um radar espiritual. COMO USAR: gaste 1 ação pra detectar se existe alguma criatura celestial, infernal (como demônios/diabos) ou morta-viva num raio de 18 metros, mesmo atrás de paredes finas (não atravessa metal grosso, pedra grossa ou chumbo). LIMITE DE USOS: 1d4+1 vezes por dia (role o dado uma vez quando criar a ficha pra saber seu total fixo, ou pergunte ao mestre se prefere fixar em 3 usos pra simplificar). RECARREGA: num descanso longo (8h dormindo)."
     },
     {
       "titulo": "Imposição das Mãos (Paladino)",
-      "texto": "Pool de cura de 10 PV (5 x nível de Paladino) por dia. Pode também curar uma doença ou neutralizar um veneno gastando 5 pontos."
+      "texto": "O QUE É: uma reserva de cura mágica que você carrega com você, tipo uma 'bateria' de pontos de vida. TOTAL DISPONÍVEL: 10 pontos por dia (recarrega num descanso longo). COMO USAR PRA CURAR: toque numa criatura (ação) e gaste quantos pontos da reserva quiser daquele toque — 1 ponto da reserva = 1 PV curado. Pode dividir entre vários toques ao longo do dia, não precisa gastar tudo de uma vez. OUTRO USO: gastando 5 pontos de uma vez, você pode curar uma doença ou neutralizar um veneno no alvo, em vez de curar PV."
     },
     {
       "titulo": "Estilo de Luta: Combate com Arma Grande (Paladino 2)",
-      "texto": "Ao rolar dano com uma arma corpo a corpo de duas mãos (ou versátil empunhada com as duas mãos), pode rerrolar resultados de 1 ou 2 nos dados de dano, uma vez por dado."
+      "texto": "O QUE É: uma habilidade passiva, sempre ativa, não precisa lembrar de usar. EFEITO: toda vez que você rolar os dados de dano da sua arma corpo a corpo de duas mãos (ou uma arma versátil, como a Espada Longa, empunhada com as duas mãos), se algum dado cair em 1 ou 2, você pode rerrolar aquele dado uma vez e fica com o novo resultado (mesmo que seja pior — mas estatisticamente compensa). EXEMPLO: você ataca, acerta, e rola 1d8 de dano da espada. Sai um 2. Você rerrola esse dado e agora sai um 6 — usa o 6."
     },
     {
       "titulo": "Smite Divino (Paladino 2)",
-      "texto": "Ao acertar um ataque corpo a corpo, pode gastar um espaço de magia para causar dano radiante extra: 2d8 (+1d8 se o alvo for morto-vivo ou aberração, +1d8 por nível do espaço acima do 1º, até 5d8)."
+      "texto": "O QUE É: a sua principal fonte de dano extra em combate corpo a corpo. COMO USAR: depois de ACERTAR um ataque corpo a corpo (a decisão é só depois de saber que acertou, não precisa decidir antes), você pode gastar 1 espaço de magia de Paladino pra causar dano radiante extra naquele ataque. DANO: gastando um espaço de 1º nível, causa 2d8 de dano radiante extra (+1d8 a mais se o alvo for morto-vivo ou aberração). Se gastar um espaço de nível mais alto, soma +1d8 por nível acima do 1º (até um máximo de 5d8 no total). VOCÊ TEM: 3 espaços de magia de Paladino de nível 1 por dia (recarregam num descanso longo). DICA: guarde pelo menos 1 espaço pra um Smite contra inimigos fortes — não precisa usar em qualquer ataque."
     },
     {
       "titulo": "Juramento de Vingança — Voto de Inimizade (Paladino 2)",
-      "texto": "Ação bônus: vantagem em jogadas de ataque contra uma criatura por 1 minuto, ou até o alvo cair a 0 PV/ficar inconsciente (usos limitados, recupera em descanso longo)."
+      "texto": "O QUE É: uma habilidade pra focar e perseguir um único alvo com mais eficiência. COMO USAR: gaste sua ação bônus e escolha uma criatura que você está vendo dentro de 18 metros. ENQUANTO DURAR (até 1 minuto): você tem vantagem (rola 2 dados de ataque e fica com o maior) em todas as jogadas de ataque contra esse alvo específico. TERMINA ANTES SE: o alvo cair a 0 PV ou ficar inconsciente — nesse caso você pode usar a habilidade de novo em outro alvo sem gastar um novo uso. USOS POR DIA: limitado (geralmente 1 vez, recarrega em descanso longo — confirme com seu mestre/ficha completa quantos usos você tem no nível atual)."
     },
     {
       "titulo": "Juramento de Vingança — Punições do Juramento (Paladino 2)",
-      "texto": "Magias de juramento sempre preparadas, sem ocupar espaço de magias conhecidas: Compelir Duelo e Ferimento Sagrado."
+      "texto": "O QUE É: magias extras que você ganha de graça só por ter feito o Juramento de Vingança. DIFERENÇA IMPORTANTE: elas NÃO ocupam uma vaga das suas magias conhecidas normais — é como um bônus à parte. VOCÊ AS TEM SEMPRE PREPARADAS: Compelir Duelo e Ferimento Sagrado (veja a descrição de cada uma na aba de Magias). Isso significa que você pode lançá-las a qualquer momento gastando um espaço de magia normal de Paladino, sem precisar 'escolher' prepará-las todo dia."
     }
   ],
 
