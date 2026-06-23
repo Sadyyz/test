@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jardim do Mestre — D&D Bankai</title>
+<title>Jardim do Mestre — Phantasos</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme="dark"]{
@@ -177,7 +177,7 @@ body::before{
     <div class="panel-head">
       <div>
         <div class="panel-title">⚔ Controle de Combate</div>
-        <div class="panel-sub">Monte a iniciativa e conduza o confronto em tempo real para os jogadores.</div>
+        <div class="panel-sub">Monte a ordem de iniciativa e conduza o confronto dos escritores.</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn" id="cb-add-player">+ Jogador</button>
@@ -215,8 +215,8 @@ body::before{
   <section class="panel" id="panel-bosses">
     <div class="panel-head">
       <div>
-        <div class="panel-title">☠ Bestiário</div>
-        <div class="panel-sub">Crie e gerencie as criaturas que os jogadores enfrentarão.</div>
+        <div class="panel-title">☠ Criaturas dos Contos</div>
+        <div class="panel-sub">Criaturas corrompidas dos contos que Mary Sue distorceu.</div>
       </div>
       <button class="btn primary" id="bs-new">+ Nova Criatura</button>
     </div>
@@ -234,7 +234,7 @@ body::before{
     <div class="panel-head">
       <div>
         <div class="panel-title">📜 Diário de Sessões</div>
-        <div class="panel-sub">Registre o que aconteceu em cada sessão e os recursos usados.</div>
+        <div class="panel-sub">Registre o que aconteceu em cada sessão — pistas, sanidade perdida, livros lidos.</div>
       </div>
       <button class="btn primary" id="dr-new">+ Nova Sessão</button>
     </div>
@@ -251,14 +251,14 @@ body::before{
   <section class="panel" id="panel-fichas">
     <div class="panel-head">
       <div>
-        <div class="panel-title">🧙 Aventureiros</div>
-        <div class="panel-sub">Visão geral de HP, CA e status de todos os personagens.</div>
+        <div class="panel-title">✒ Escritores</div>
+        <div class="panel-sub">Visão geral de Vida, Sanidade e Exposição dos escritores.</div>
       </div>
       <button class="btn btn-sm" id="fc-refresh">⟳ Atualizar</button>
     </div>
 
     <div id="fc-list-wrap">
-      <div class="loading-state">⧖ Reunindo os heróis…</div>
+      <div class="loading-state">⧖ Convocando os escritores…</div>
     </div>
   </section>
 
@@ -1466,7 +1466,7 @@ function fcHpPct(atual,max){ return Math.max(0,Math.min(100,((Number(atual)||0)/
 
 async function fcLoad(){
   const wrap = document.getElementById('fc-list-wrap');
-  wrap.innerHTML = `<div class="loading-state">⧖ Reunindo os heróis…</div>`;
+  wrap.innerHTML = `<div class="loading-state">⧖ Convocando os escritores…</div>`;
   let manifest = [];
   try{
     manifest = await loadFullManifest();
