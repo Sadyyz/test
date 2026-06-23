@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jardim do Mestre — Phantasos</title>
+<title>Jardim do Mestre — Phantasos — Jardim do Mestre</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme="dark"]{
@@ -177,7 +177,7 @@ body::before{
     <div class="panel-head">
       <div>
         <div class="panel-title">⚔ Controle de Combate</div>
-        <div class="panel-sub">Monte a ordem de iniciativa e conduza o confronto dos escritores.</div>
+        <div class="panel-sub">Monte a iniciativa e conduza o confronto em tempo real para os jogadores.</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn" id="cb-add-player">+ Jogador</button>
@@ -215,8 +215,8 @@ body::before{
   <section class="panel" id="panel-bosses">
     <div class="panel-head">
       <div>
-        <div class="panel-title">☠ Criaturas dos Contos</div>
-        <div class="panel-sub">Criaturas corrompidas dos contos que Mary Sue distorceu.</div>
+        <div class="panel-title">☠ Bestiário</div>
+        <div class="panel-sub">Crie e gerencie as criaturas que os jogadores enfrentarão.</div>
       </div>
       <button class="btn primary" id="bs-new">+ Nova Criatura</button>
     </div>
@@ -234,7 +234,7 @@ body::before{
     <div class="panel-head">
       <div>
         <div class="panel-title">📜 Diário de Sessões</div>
-        <div class="panel-sub">Registre o que aconteceu em cada sessão — pistas, sanidade perdida, livros lidos.</div>
+        <div class="panel-sub">Registre o que aconteceu em cada sessão e os recursos usados.</div>
       </div>
       <button class="btn primary" id="dr-new">+ Nova Sessão</button>
     </div>
@@ -251,14 +251,14 @@ body::before{
   <section class="panel" id="panel-fichas">
     <div class="panel-head">
       <div>
-        <div class="panel-title">✒ Escritores</div>
-        <div class="panel-sub">Visão geral de Vida, Sanidade e Exposição dos escritores.</div>
+        <div class="panel-title">🧙 Aventureiros</div>
+        <div class="panel-sub">Visão geral de HP, CA e status de todos os personagens.</div>
       </div>
       <button class="btn btn-sm" id="fc-refresh">⟳ Atualizar</button>
     </div>
 
     <div id="fc-list-wrap">
-      <div class="loading-state">⧖ Convocando os escritores…</div>
+      <div class="loading-state">⧖ Reunindo os heróis…</div>
     </div>
   </section>
 
@@ -322,22 +322,16 @@ body::before{
 // ── Tema ──────────────────────────────────────────────────────────────
 (function(){
   const btn=document.getElementById('theme-btn'),html=document.documentElement;
-  const saved=localStorage.getItem('dnd-theme')||'dark';
+  const saved=localStorage.getItem('phantasos-theme')||'dark';
   html.setAttribute('data-theme',saved);btn.textContent=saved==='dark'?'☀':'☽';
-  btn.addEventListener('click',()=>{const n=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',n);btn.textContent=n==='dark'?'☀':'☽';localStorage.setItem('dnd-theme',n);});
+  btn.addEventListener('click',()=>{const n=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',n);btn.textContent=n==='dark'?'☀':'☽';localStorage.setItem('phantasos-theme',n);});
 })();
 
-// ── Guarda de acesso: exige senha do index ──────────────────────────
+// ── Guarda de acesso: exige ter vindo pela senha do index ──────────────
 (function(){
-  if (!localStorage.getItem('phantasos-mestre-auth')) {
-    document.body.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:20px;font-family:'Cinzel',serif;">
-        <div style="font-size:1.4rem;color:var(--gold);letter-spacing:.1em;">🔮 Jardim do Mestre</div>
-        <div style="font-size:.6rem;color:var(--ink-dim);letter-spacing:.2em;text-transform:uppercase;">Acesso restrito</div>
-        <a href="index.html" style="color:var(--gold);font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;border:1px solid var(--gold-dim);padding:8px 20px;margin-top:8px;">⟵ Voltar ao início</a>
-      </div>`;
-    return;
-  }
+  // Mantemos simples e consistente com index.html: sem sessão própria,
+  // apenas redireciona se o usuário cair aqui sem nunca ter passado pelo portal.
+  // (index.html já faz o gate por senha antes de linkar para mestre.html)
 })();
 
 // ── Toast helper ─────────────────────────────────────────────────────
@@ -1012,9 +1006,7 @@ async function bsLoadAvatarPreview(id){
       if(d.avatar){
         bsAvatarDataUrl = d.avatar;
         const img = document.getElementById('bs-avatar-preview');
-        const ph = document.getElementById('bs-avatar-placeholder');
-        if(img){ img.src = d.avatar; img.style.display='block'; }
-        if(ph){ ph.style.display='none'; }
+        if(img) img.src = d.avatar;
       }
     }
   }catch{}
@@ -1120,46 +1112,14 @@ function bsRenderEditor(){
   document.getElementById('bs-editor-close').addEventListener('click', bsCloseEditor);
   document.getElementById('bs-editor-cancel').addEventListener('click', bsCloseEditor);
   document.getElementById('bs-editor-save').addEventListener('click', bsSaveEditor);
-  document.getElementById('bs-add-acao').addEventListener('click', ()=>{
-    const idx = s.acoes.length;
-    s.acoes.push({nome:'',dano:'',descricao:''});
-    const container = document.getElementById('bs-acoes-list');
-    // Remove "Nenhum item ainda." placeholder if present
-    if(container.querySelector('div[style*="font-style:italic"]')) container.innerHTML='';
-    const div = document.createElement('div');
-    div.innerHTML = bsListEditorRows([{nome:'',dano:'',descricao:''}],'acoes').replace(/data-idx="0"/g,`data-idx="${idx}"`);
-    const row = div.firstElementChild;
-    container.appendChild(row);
-    // Bind events on new row
-    row.querySelector('.bs-item-nome').addEventListener('input', e=>{ s.acoes[idx].nome=e.target.value; });
-    row.querySelector('.bs-item-dano').addEventListener('input', e=>{ s.acoes[idx].dano=e.target.value; });
-    row.querySelector('.bs-item-desc').addEventListener('input', e=>{ s.acoes[idx].descricao=e.target.value; });
-    row.querySelector('.bs-item-del').addEventListener('click', ()=>{ s.acoes.splice(idx,1); row.remove(); if(!container.children.length) container.innerHTML=bsListEditorRows([],'acoes'); });
-    row.querySelector('.bs-item-nome').focus();
-  });
-  document.getElementById('bs-add-habilidade').addEventListener('click', ()=>{
-    const idx = s.habilidades.length;
-    s.habilidades.push({nome:'',descricao:''});
-    const container = document.getElementById('bs-habilidades-list');
-    if(container.querySelector('div[style*="font-style:italic"]')) container.innerHTML='';
-    const div = document.createElement('div');
-    div.innerHTML = bsListEditorRows([{nome:'',descricao:''}],'habilidades').replace(/data-idx="0"/g,`data-idx="${idx}"`);
-    const row = div.firstElementChild;
-    container.appendChild(row);
-    row.querySelector('.bs-item-nome').addEventListener('input', e=>{ s.habilidades[idx].nome=e.target.value; });
-    row.querySelector('.bs-item-desc').addEventListener('input', e=>{ s.habilidades[idx].descricao=e.target.value; });
-    row.querySelector('.bs-item-del').addEventListener('click', ()=>{ s.habilidades.splice(idx,1); row.remove(); if(!container.children.length) container.innerHTML=bsListEditorRows([],'habilidades'); });
-    row.querySelector('.bs-item-nome').focus();
-  });
+  document.getElementById('bs-add-acao').addEventListener('click', ()=>{ s.acoes.push({nome:'',descricao:''}); bsRenderEditor(); });
+  document.getElementById('bs-add-habilidade').addEventListener('click', ()=>{ s.habilidades.push({nome:'',descricao:''}); bsRenderEditor(); });
 
   el.querySelectorAll('.bs-item-del').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const kind = btn.dataset.kind, idx = Number(btn.dataset.idx);
       s[kind].splice(idx,1);
-      const row = btn.closest(`.bs-${kind}-row`);
-      const container = row.parentElement;
-      row.remove();
-      if(!container.children.length) container.innerHTML=bsListEditorRows([],kind);
+      bsRenderEditor();
     });
   });
   el.querySelectorAll('.bs-item-nome').forEach(inp=>{
@@ -1472,7 +1432,7 @@ function fcHpPct(atual,max){ return Math.max(0,Math.min(100,((Number(atual)||0)/
 
 async function fcLoad(){
   const wrap = document.getElementById('fc-list-wrap');
-  wrap.innerHTML = `<div class="loading-state">⧖ Convocando os escritores…</div>`;
+  wrap.innerHTML = `<div class="loading-state">⧖ Reunindo os heróis…</div>`;
   let manifest = [];
   try{
     manifest = await loadFullManifest();
@@ -1505,31 +1465,68 @@ async function fcLoad(){
   }
 
   wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">${fichas.map(p=>{
-    const core = p.core || {};
-    const hpAtual = Number(core.hpAtual)||0, hpMax = Number(core.hpMax)||1;
-    const pct = fcHpPct(hpAtual, hpMax);
-    const subtitulo = [p.nivel?`Nível ${p.nivel}`:'', p.classe||''].filter(Boolean).join(' · ');
+    const san = p.sanidade || {};
+    const vida = p.vida || {};
+    const sanAtual = Number(san.atual ?? 100), sanMax = Number(san.max || 100);
+    const vidaAtual = Number(vida.atual ?? 10), vidaMax = Number(vida.max || 10);
+    const sanPct  = Math.max(0,Math.min(100,Math.round((sanAtual/sanMax)*100)));
+    const vidaPct = Math.max(0,Math.min(100,Math.round((vidaAtual/vidaMax)*100)));
+    const obraAtivada = !!p.obra_ativada;
     const avatarEl = p._avatarSrc
       ? `<img src="${p._avatarSrc}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top">`
-      : `<span style="font-size:2.2rem;opacity:.3;color:var(--gold)">⚔</span>`;
-    return `<a class="box" href="ficha.html?id=${esc(p.id)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:block;padding:0;overflow:hidden;transition:all .25s">
-      <div style="height:90px;background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden">${avatarEl}</div>
-      <div style="padding:14px 16px">
-        <div style="font-family:'Cinzel',serif;font-size:.88rem;letter-spacing:.06em;color:var(--gold-lt)">${esc(p.nome||'Aventureiro')}</div>
-        ${subtitulo?`<div style="font-size:.74rem;color:var(--ink-dim);font-style:italic;margin:2px 0 10px">${esc(subtitulo)}</div>`:'<div style="margin-bottom:10px"></div>'}
-        <div style="display:flex;gap:14px;margin-bottom:10px">
-          ${core.ca?`<div style="text-align:center"><div style="font-family:'Cinzel',serif;font-size:.95rem">${core.ca}</div><div style="font-size:.5rem;letter-spacing:.2em;color:var(--ink-dim);text-transform:uppercase">CA</div></div>`:''}
-          ${core.iniciativa!==undefined?`<div style="text-align:center"><div style="font-family:'Cinzel',serif;font-size:.95rem">${core.iniciativa>=0?'+':''}${core.iniciativa}</div><div style="font-size:.5rem;letter-spacing:.2em;color:var(--ink-dim);text-transform:uppercase">Init</div></div>`:''}
+      : `<span style="font-size:2.2rem;opacity:.3;color:var(--gold)">✒</span>`;
+    return `<div class="box fc-card" data-id="${esc(p.id)}" style="padding:0;overflow:hidden;transition:all .25s;cursor:default">
+      <a href="ficha.html?id=${esc(p.id)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:block">
+        <div style="height:80px;background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden">${avatarEl}</div>
+        <div style="padding:12px 14px 8px">
+          <div style="font-family:'Cinzel',serif;font-size:.88rem;letter-spacing:.06em;color:var(--gold-lt)">${esc(p.nome||'Escritor')}</div>
+          ${p.genero_principal?`<div style="font-size:.68rem;color:var(--ink-dim);font-style:italic;margin:2px 0 8px">Gênero: ${esc(p.genero_principal)}</div>`:'<div style="margin-bottom:8px"></div>'}
+          <div style="font-size:.68rem;color:var(--ink-2);margin-bottom:2px">Sanidade ${sanAtual}/${sanMax}</div>
+          <div style="height:4px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px"><div style="height:100%;width:${sanPct}%;background:${sanPct>60?'#2a7a40':sanPct>25?'#8a5010':'#7a1020'};transition:width .4s"></div></div>
+          <div style="font-size:.68rem;color:var(--ink-2);margin-bottom:2px">Vida ${vidaAtual}/${vidaMax}</div>
+          <div style="height:4px;background:var(--bg2);border:1px solid var(--border)"><div style="height:100%;width:${vidaPct}%;background:#7a1828;transition:width .4s"></div></div>
         </div>
-        <div style="font-size:.78rem;color:var(--ink-2);margin-bottom:4px">${hpAtual} / ${hpMax} HP</div>
-        <div style="height:5px;background:var(--bg2);border:1px solid var(--border)"><div style="height:100%;width:${pct}%;background:${fcHpColor(pct)}"></div></div>
+      </a>
+      <div style="padding:8px 14px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="font-family:'Cinzel',serif;font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim)">Obra Inacabada</div>
+        <button class="btn-obra-toggle btn-obra-${obraAtivada?'on':'off'}" data-obra-id="${esc(p.id)}" data-obra-ativa="${obraAtivada}"
+          style="font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.18em;text-transform:uppercase;padding:5px 10px;border:1px solid ${obraAtivada?'var(--crimson-lt)':'var(--border)'};background:${obraAtivada?'rgba(122,24,40,.15)':'transparent'};color:${obraAtivada?'var(--crimson-lt)':'var(--ink-dim)'};cursor:pointer;transition:all .25s;">
+          ${obraAtivada ? '✦ Ativada' : '◌ Dormente'}
+        </button>
       </div>
-    </a>`;
+    </div>`;
   }).join('')}</div>`;
 
-  wrap.querySelectorAll('.box').forEach(card=>{
+  wrap.querySelectorAll('.fc-card').forEach(card=>{
     card.addEventListener('mouseenter',()=>{card.style.borderColor='var(--gold)';});
     card.addEventListener('mouseleave',()=>{card.style.borderColor='var(--border)';});
+  });
+
+  // Botões de ativar/desativar obra
+  wrap.querySelectorAll('.btn-obra-toggle').forEach(btn=>{
+    btn.addEventListener('click', async e=>{
+      e.stopPropagation();
+      const id = btn.dataset.obraId;
+      const novoEstado = btn.dataset.obraAtiva === 'true' ? false : true;
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        const r = await fetch(`/api/obra?id=${id}`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ativada: novoEstado })
+        });
+        if (!r.ok) throw new Error();
+        btn.dataset.obraAtiva = String(novoEstado);
+        btn.textContent = novoEstado ? '✦ Ativada' : '◌ Dormente';
+        btn.style.borderColor = novoEstado ? 'var(--crimson-lt)' : 'var(--border)';
+        btn.style.color       = novoEstado ? 'var(--crimson-lt)' : 'var(--ink-dim)';
+        btn.style.background  = novoEstado ? 'rgba(122,24,40,.15)' : 'transparent';
+        toast(novoEstado ? `Obra de ${id} ativada!` : `Obra de ${id} dormente.`);
+      } catch {
+        toast('Erro ao alterar estado da obra.', true);
+        btn.textContent = novoEstado ? '◌ Dormente' : '✦ Ativada'; // revert display
+      }
+      btn.disabled = false;
+    });
   });
 }
 
