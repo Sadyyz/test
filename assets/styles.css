@@ -886,3 +886,71 @@ span.char-tag { cursor: default; }
    BLINK & MISC
    ========================================================= */
 @keyframes blink { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+/* ── Dados — animações ── */
+@keyframes dieRoll {
+  0%   { transform: scale(1) rotate(0deg); }
+  15%  { transform: scale(1.25) rotate(-20deg); }
+  35%  { transform: scale(1.15) rotate(15deg); }
+  55%  { transform: scale(1.2) rotate(-10deg); }
+  75%  { transform: scale(1.1) rotate(8deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.die.roll { animation: dieRoll .55s cubic-bezier(.2,1.4,.4,1) both; }
+
+@keyframes countingFlicker {
+  0%,100% { opacity: 1; } 50% { opacity: .4; }
+}
+.dice-result.rolling-counting {
+  animation: countingFlicker .11s linear infinite;
+  color: var(--ink-dim);
+  font-size: 2.4rem;
+}
+
+@keyframes revealPop {
+  0%   { transform: scale(.6); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.dice-result.reveal { animation: revealPop .35s cubic-bezier(.2,1.4,.4,1) both; }
+
+.dice-result.vantagem-result {
+  color: var(--teal-lt);
+  animation: revealPop .35s cubic-bezier(.2,1.4,.4,1) both;
+}
+.dice-result.desvantagem-result {
+  color: var(--crimson-lt);
+  animation: revealPop .35s cubic-bezier(.2,1.4,.4,1) both;
+}
+
+/* CRÍTICO */
+@keyframes criticoPop {
+  0%   { transform: scale(.4) rotate(-12deg); opacity: 0; text-shadow: none; }
+  40%  { transform: scale(1.4) rotate(4deg);  opacity: 1; }
+  60%  { transform: scale(.95) rotate(-2deg); }
+  80%  { transform: scale(1.08) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg);
+         text-shadow: 0 0 30px var(--gold), 0 0 60px rgba(200,160,40,.5); }
+}
+.dice-result.critico {
+  color: var(--gold);
+  animation: criticoPop .6s cubic-bezier(.2,1.4,.4,1) both;
+  text-shadow: 0 0 30px var(--gold), 0 0 60px rgba(200,160,40,.5);
+}
+
+@keyframes critText {
+  0%   { opacity: 0; letter-spacing: .5em; }
+  100% { opacity: 1; letter-spacing: .2em; }
+}
+
+/* FUMBLE */
+@keyframes fumblePop {
+  0%   { transform: scale(1.2); opacity: 0; }
+  30%  { transform: scale(.85) rotate(8deg); opacity: 1; }
+  60%  { transform: scale(1.05) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.dice-result.fumble {
+  color: var(--crimson-lt);
+  animation: fumblePop .5s cubic-bezier(.2,1,.4,1) both;
+}

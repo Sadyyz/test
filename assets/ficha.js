@@ -174,6 +174,7 @@ function defaultState() {
     atributos: { razao: 1, vigor: 1, vontade: 1, expressao: 1 },
     pericias,
     sanidade: { atual: 100, max: 100 },
+    vida: { atual: 10, max: 10 },
     exposicao: 0,
     ca: 10,
     iniciativa: 0,
@@ -478,6 +479,27 @@ function render() {
               <button class="exp-btn" data-expdelta="1">+ 1</button>
               <button class="exp-btn" data-expdelta="3">+ 3</button>
               <button class="exp-btn" data-expdelta="5">+ 5</button>
+            </div>
+          </div>
+
+          <div class="section-label">Vida</div>
+          <div class="sanidade-block" style="border-color:var(--crimson);">
+            <div class="sanidade-label-row">
+              <span class="sanidade-label" style="color:var(--crimson-lt);">Pontos de Vida</span>
+              <div class="sanidade-nums">
+                <input type="number" min="0" max="${s.vida?.max || 20}" value="${s.vida?.atual ?? s.vida?.max ?? 10}" data-vida="atual">
+                <span class="sanidade-sep">/</span>
+                <input type="number" min="0" max="999" value="${s.vida?.max ?? 10}" data-vida="max">
+              </div>
+            </div>
+            <div class="sanidade-bar-wrap">
+              <div id="vida-bar" style="height:100%;background:var(--crimson-lt);transition:width .4s ease;width:${Math.max(0,Math.min(100,Math.round(((s.vida?.atual ?? s.vida?.max ?? 10) / (s.vida?.max || 10)) * 100)))}%"></div>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button class="exp-btn" data-vidadelta="-1" style="color:var(--crimson-lt);border-color:var(--crimson);">− 1</button>
+              <button class="exp-btn" data-vidadelta="-5" style="color:var(--crimson-lt);border-color:var(--crimson);">− 5</button>
+              <button class="exp-btn" data-vidadelta="1" style="color:#4a8a40;border-color:#4a8a40;">+ 1</button>
+              <button class="exp-btn" data-vidadelta="5" style="color:#4a8a40;border-color:#4a8a40;">+ 5</button>
             </div>
           </div>
 
@@ -802,6 +824,26 @@ function attachEvents() {
     scheduleSave();
   }));
 
+  // Vida inputs
+  document.querySelectorAll('[data-vida]').forEach(el => el.addEventListener('input', () => {
+    if (!state.vida) state.vida = { atual: 10, max: 10 };
+    state.vida[el.dataset.vida] = Math.max(0, parseInt(el.value) || 0);
+    const bar = document.getElementById('vida-bar');
+    if (bar) {
+      const pct = Math.max(0, Math.min(100, Math.round((state.vida.atual / (state.vida.max || 1)) * 100)));
+      bar.style.width = pct + '%';
+    }
+    scheduleSave();
+  }));
+
+  // Vida delta
+  document.querySelectorAll('[data-vidadelta]').forEach(el => el.addEventListener('click', () => {
+    if (!state.vida) state.vida = { atual: 10, max: 10 };
+    const d = parseInt(el.dataset.vidadelta);
+    state.vida.atual = Math.max(0, Math.min(state.vida.max, state.vida.atual + d));
+    render(); scheduleSave();
+  }));
+
   // Exposição
   document.querySelectorAll('[data-expdelta]').forEach(el => el.addEventListener('click', () => {
     const d = parseInt(el.dataset.expdelta);
@@ -886,34 +928,110 @@ function attachEvents() {
 
   document.querySelectorAll('[data-die]').forEach(el => el.addEventListener('click', () => {
     const d = parseInt(el.dataset.die);
+    const isCrit20 = d === 20;
+
+    // Animação do hexágono: spin rápido
     el.classList.remove('roll'); void el.offsetWidth; el.classList.add('roll');
-    const r1 = Math.floor(Math.random() * d) + 1;
-    let result, detail = '';
-    if (rollMode === 'vantagem') {
-      const r2 = Math.floor(Math.random() * d) + 1;
-      result = Math.max(r1, r2);
-      detail = `<span class="dice-roll-detail vantagem">↑ [${result} <s>${Math.min(r1,r2)}</s>] d${d} com vantagem</span>`;
-    } else if (rollMode === 'desvantagem') {
-      const r2 = Math.floor(Math.random() * d) + 1;
-      result = Math.min(r1, r2);
-      detail = `<span class="dice-roll-detail desvantagem">↓ [${result} <s>${Math.max(r1,r2)}</s>] d${d} com desvantagem</span>`;
-    } else {
-      result = r1;
-      detail = `<span class="dice-roll-detail">d${d}</span>`;
-    }
+
+    // Contador animado antes de revelar o resultado
     const res = document.getElementById('dice-result');
-    res.textContent = result;
-    res.className = rollMode === 'vantagem' ? 'rolling vantagem-result' : rollMode === 'desvantagem' ? 'rolling desvantagem-result' : 'rolling';
-    void res.offsetWidth;
     const det = document.getElementById('dice-detail');
-    if (det) det.innerHTML = detail;
-    const log = document.getElementById('dice-log');
-    const entry = document.createElement('div');
-    entry.textContent = `d${d} → ${result}`;
-    if (rollMode === 'vantagem') entry.style.color = 'var(--teal-lt)';
-    if (rollMode === 'desvantagem') entry.style.color = 'var(--crimson-lt)';
-    log.prepend(entry);
+    res.className = 'dice-result rolling-counting';
+    res.textContent = '…';
+    det.innerHTML = '';
+
+    let ticks = 0;
+    const tickMax = 10;
+    const tickInterval = setInterval(() => {
+      ticks++;
+      res.textContent = Math.floor(Math.random() * d) + 1;
+      if (ticks >= tickMax) {
+        clearInterval(tickInterval);
+
+        // Resultado real
+        const r1 = Math.floor(Math.random() * d) + 1;
+        let result, detail = '', isCritical = false, isFumble = false;
+
+        if (rollMode === 'vantagem') {
+          const r2 = Math.floor(Math.random() * d) + 1;
+          result = Math.max(r1, r2);
+          isCritical = isCrit20 && result === 20;
+          detail = `↑ [${result} <s style="opacity:.4">${Math.min(r1,r2)}</s>] · d${d} com vantagem`;
+        } else if (rollMode === 'desvantagem') {
+          const r2 = Math.floor(Math.random() * d) + 1;
+          result = Math.min(r1, r2);
+          isFumble = isCrit20 && result === 1;
+          detail = `↓ [${result} <s style="opacity:.4">${Math.max(r1,r2)}</s>] · d${d} com desvantagem`;
+        } else {
+          result = r1;
+          isCritical = isCrit20 && result === 20;
+          isFumble = isCrit20 && result === 1;
+          detail = `d${d}`;
+        }
+
+        if (isCritical) {
+          res.textContent = result;
+          res.className = 'dice-result critico';
+          det.innerHTML = `<span style="color:var(--gold);letter-spacing:.2em;font-family:'Cinzel',serif;font-size:.75rem;animation:critText .4s ease both">✦ CRÍTICO ✦</span>`;
+          dispararCritico();
+        } else if (isFumble) {
+          res.textContent = result;
+          res.className = 'dice-result fumble';
+          det.innerHTML = `<span style="color:var(--crimson-lt);letter-spacing:.2em;font-family:'Cinzel',serif;font-size:.75rem">✕ FALHA CRÍTICA ✕</span>`;
+        } else {
+          res.textContent = result;
+          res.className = rollMode === 'vantagem' ? 'dice-result vantagem-result' : rollMode === 'desvantagem' ? 'dice-result desvantagem-result' : 'dice-result reveal';
+          det.innerHTML = `<span style="color:var(--ink-dim)">${detail}</span>`;
+        }
+
+        // Log
+        const log = document.getElementById('dice-log');
+        const entry = document.createElement('div');
+        entry.style.cssText = 'padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;';
+        entry.innerHTML = `<span>d${d}</span><span style="color:${isCritical?'var(--gold)':isFumble?'var(--crimson-lt)':rollMode==='vantagem'?'var(--teal-lt)':rollMode==='desvantagem'?'var(--crimson-lt)':'var(--ink)'}">${isCritical?'✦ ':isFumble?'✕ ':''}${result}</span>`;
+        log.prepend(entry);
+      }
+    }, 55);
   }));
+
+  function dispararCritico() {
+    // Cria partículas de crítico ao redor do resultado
+    const panel = document.querySelector('[data-panel="dados"].active');
+    if (!panel) return;
+    const resultEl = document.getElementById('dice-result');
+    if (!resultEl) return;
+    const rect = resultEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    for (let i = 0; i < 18; i++) {
+      const spark = document.createElement('div');
+      spark.style.cssText = `
+        position:fixed;z-index:9999;pointer-events:none;
+        left:${cx}px;top:${cy}px;
+        width:${3 + Math.random()*4}px;height:${3 + Math.random()*4}px;
+        border-radius:50%;
+        background:${Math.random()>.5?'var(--gold)':'var(--gold-lt)'};
+        box-shadow:0 0 6px var(--gold);
+      `;
+      document.body.appendChild(spark);
+      const angle = (i / 18) * Math.PI * 2 + (Math.random() - .5) * .5;
+      const dist = 60 + Math.random() * 80;
+      const tx = Math.cos(angle) * dist;
+      const ty = Math.sin(angle) * dist;
+      spark.animate([
+        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
+      ], { duration: 600 + Math.random() * 400, easing: 'cubic-bezier(.2,1,.4,1)', fill: 'forwards' })
+        .onfinish = () => spark.remove();
+    }
+
+    // Flash na tela
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;background:radial-gradient(ellipse at center,rgba(200,160,40,.18) 0%,transparent 70%);';
+    document.body.appendChild(flash);
+    flash.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: 'forwards' }).onfinish = () => flash.remove();
+  }
 
   // Historia
   attachHistoriaEvents();
@@ -1030,6 +1148,7 @@ async function saveState() {
 
   // Garante campos novos em fichas antigas
   if (!state.sanidade) state.sanidade = { atual: 100, max: 100 };
+  if (!state.vida) state.vida = { atual: 10, max: 10 };
   if (state.exposicao === undefined) state.exposicao = 0;
   if (!state.pericias) {
     state.pericias = {};
