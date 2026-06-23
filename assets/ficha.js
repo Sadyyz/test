@@ -130,7 +130,60 @@ const PERICIAS_DEF = {
   'Ident. de Corrupção':       { attr: 'expressao' },
 };
 
-const GENEROS = ['Terror', 'Suspense', 'Romance', 'Aventura', 'Tragédia'];
+const GENEROS = ['Drama', 'Investigação', 'Romance', 'Suspense', 'Aventura', 'Fantasia'];
+
+// Bônus de perícias e debuffs de combate por gênero
+const GENERO_RULES = {
+  'Drama': {
+    cor: '#8a4070',
+    bonus_pericias: ['Resiliência', 'Foco'],
+    debuff_combate: 'Penalidade de -2 em Iniciativa',
+    desc_bonus: 'Escritores de Drama suportam pressão emocional com mais firmeza.',
+    desc_debuff: 'Conflito físico os paralisa — -2 em Iniciativa em combate.',
+  },
+  'Investigação': {
+    cor: '#4a70a0',
+    bonus_pericias: ['Investigação', 'Ident. de Corrupção'],
+    debuff_combate: 'Penalidade de -2 em CA',
+    desc_bonus: 'Mentes investigativas percebem o que outros ignoram.',
+    desc_debuff: 'Preferem observar a reagir — -2 em CA durante combate.',
+  },
+  'Romance': {
+    cor: '#a04060',
+    bonus_pericias: ['Leitura de Contos', 'Interpretação Narrativa'],
+    debuff_combate: 'Penalidade de -1d4 em dano causado',
+    desc_bonus: 'Leitores de emoção decifram narrativas com mais intuição.',
+    desc_debuff: 'Relutam em ferir — -1d4 no dano causado em combate.',
+  },
+  'Suspense': {
+    cor: '#507050',
+    bonus_pericias: ['Furtividade', 'Resist. ao Paranormal'],
+    debuff_combate: 'Penalidade de -2 em testes de Vigor',
+    desc_bonus: 'Vivem no fio da navalha — furtividade e controle sob pressão.',
+    desc_debuff: 'Preferem evitar o confronto direto — -2 em testes de Vigor.',
+  },
+  'Aventura': {
+    cor: '#806030',
+    bonus_pericias: ['Sobrevivência', 'Luta'],
+    debuff_combate: 'Penalidade de -2 em testes de Expressão ao ler livros em combate',
+    desc_bonus: 'Corpos treinados para resistir ao que o mundo joga contra eles.',
+    desc_debuff: 'Agir com a cabeça em combate é difícil — -2 em Expressão ao ler livros sob pressão.',
+  },
+  'Fantasia': {
+    cor: '#604080',
+    bonus_pericias: ['Ocultismo', 'Escrita'],
+    debuff_combate: 'Penalidade de -3 em testes de Razão contra ilusões do conto',
+    desc_bonus: 'Familiarizados com o impossível — ocultismo e escrita fluem naturalmente.',
+    desc_debuff: 'O mundo dos contos os confunde mais — -3 em Razão contra ilusões.',
+  },
+};
+
+// Custo de sanidade ao ler livros por compatibilidade de gênero
+function custoSanidadeLeitura(generoLivro, generoPrincipal, generoFraqueza) {
+  if (generoLivro === generoPrincipal) return '−2 Sanidade (gênero familiar)';
+  if (generoLivro === generoFraqueza)  return '−8 Sanidade (gênero fraqueza)';
+  return '−5 Sanidade (gênero neutro)';
+}
 
 const SANIDADE_ESTAGIOS = [
   { min: 81,  max: 100, nome: 'Estável',        cor: 'alto' },
@@ -167,7 +220,7 @@ function defaultState() {
   return {
     nome: '',
     subtitulo: '',
-    genero_principal: 'Terror',
+    genero_principal: 'Investigação',
     genero_fraqueza: 'Romance',
     obra_titulo: '',
     obra_descricao: '',
@@ -531,14 +584,30 @@ function render() {
               <select class="genero-select" data-field="genero_principal">
                 ${GENEROS.map(g => `<option value="${g}" ${s.genero_principal === g ? 'selected' : ''}>${g}</option>`).join('')}
               </select>
+              ${s.genero_principal && GENERO_RULES[s.genero_principal] ? `
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                  <div style="font-family:'Cinzel',serif;font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-lt);margin-bottom:3px;">✦ Bônus</div>
+                  <div style="font-size:.72rem;color:var(--ink-2);line-height:1.5;">${GENERO_RULES[s.genero_principal].bonus_pericias.join(', ')}</div>
+                  <div style="font-size:.65rem;color:var(--ink-dim);margin-top:2px;font-style:italic;">${GENERO_RULES[s.genero_principal].desc_bonus}</div>
+                </div>` : ''}
             </div>
             <div class="genero-card fraqueza">
               <span class="genero-titulo">Fraqueza Narrativa</span>
               <select class="genero-select" data-field="genero_fraqueza">
                 ${GENEROS.map(g => `<option value="${g}" ${s.genero_fraqueza === g ? 'selected' : ''}>${g}</option>`).join('')}
               </select>
+              ${s.genero_fraqueza && GENERO_RULES[s.genero_fraqueza] ? `
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                  <div style="font-family:'Cinzel',serif;font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;color:var(--crimson-lt);margin-bottom:3px;">✕ Debuff em Combate</div>
+                  <div style="font-size:.72rem;color:var(--ink-2);line-height:1.5;">${GENERO_RULES[s.genero_fraqueza].debuff_combate}</div>
+                  <div style="font-size:.65rem;color:var(--ink-dim);margin-top:2px;font-style:italic;">${GENERO_RULES[s.genero_fraqueza].desc_debuff}</div>
+                </div>` : ''}
             </div>
           </div>
+          ${s.genero_principal && s.genero_fraqueza && s.genero_principal === s.genero_fraqueza ? `
+            <div style="margin-top:6px;padding:8px 12px;border:1px solid var(--gold);background:var(--gold-dim);font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;">
+              ⚠ Gênero Principal e Fraqueza iguais — debuffs dobrados ao ler livros deste gênero
+            </div>` : ''}
 
           <div class="section-label">Obra Inacabada</div>
           <div class="obra-card">
@@ -571,13 +640,16 @@ function render() {
     <!-- ABA: ACERVO -->
     <div class="tab-panel" data-panel="acervo">
       <div class="section-label">Livros do Acervo</div>
-      ${s.livros?.length ? s.livros.map((l, i) => `
+      ${s.livros?.length ? s.livros.map((l, i) => {
+        const custoAuto = custoSanidadeLeitura(l.genero, s.genero_principal, s.genero_fraqueza);
+        const corCusto = l.genero === s.genero_fraqueza ? 'var(--crimson-lt)' : l.genero === s.genero_principal ? 'var(--teal-lt)' : 'var(--ink-dim)';
+        return `
         <div class="livro-item" id="livro-${i}">
           <div class="livro-header" data-livro="${i}">
             <div class="livro-dot"></div>
             <div class="livro-titulo">${esc(l.titulo)}</div>
             <div class="livro-genero">${esc(l.genero)}</div>
-            ${l.custo ? `<div class="livro-custo">${esc(l.custo)}</div>` : ''}
+            <div class="livro-custo" style="color:${corCusto}">${custoAuto}</div>
             <div class="item-actions">
               <button class="btn-edit-item" data-edit-livro="${i}" title="Editar">✎</button>
               <button class="btn-del-item" data-del-livro="${i}" title="Remover">✕</button>
@@ -589,7 +661,7 @@ function render() {
             ${l.conto ? `<div style="margin-bottom:8px;font-style:italic;color:var(--ink-2);">${esc(l.conto)}</div>` : ''}
             ${l.efeito ? `<div style="color:var(--gold-lt);font-size:.78rem;"><strong>Efeito:</strong> ${esc(l.efeito)}</div>` : ''}
           </div>
-        </div>`).join('')
+        </div>`}).join('')
       : `<div class="empty-hint">Nenhum livro no acervo.</div>`}
       <button class="btn-add-skill" id="btn-add-livro"><span class="btn-icon">+</span> Adicionar Livro</button>
     </div>
@@ -822,6 +894,7 @@ function attachEvents() {
       bar.style.width = pct + '%';
       bar.className = 'sanidade-bar ' + est.cor;
     }
+    atualizarEfeitosHorror();
     scheduleSave();
   }));
 
@@ -829,6 +902,7 @@ function attachEvents() {
   document.querySelectorAll('[data-vida]').forEach(el => el.addEventListener('input', () => {
     if (!state.vida) state.vida = { atual: 10, max: 10 };
     state.vida[el.dataset.vida] = Math.max(0, parseInt(el.value) || 0);
+    atualizarEfeitosHorror();
     const bar = document.getElementById('vida-bar');
     if (bar) {
       const pct = Math.max(0, Math.min(100, Math.round((state.vida.atual / (state.vida.max || 1)) * 100)));
@@ -842,6 +916,7 @@ function attachEvents() {
     if (!state.vida) state.vida = { atual: 10, max: 10 };
     const d = parseInt(el.dataset.vidadelta);
     state.vida.atual = Math.max(0, Math.min(state.vida.max, state.vida.atual + d));
+    atualizarEfeitosHorror();
     render(); scheduleSave();
   }));
 
@@ -1095,7 +1170,182 @@ function attachRelEventDelegation() {
 }
 
 // ══════════════════════════════════════════════════
-//  SAVE / LOAD
+//  EFEITOS DE HORROR — SANIDADE E VIDA
+// ══════════════════════════════════════════════════
+
+let _horrorInterval = null;
+let _breathInterval = null;
+const _alucinacoes = [
+  'ela está reescrevendo',
+  'você não escolheu estar aqui',
+  'o final já foi escrito',
+  'Marisul',
+  'não foi',
+  'pages that bleed',
+  'o conto vence',
+  'você é personagem',
+  '✦',
+  'leia',
+  'o manuscrito já terminou',
+  'quem segura a pena?',
+];
+
+function atualizarEfeitosHorror() {
+  const san = state?.sanidade?.atual ?? 100;
+  const vida = state?.vida?.atual ?? 10;
+  const vidaMax = state?.vida?.max ?? 10;
+  const vidaPct = vidaMax > 0 ? (vida / vidaMax) * 100 : 100;
+
+  // ── SANIDADE BAIXA (≤ 20) ─────────────────────
+  if (san <= 20) {
+    if (!_horrorInterval) iniciarHorrorSanidade(san);
+    else atualizarIntensidadeHorror(san);
+  } else {
+    pararHorrorSanidade();
+  }
+
+  // ── VIDA BAIXA (≤ 25%) ────────────────────────
+  if (vidaPct <= 25) {
+    iniciarEfeitoVida(vidaPct);
+  } else {
+    pararEfeitoVida();
+  }
+}
+
+// ── SANIDADE ──────────────────────────────────────
+function iniciarHorrorSanidade(san) {
+  let overlay = document.getElementById('horror-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'horror-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9000;overflow:hidden;';
+    document.body.appendChild(overlay);
+  }
+
+  _horrorInterval = setInterval(() => {
+    const s = state?.sanidade?.atual ?? 100;
+    const intensidade = Math.max(0, (20 - s) / 20); // 0 a 1
+
+    // Glitch na tela
+    if (Math.random() < 0.3 + intensidade * 0.5) {
+      dispararGlitch(intensidade);
+    }
+
+    // Texto alucinógeno
+    if (Math.random() < 0.15 + intensidade * 0.35) {
+      dispararTextoAlucinogeno(overlay, intensidade);
+    }
+
+    // Vinheta pulsante vermelha
+    atualizarVinheta(intensidade);
+
+  }, 800 - intensidade * 500);
+}
+
+function atualizarIntensidadeHorror(san) {
+  clearInterval(_horrorInterval);
+  iniciarHorrorSanidade(san);
+}
+
+function pararHorrorSanidade() {
+  clearInterval(_horrorInterval);
+  _horrorInterval = null;
+  const overlay = document.getElementById('horror-overlay');
+  if (overlay) overlay.innerHTML = '';
+  const v = document.getElementById('vinheta-horror');
+  if (v) v.remove();
+  const g = document.getElementById('glitch-style');
+  if (g) g.remove();
+}
+
+function dispararGlitch(intensidade) {
+  let style = document.getElementById('glitch-style');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'glitch-style';
+    document.head.appendChild(style);
+  }
+
+  const tx1 = (Math.random() - .5) * 12 * intensidade;
+  const tx2 = (Math.random() - .5) * 8 * intensidade;
+  const dur = 80 + Math.random() * 120;
+
+  style.textContent = `
+    @keyframes glitchNow {
+      0%   { transform: translate(0); clip-path: none; filter: none; }
+      20%  { transform: translate(${tx1}px, 0); clip-path: inset(${Math.random()*30}% 0 ${Math.random()*30}% 0); filter: hue-rotate(${Math.random()*60}deg); }
+      40%  { transform: translate(${tx2}px, 0); clip-path: inset(${Math.random()*20}% 0 ${Math.random()*40}% 0); }
+      60%  { transform: translate(${-tx1*.5}px, 0); filter: hue-rotate(${-Math.random()*40}deg) brightness(1.2); }
+      80%  { transform: translate(0); clip-path: none; }
+      100% { transform: translate(0); filter: none; clip-path: none; }
+    }
+    body { animation: glitchNow ${dur}ms steps(1) both; }
+  `;
+  setTimeout(() => { if (style.parentNode) style.textContent = ''; }, dur + 50);
+}
+
+function dispararTextoAlucinogeno(overlay, intensidade) {
+  const txt = document.createElement('div');
+  const frase = _alucinacoes[Math.floor(Math.random() * _alucinacoes.length)];
+  const x = Math.random() * 90;
+  const y = Math.random() * 85;
+  const sz = 0.55 + Math.random() * 0.6 * intensidade;
+  const alpha = 0.3 + intensidade * 0.5;
+
+  txt.style.cssText = `
+    position:absolute;
+    left:${x}%;top:${y}%;
+    font-family:'IM Fell English',serif;
+    font-size:${sz}rem;
+    color:rgba(180,20,20,${alpha});
+    pointer-events:none;
+    white-space:nowrap;
+    animation: alucinaFade ${800 + Math.random()*1200}ms ease both;
+    letter-spacing:.1em;
+    font-style:italic;
+    text-shadow:0 0 8px rgba(180,20,20,.4);
+  `;
+  txt.textContent = frase;
+  overlay.appendChild(txt);
+  setTimeout(() => txt.remove(), 2200);
+}
+
+function atualizarVinheta(intensidade) {
+  let v = document.getElementById('vinheta-horror');
+  if (!v) {
+    v = document.createElement('div');
+    v.id = 'vinheta-horror';
+    v.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8999;';
+    document.body.appendChild(v);
+  }
+  const opacity = 0.15 + intensidade * 0.4;
+  const pulseSpeed = 1.5 - intensidade * 1.0;
+  v.style.background = `radial-gradient(ellipse at center, transparent 40%, rgba(100,0,0,${opacity}) 100%)`;
+  v.style.animation = `vinhPulse ${Math.max(.5, pulseSpeed)}s ease-in-out infinite`;
+}
+
+// ── VIDA ──────────────────────────────────────────
+function iniciarEfeitoVida(pct) {
+  let overlay = document.getElementById('vida-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'vida-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8998;';
+    document.body.appendChild(overlay);
+  }
+  const intensidade = Math.max(0, (25 - pct) / 25);
+  const darkLevel = 0.15 + intensidade * 0.45;
+  const breathSpeed = 1.8 - intensidade * 0.8;
+
+  overlay.style.background = `rgba(0,0,0,${darkLevel})`;
+  overlay.style.animation = `respirar ${Math.max(1, breathSpeed)}s ease-in-out infinite`;
+}
+
+function pararEfeitoVida() {
+  const overlay = document.getElementById('vida-overlay');
+  if (overlay) overlay.remove();
+}
+
 // ══════════════════════════════════════════════════
 async function loadState() {
   if (!FICHA_ID) return null;
@@ -1164,6 +1414,7 @@ async function saveState() {
 
   render();
   loadAvatar();
+  atualizarEfeitosHorror();
 
   const btn = document.getElementById('save-btn');
   btn.style.display = 'block';

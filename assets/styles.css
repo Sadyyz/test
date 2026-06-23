@@ -874,10 +874,23 @@ span.char-tag { cursor: default; }
 .genero-card.principal .genero-titulo { color: var(--gold); }
 .genero-card.fraqueza .genero-titulo { color: var(--crimson-lt); }
 
-/* =========================================================
-   BLINK & MISC
-   ========================================================= */
-@keyframes blink { 0%,100%{opacity:.5} 50%{opacity:1} }
+/* ── Efeitos de Horror ── */
+@keyframes alucinaFade {
+  0%   { opacity: 0; transform: translateY(-6px) scale(.95); }
+  15%  { opacity: 1; transform: translateY(0) scale(1); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(4px) scale(.98); }
+}
+
+@keyframes vinhPulse {
+  0%,100% { opacity: .7; }
+  50%      { opacity: 1; }
+}
+
+@keyframes respirar {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
 
 /* ── Dados — animações ── */
 @keyframes dieRoll {
