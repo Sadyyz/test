@@ -327,11 +327,17 @@ body::before{
   btn.addEventListener('click',()=>{const n=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',n);btn.textContent=n==='dark'?'☀':'☽';localStorage.setItem('dnd-theme',n);});
 })();
 
-// ── Guarda de acesso: exige ter vindo pela senha do index ──────────────
+// ── Guarda de acesso: exige senha do index ──────────────────────────
 (function(){
-  // Mantemos simples e consistente com index.html: sem sessão própria,
-  // apenas redireciona se o usuário cair aqui sem nunca ter passado pelo portal.
-  // (index.html já faz o gate por senha antes de linkar para mestre.html)
+  if (!localStorage.getItem('phantasos-mestre-auth')) {
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:20px;font-family:'Cinzel',serif;">
+        <div style="font-size:1.4rem;color:var(--gold);letter-spacing:.1em;">🔮 Jardim do Mestre</div>
+        <div style="font-size:.6rem;color:var(--ink-dim);letter-spacing:.2em;text-transform:uppercase;">Acesso restrito</div>
+        <a href="index.html" style="color:var(--gold);font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;border:1px solid var(--gold-dim);padding:8px 20px;margin-top:8px;">⟵ Voltar ao início</a>
+      </div>`;
+    return;
+  }
 })();
 
 // ── Toast helper ─────────────────────────────────────────────────────

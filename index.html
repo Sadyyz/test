@@ -79,7 +79,7 @@
     <h1 class="index-title">Phantasos</h1>
     <div class="index-sub">Contos Distorcidos · Escritores</div>
     <div style="text-align:center;margin-bottom:24px;">
-      <a href="mestre.html" style="font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:1px solid var(--gold-dim);padding:8px 20px;display:inline-block;transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-dim)'">🔮 Jardim do Mestre</a>
+      <button onclick="abrirMestre()" style="font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);background:transparent;cursor:pointer;border:1px solid var(--gold-dim);padding:8px 20px;display:inline-block;transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-dim)'">🔮 Jardim do Mestre</button>
     </div>
 
     <div class="char-list" id="char-list"></div>
@@ -169,6 +169,19 @@
     document.getElementById('new-name').addEventListener('keydown', e => {
       if (e.key === 'Enter') addChar();
     });
+
+    function abrirMestre() {
+      const SENHA = 'phantasos';
+      const tentativa = prompt('🔮 Senha do Mestre:');
+      if (tentativa === null) return;
+      if (tentativa.trim().toLowerCase() === SENHA) {
+        localStorage.setItem('phantasos-mestre-auth', '1');
+        window.location.href = 'mestre.html';
+      } else {
+        alert('Senha incorreta.');
+      }
+    }
+    window.abrirMestre = abrirMestre;
 
     renderList();
   </script>
