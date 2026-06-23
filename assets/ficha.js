@@ -178,7 +178,11 @@ const GENERO_RULES = {
   },
 };
 
-// Custo de sanidade ao ler livros por compatibilidade de gênero
+// Retorna o bônus automático de gênero pra uma perícia específica
+function getBonusGenero(nomePericias, generoPrincipal) {
+  if (!generoPrincipal || !GENERO_RULES[generoPrincipal]) return 0;
+  return GENERO_RULES[generoPrincipal].bonus_pericias.includes(nomePericias) ? 1 : 0;
+}
 function custoSanidadeLeitura(generoLivro, generoPrincipal, generoFraqueza) {
   if (generoLivro === generoPrincipal) return '−2 Sanidade (gênero familiar)';
   if (generoLivro === generoFraqueza)  return '−8 Sanidade (gênero fraqueza)';
@@ -236,6 +240,10 @@ function defaultState() {
     caracteristicas: [],
     equipamento: [],
     notas: '',
+    sessao_atual: '',
+    sessao_data: '',
+    livros_lidos_sessao: [],
+    obra_ativada: false,
     hist_origem: '',
     hist_motivacao: '',
     hist_tracos: '',
@@ -468,6 +476,8 @@ function render() {
           <span class="char-tag" style="border-color:var(--crimson);">Fraqueza: ${esc(s.genero_fraqueza || '—')}</span>
           <span class="char-tag">SAN ${san.atual}/${san.max}</span>
           <span class="char-tag" style="border-color:var(--teal-lt);color:var(--teal-lt);">EXP ${s.exposicao || 0}%</span>
+          ${s.sessao_atual ? `<span class="char-tag" style="border-color:var(--gold-dim);color:var(--gold);">📖 ${esc(s.sessao_atual)}</span>` : ''}
+          ${s.obra_ativada ? `<span class="char-tag obra-tag-ativada" style="border-color:var(--crimson-lt);color:var(--crimson-lt);animation:pulseBorder 1.8s ease-in-out infinite;">✦ OBRA ATIVA</span>` : ''}
         </div>
       </div>
     </header>
@@ -610,8 +620,14 @@ function render() {
             </div>` : ''}
 
           <div class="section-label">Obra Inacabada</div>
-          <div class="obra-card">
-            <div class="obra-titulo">A história que ficou para trás</div>
+          <div class="obra-card${s.obra_ativada ? ' obra-ativada' : ''}" id="obra-card">
+            <div class="obra-titulo-row">
+              <div class="obra-titulo">A história que ficou para trás</div>
+              <div class="obra-status-pill ${s.obra_ativada ? 'ativada' : 'dormente'}" id="obra-status-pill">
+                ${s.obra_ativada ? '✦ ATIVADA PELO MESTRE' : '◌ Dormente'}
+              </div>
+            </div>
+            ${s.obra_ativada ? `<div class="obra-aviso-ativacao" id="obra-aviso">⚠ O Mestre ativou sua Obra — algo está se movendo nas margens do conto.</div>` : ''}
             <input class="obra-input" data-field="obra_titulo" value="${esc(s.obra_titulo)}"
               placeholder="Título da obra inacabada...">
             <textarea class="obra-textarea" data-field="obra_descricao"
@@ -621,13 +637,16 @@ function render() {
           <div class="section-label">Perícias</div>
           <div class="check-list">
             ${Object.entries(s.pericias || {}).map(([nome, p]) => {
-              const attrVal = atrs[p.attr] || 1;
-              const mod = calcMod(attrVal) + (p.pontos || 0);
-              return `<div class="check-row">
-                <div class="chk ${p.pontos > 0 ? 'on' : ''}" data-skill="${nome}" title="Clique para alternar ponto"></div>
+              const attrVal    = atrs[p.attr] || 1;
+              const bonusGenero = getBonusGenero(nome, s.genero_principal);
+              const total      = calcMod(attrVal) + (p.pontos || 0) + bonusGenero;
+              const temBonus   = bonusGenero > 0;
+              const temPonto   = (p.pontos || 0) > 0;
+              return `<div class="check-row ${temBonus ? 'has-genero-bonus' : ''}">
+                <div class="chk ${temPonto ? 'on' : ''}" data-skill="${nome}" title="Clique para adicionar ponto de perícia"></div>
                 <span class="check-attr">${ATTR_SHORT[p.attr] || p.attr}</span>
-                <div class="check-name">${nome}</div>
-                <div class="check-bonus">${fmtMod(mod)}</div>
+                <div class="check-name">${nome}${temBonus ? `<span class="genero-pip" title="Bônus de gênero: +1">✦</span>` : ''}</div>
+                <div class="check-bonus">${fmtMod(total)}</div>
               </div>`;
             }).join('')}
           </div>
@@ -639,15 +658,28 @@ function render() {
 
     <!-- ABA: ACERVO -->
     <div class="tab-panel" data-panel="acervo">
-      <div class="section-label">Livros do Acervo</div>
+      <div class="acervo-header-row">
+        <div class="section-label" style="margin:0">Livros do Acervo</div>
+        <div class="acervo-contador">
+          <span class="acervo-count-num">${s.livros?.length || 0}</span>
+          <span class="acervo-count-label">livro${(s.livros?.length || 0) !== 1 ? 's' : ''} carregado${(s.livros?.length || 0) !== 1 ? 's' : ''}</span>
+          ${(s.livros_lidos_sessao?.length || 0) > 0 ? `<span class="acervo-lidos-badge">${s.livros_lidos_sessao.length} lido${s.livros_lidos_sessao.length !== 1 ? 's' : ''} esta sessão</span>` : ''}
+        </div>
+        ${(s.livros_lidos_sessao?.length || 0) > 0 ? `<button class="btn-reset-sessao" id="btn-reset-sessao" title="Marcar todos como não lidos nesta sessão">↺ Resetar sessão</button>` : ''}
+      </div>
       ${s.livros?.length ? s.livros.map((l, i) => {
         const custoAuto = custoSanidadeLeitura(l.genero, s.genero_principal, s.genero_fraqueza);
         const corCusto = l.genero === s.genero_fraqueza ? 'var(--crimson-lt)' : l.genero === s.genero_principal ? 'var(--teal-lt)' : 'var(--ink-dim)';
+        const foiLido = Array.isArray(s.livros_lidos_sessao) && s.livros_lidos_sessao.includes(i);
         return `
-        <div class="livro-item" id="livro-${i}">
+        <div class="livro-item${foiLido ? ' livro-lido' : ''}" id="livro-${i}">
           <div class="livro-header" data-livro="${i}">
+            <button class="livro-lido-btn ${foiLido ? 'lido' : ''}" data-toggle-lido="${i}" title="${foiLido ? 'Marcar como não lido' : 'Marcar como lido nesta sessão'}">
+              ${foiLido ? '✓' : '○'}
+            </button>
             <div class="livro-dot"></div>
             <div class="livro-titulo">${esc(l.titulo)}</div>
+            ${foiLido ? `<span class="livro-lido-tag">lido</span>` : ''}
             <div class="livro-genero">${esc(l.genero)}</div>
             <div class="livro-custo" style="color:${corCusto}">${custoAuto}</div>
             <div class="item-actions">
@@ -728,6 +760,44 @@ function render() {
 
     <!-- ABA: DADOS -->
     <div class="tab-panel" data-panel="dados">
+
+      <!-- TESTE RÁPIDO -->
+      <div class="section-label">Teste Rápido</div>
+      <div class="teste-rapido-card">
+        <div class="teste-rapido-selects">
+          <div class="teste-select-group">
+            <label class="teste-select-label">Atributo</label>
+            <select class="teste-select" id="tr-atributo">
+              ${Object.entries(atrs).map(([k, v]) => `<option value="${k}">${ATTR_FULL[k]} (${fmtMod(calcMod(v))})</option>`).join('')}
+            </select>
+          </div>
+          <div class="teste-select-group">
+            <label class="teste-select-label">Perícia</label>
+            <select class="teste-select" id="tr-pericia">
+              <option value="">— Nenhuma —</option>
+              ${Object.entries(s.pericias || {}).map(([nome, p]) => {
+                const bonusG = getBonusGenero(nome, s.genero_principal);
+                const pontos = (p.pontos || 0) + bonusG;
+                return `<option value="${nome}" data-attr="${p.attr}" data-pontos="${pontos}">${nome} (${pontos > 0 ? '+' + pontos : '0'})</option>`;
+              }).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="teste-rapido-preview" id="tr-preview">
+          <span class="tr-preview-label">Total estimado</span>
+          <span class="tr-preview-total" id="tr-total">+0</span>
+          <span class="tr-preview-breakdown" id="tr-breakdown">mod(0) + perícia(0)</span>
+        </div>
+        <button class="teste-rapido-roll" id="tr-roll-btn">⚄ Rolar d20 + Total</button>
+        <div class="teste-rapido-result" id="tr-result" style="display:none">
+          <span class="tr-result-dado" id="tr-dado">—</span>
+          <span class="tr-result-sep">+</span>
+          <span class="tr-result-mod" id="tr-mod">0</span>
+          <span class="tr-result-sep">=</span>
+          <span class="tr-result-final" id="tr-final">—</span>
+        </div>
+      </div>
+
       <div class="dice-panel">
         <div class="roll-mode-row">
           <button class="roll-mode-btn active" data-mode="normal">Normal</button>
@@ -816,7 +886,17 @@ function render() {
 
     <!-- ABA: NOTAS -->
     <div class="tab-panel" data-panel="notas">
-      <div class="section-label">Anotações de Sessão</div>
+      <div class="sessao-info-row">
+        <div class="sessao-campo">
+          <label class="sessao-label">Sessão Atual</label>
+          <input type="text" class="sessao-input" data-field="sessao_atual" value="${esc(s.sessao_atual)}" placeholder="Ex: Sessão 3 — O Manuscrito">
+        </div>
+        <div class="sessao-campo sessao-campo--data">
+          <label class="sessao-label">Data</label>
+          <input type="text" class="sessao-input" data-field="sessao_data" value="${esc(s.sessao_data)}" placeholder="Ex: 15/06/2025">
+        </div>
+      </div>
+      <div class="section-label" style="margin-top:16px">Anotações de Sessão</div>
       <textarea class="notes-area" id="notes"
         placeholder="Pistas encontradas, suspeitas, eventos importantes...">${esc(s.notas)}</textarea>
     </div>
@@ -957,6 +1037,107 @@ function attachEvents() {
     const item = document.getElementById('feat-' + el.dataset.feat);
     if (item) item.classList.toggle('open');
   }));
+
+  // ── Livro lido/não lido na sessão
+  document.querySelectorAll('[data-toggle-lido]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.toggleLido);
+      if (!Array.isArray(state.livros_lidos_sessao)) state.livros_lidos_sessao = [];
+      const idx = state.livros_lidos_sessao.indexOf(i);
+      if (idx === -1) state.livros_lidos_sessao.push(i);
+      else state.livros_lidos_sessao.splice(idx, 1);
+      render(); scheduleSave();
+    });
+  });
+
+  // ── Reset de sessão (marcar todos como não lidos)
+  document.getElementById('btn-reset-sessao')?.addEventListener('click', () => {
+    if (confirm('Marcar todos os livros como não lidos nesta sessão?')) {
+      state.livros_lidos_sessao = [];
+      render(); scheduleSave();
+    }
+  });
+
+  // ── Teste Rápido
+  function calcTesteRapido() {
+    const atributoSelect = document.getElementById('tr-atributo');
+    const periciaSelect  = document.getElementById('tr-pericia');
+    if (!atributoSelect) return { total: 0, mod: 0, pontos: 0, label: '' };
+
+    const attrKey  = atributoSelect.value;
+    const attrVal  = (state.atributos[attrKey] || 1);
+    const mod      = calcMod(attrVal);
+
+    let pontos = 0;
+    let label  = '';
+    if (periciaSelect && periciaSelect.value) {
+      const opt = periciaSelect.selectedOptions[0];
+      pontos = parseInt(opt.dataset.pontos) || 0;
+      label  = periciaSelect.value;
+    }
+    return { total: mod + pontos, mod, pontos, label, attrKey };
+  }
+
+  function updateTestePreview() {
+    const { total, mod, pontos, label, attrKey } = calcTesteRapido();
+    const totalEl = document.getElementById('tr-total');
+    const bdEl    = document.getElementById('tr-breakdown');
+    if (totalEl) totalEl.textContent = (total >= 0 ? '+' : '') + total;
+    if (bdEl) bdEl.textContent = `${ATTR_SHORT[attrKey] || ''}(${fmtMod(mod)}) + perícia(${pontos > 0 ? '+' + pontos : pontos})`;
+  }
+
+  function autoSyncPericiaAttr() {
+    const periciaSelect  = document.getElementById('tr-pericia');
+    const atributoSelect = document.getElementById('tr-atributo');
+    if (!periciaSelect || !atributoSelect || !periciaSelect.value) return;
+    const opt = periciaSelect.selectedOptions[0];
+    const attr = opt?.dataset?.attr;
+    if (attr) atributoSelect.value = attr;
+  }
+
+  document.getElementById('tr-atributo')?.addEventListener('change', updateTestePreview);
+  document.getElementById('tr-pericia')?.addEventListener('change', () => {
+    autoSyncPericiaAttr();
+    updateTestePreview();
+  });
+  updateTestePreview();
+
+  document.getElementById('tr-roll-btn')?.addEventListener('click', () => {
+    const { total, mod, pontos, label, attrKey } = calcTesteRapido();
+    const dado  = Math.floor(Math.random() * 20) + 1;
+    const final = dado + total;
+    const isCrit  = dado === 20;
+    const isFumble = dado === 1;
+
+    const resultEl = document.getElementById('tr-result');
+    const dadoEl   = document.getElementById('tr-dado');
+    const modEl    = document.getElementById('tr-mod');
+    const finalEl  = document.getElementById('tr-final');
+    if (!resultEl) return;
+
+    resultEl.style.display = 'flex';
+    dadoEl.textContent  = dado;
+    modEl.textContent   = (total >= 0 ? '+' : '') + total;
+    finalEl.textContent = final;
+
+    resultEl.className  = 'teste-rapido-result';
+    if (isCrit)   resultEl.classList.add('tr-critico');
+    if (isFumble) resultEl.classList.add('tr-fumble');
+
+    // Anima o número final
+    finalEl.animate([{ transform: 'scale(1.5)', opacity: .6 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.2,1,.4,1)' });
+
+    // Log no histórico de dados
+    const log = document.getElementById('dice-log');
+    if (log) {
+      const entry = document.createElement('div');
+      const nomeLabel = label ? `${ATTR_SHORT[attrKey]} + ${label}` : ATTR_SHORT[attrKey];
+      entry.style.cssText = 'padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:.75rem;';
+      entry.innerHTML = `<span>${nomeLabel}</span><span style="color:${isCrit ? 'var(--gold)' : isFumble ? 'var(--crimson-lt)' : 'var(--ink)'}">${isCrit ? '✦ ' : isFumble ? '✕ ' : ''}${final} <span style="opacity:.4">(d20:${dado})</span></span>`;
+      log.prepend(entry);
+    }
+  });
 
   // Botoes add
   document.getElementById('btn-add-livro')  ?.addEventListener('click', () => openLivroModal(-1));
@@ -1299,6 +1480,45 @@ function tickHorror() {
 }
 
 // ══════════════════════════════════════════════════
+//  EFEITO: OBRA ATIVADA PELO MESTRE
+// ══════════════════════════════════════════════════
+function dispararObraAtivada() {
+  // Overlay vermelho que pulsa e desaparece
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;z-index:9995;pointer-events:none;background:radial-gradient(ellipse at center,rgba(100,0,20,.45) 0%,rgba(60,0,10,.7) 100%);';
+  document.body.appendChild(flash);
+  flash.animate([
+    { opacity: 0 }, { opacity: 1 }, { opacity: .6 }, { opacity: 1 }, { opacity: 0 }
+  ], { duration: 2200, easing: 'ease-in-out', fill: 'forwards' }).onfinish = () => flash.remove();
+
+  // Mensagem central
+  const msg = document.createElement('div');
+  msg.style.cssText = `
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    z-index:9996;pointer-events:none;text-align:center;
+    font-family:'IM Fell English',serif;font-style:italic;
+    color:rgba(220,180,180,1);text-shadow:0 0 40px rgba(180,0,30,.9);
+    animation:alucinaFade 3200ms ease both;
+  `;
+  msg.innerHTML = `
+    <div style="font-size:1.8rem;letter-spacing:.06em;margin-bottom:.4em">✦</div>
+    <div style="font-size:1.05rem;line-height:1.7">Sua Obra acorda.</div>
+    <div style="font-size:.78rem;margin-top:.5em;opacity:.7;letter-spacing:.12em">O Mestre puxou o fio da história inacabada.</div>
+  `;
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 3500);
+
+  // Toca o horror por alguns segundos
+  const prevSan = state?.sanidade?.atual;
+  if (state?.sanidade) state.sanidade.atual = Math.min(state.sanidade.atual, 15);
+  atualizarEfeitosHorror();
+  setTimeout(() => {
+    if (state?.sanidade && prevSan !== undefined) state.sanidade.atual = prevSan;
+    atualizarEfeitosHorror();
+  }, 4000);
+}
+
+// ══════════════════════════════════════════════════
 async function loadState() {
   if (!FICHA_ID) return null;
   try { const r = await fetch(`/api/ficha?id=${FICHA_ID}`); if (r.ok) { const d = await r.json(); if (d?.nome !== undefined) return d; } } catch {}
@@ -1363,6 +1583,10 @@ async function saveState() {
   if (!state.caracteristicas) state.caracteristicas = [];
   if (!state.equipamento) state.equipamento = [];
   if (!state.ataques) state.ataques = [];
+  if (!state.sessao_atual) state.sessao_atual = '';
+  if (!state.sessao_data) state.sessao_data = '';
+  if (!state.livros_lidos_sessao) state.livros_lidos_sessao = [];
+  if (state.obra_ativada === undefined) state.obra_ativada = false;
 
   render();
   loadAvatar();
@@ -1371,6 +1595,26 @@ async function saveState() {
   const btn = document.getElementById('save-btn');
   btn.style.display = 'block';
   btn.addEventListener('click', saveState);
+
+  // ── Poll: Obra Inacabada ativada pelo Mestre
+  let _obraAtivadaAnterior = state.obra_ativada || false;
+  async function pollObra() {
+    if (!FICHA_ID) return;
+    try {
+      const r = await fetch(`/api/ficha?id=${FICHA_ID}`);
+      if (!r.ok) return;
+      const fresh = await r.json();
+      const novoEstado = !!fresh.obra_ativada;
+      if (novoEstado !== _obraAtivadaAnterior) {
+        _obraAtivadaAnterior = novoEstado;
+        state.obra_ativada = novoEstado;
+        render();
+        atualizarEfeitosHorror();
+        if (novoEstado) dispararObraAtivada();
+      }
+    } catch {}
+  }
+  setInterval(pollObra, 8000);
 
   // Modal fechar
   document.getElementById('modal-close-btn')?.addEventListener('click', closeModal);
