@@ -863,10 +863,17 @@ function attachEvents() {
   // Tabs
   document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
 
-  // Campos diretos
+  // Campos diretos — selects de gênero re-renderizam, outros só salvam
   document.querySelectorAll('[data-field]').forEach(el => {
-    el.addEventListener('input', () => { state[el.dataset.field] = el.value; scheduleSave(); });
-    el.addEventListener('change', () => { state[el.dataset.field] = el.value; scheduleSave(); });
+    const needsRender = ['genero_principal', 'genero_fraqueza'].includes(el.dataset.field);
+    el.addEventListener('input', () => {
+      state[el.dataset.field] = el.value;
+      if (needsRender) render(); else scheduleSave();
+    });
+    el.addEventListener('change', () => {
+      state[el.dataset.field] = el.value;
+      if (needsRender) { render(); scheduleSave(); } else scheduleSave();
+    });
   });
 
   // Atributos
@@ -1174,7 +1181,6 @@ function attachRelEventDelegation() {
 // ══════════════════════════════════════════════════
 
 let _horrorInterval = null;
-let _breathInterval = null;
 const _alucinacoes = [
   'ela está reescrevendo',
   'você não escolheu estar aqui',
@@ -1188,162 +1194,108 @@ const _alucinacoes = [
   'leia',
   'o manuscrito já terminou',
   'quem segura a pena?',
+  'the story ends here',
+  'você sabia disso',
 ];
 
-function atualizarEfeitosHorror() {
+function getIntensidadeSanidade() {
   const san = state?.sanidade?.atual ?? 100;
+  return san <= 20 ? Math.max(0.05, (20 - san) / 20) : 0;
+}
+
+function getIntensidadeVida() {
   const vida = state?.vida?.atual ?? 10;
-  const vidaMax = state?.vida?.max ?? 10;
-  const vidaPct = vidaMax > 0 ? (vida / vidaMax) * 100 : 100;
-
-  // ── SANIDADE BAIXA (≤ 20) ─────────────────────
-  if (san <= 20) {
-    if (!_horrorInterval) iniciarHorrorSanidade(san);
-    else atualizarIntensidadeHorror(san);
-  } else {
-    pararHorrorSanidade();
-  }
-
-  // ── VIDA BAIXA (≤ 25%) ────────────────────────
-  if (vidaPct <= 25) {
-    iniciarEfeitoVida(vidaPct);
-  } else {
-    pararEfeitoVida();
-  }
+  const max  = state?.vida?.max   ?? 10;
+  const pct  = max > 0 ? (vida / max) * 100 : 100;
+  return pct <= 25 ? Math.max(0.05, (25 - pct) / 25) : 0;
 }
 
-// ── SANIDADE ──────────────────────────────────────
-function iniciarHorrorSanidade(san) {
-  let overlay = document.getElementById('horror-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'horror-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9000;overflow:hidden;';
-    document.body.appendChild(overlay);
-  }
+function atualizarEfeitosHorror() {
+  const si = getIntensidadeSanidade();
+  const vi = getIntensidadeVida();
 
-  _horrorInterval = setInterval(() => {
-    const s = state?.sanidade?.atual ?? 100;
-    const intensidade = Math.max(0, (20 - s) / 20); // 0 a 1
-
-    // Glitch na tela
-    if (Math.random() < 0.3 + intensidade * 0.5) {
-      dispararGlitch(intensidade);
+  // ── vinheta de sanidade ──
+  let vS = document.getElementById('vinheta-san');
+  if (si > 0) {
+    if (!vS) {
+      vS = document.createElement('div');
+      vS.id = 'vinheta-san';
+      vS.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8997;';
+      document.body.appendChild(vS);
     }
+    const op = 0.12 + si * 0.38;
+    const sp = Math.max(0.5, 1.8 - si * 1.2);
+    vS.style.background = `radial-gradient(ellipse at center,transparent 35%,rgba(120,0,0,${op}) 100%)`;
+    vS.style.animation  = `vinhPulse ${sp}s ease-in-out infinite`;
+  } else if (vS) {
+    vS.remove();
+  }
 
-    // Texto alucinógeno
-    if (Math.random() < 0.15 + intensidade * 0.35) {
-      dispararTextoAlucinogeno(overlay, intensidade);
+  // ── escurecimento de vida ──
+  let vV = document.getElementById('vida-overlay');
+  if (vi > 0) {
+    if (!vV) {
+      vV = document.createElement('div');
+      vV.id = 'vida-overlay';
+      vV.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8996;';
+      document.body.appendChild(vV);
     }
-
-    // Vinheta pulsante vermelha
-    atualizarVinheta(intensidade);
-
-  }, 800 - intensidade * 500);
-}
-
-function atualizarIntensidadeHorror(san) {
-  clearInterval(_horrorInterval);
-  iniciarHorrorSanidade(san);
-}
-
-function pararHorrorSanidade() {
-  clearInterval(_horrorInterval);
-  _horrorInterval = null;
-  const overlay = document.getElementById('horror-overlay');
-  if (overlay) overlay.innerHTML = '';
-  const v = document.getElementById('vinheta-horror');
-  if (v) v.remove();
-  const g = document.getElementById('glitch-style');
-  if (g) g.remove();
-}
-
-function dispararGlitch(intensidade) {
-  let style = document.getElementById('glitch-style');
-  if (!style) {
-    style = document.createElement('style');
-    style.id = 'glitch-style';
-    document.head.appendChild(style);
+    const dk = 0.12 + vi * 0.44;
+    const sp = Math.max(0.8, 2.2 - vi * 1.0);
+    vV.style.background = `rgba(0,0,0,${dk})`;
+    vV.style.animation  = `respirar ${sp}s ease-in-out infinite`;
+  } else if (vV) {
+    vV.remove();
   }
 
-  const tx1 = (Math.random() - .5) * 12 * intensidade;
-  const tx2 = (Math.random() - .5) * 8 * intensidade;
-  const dur = 80 + Math.random() * 120;
+  // ── loop de alucinações ──
+  if (si > 0 && !_horrorInterval) {
+    _horrorInterval = setInterval(tickHorror, 900);
+  } else if (si === 0 && _horrorInterval) {
+    clearInterval(_horrorInterval);
+    _horrorInterval = null;
+    const ov = document.getElementById('horror-overlay');
+    if (ov) ov.remove();
+    const gs = document.getElementById('glitch-style');
+    if (gs) gs.remove();
+  }
+}
 
-  style.textContent = `
-    @keyframes glitchNow {
-      0%   { transform: translate(0); clip-path: none; filter: none; }
-      20%  { transform: translate(${tx1}px, 0); clip-path: inset(${Math.random()*30}% 0 ${Math.random()*30}% 0); filter: hue-rotate(${Math.random()*60}deg); }
-      40%  { transform: translate(${tx2}px, 0); clip-path: inset(${Math.random()*20}% 0 ${Math.random()*40}% 0); }
-      60%  { transform: translate(${-tx1*.5}px, 0); filter: hue-rotate(${-Math.random()*40}deg) brightness(1.2); }
-      80%  { transform: translate(0); clip-path: none; }
-      100% { transform: translate(0); filter: none; clip-path: none; }
+function tickHorror() {
+  const si = getIntensidadeSanidade();
+  if (si === 0) return;
+
+  // texto alucinógeno
+  if (Math.random() < 0.18 + si * 0.42) {
+    let ov = document.getElementById('horror-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'horror-overlay';
+      ov.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9000;overflow:hidden;';
+      document.body.appendChild(ov);
     }
-    body { animation: glitchNow ${dur}ms steps(1) both; }
-  `;
-  setTimeout(() => { if (style.parentNode) style.textContent = ''; }, dur + 50);
-}
-
-function dispararTextoAlucinogeno(overlay, intensidade) {
-  const txt = document.createElement('div');
-  const frase = _alucinacoes[Math.floor(Math.random() * _alucinacoes.length)];
-  const x = Math.random() * 90;
-  const y = Math.random() * 85;
-  const sz = 0.55 + Math.random() * 0.6 * intensidade;
-  const alpha = 0.3 + intensidade * 0.5;
-
-  txt.style.cssText = `
-    position:absolute;
-    left:${x}%;top:${y}%;
-    font-family:'IM Fell English',serif;
-    font-size:${sz}rem;
-    color:rgba(180,20,20,${alpha});
-    pointer-events:none;
-    white-space:nowrap;
-    animation: alucinaFade ${800 + Math.random()*1200}ms ease both;
-    letter-spacing:.1em;
-    font-style:italic;
-    text-shadow:0 0 8px rgba(180,20,20,.4);
-  `;
-  txt.textContent = frase;
-  overlay.appendChild(txt);
-  setTimeout(() => txt.remove(), 2200);
-}
-
-function atualizarVinheta(intensidade) {
-  let v = document.getElementById('vinheta-horror');
-  if (!v) {
-    v = document.createElement('div');
-    v.id = 'vinheta-horror';
-    v.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8999;';
-    document.body.appendChild(v);
+    const txt  = document.createElement('div');
+    const x    = 5 + Math.random() * 85;
+    const y    = 5 + Math.random() * 82;
+    const sz   = 0.5 + Math.random() * 0.55 * si;
+    const alp  = 0.25 + si * 0.55;
+    const dur  = 900 + Math.random() * 1400;
+    txt.style.cssText = `position:absolute;left:${x}%;top:${y}%;font-family:'IM Fell English',serif;font-size:${sz}rem;color:rgba(180,20,20,${alp});pointer-events:none;white-space:nowrap;font-style:italic;letter-spacing:.08em;text-shadow:0 0 10px rgba(180,20,20,.5);animation:alucinaFade ${dur}ms ease both;`;
+    txt.textContent = _alucinacoes[Math.floor(Math.random() * _alucinacoes.length)];
+    ov.appendChild(txt);
+    setTimeout(() => txt.remove(), dur + 100);
   }
-  const opacity = 0.15 + intensidade * 0.4;
-  const pulseSpeed = 1.5 - intensidade * 1.0;
-  v.style.background = `radial-gradient(ellipse at center, transparent 40%, rgba(100,0,0,${opacity}) 100%)`;
-  v.style.animation = `vinhPulse ${Math.max(.5, pulseSpeed)}s ease-in-out infinite`;
-}
 
-// ── VIDA ──────────────────────────────────────────
-function iniciarEfeitoVida(pct) {
-  let overlay = document.getElementById('vida-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'vida-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8998;';
-    document.body.appendChild(overlay);
+  // glitch
+  if (Math.random() < 0.12 + si * 0.38) {
+    let gs = document.getElementById('glitch-style');
+    if (!gs) { gs = document.createElement('style'); gs.id = 'glitch-style'; document.head.appendChild(gs); }
+    const t1  = (Math.random() - .5) * 14 * si;
+    const t2  = (Math.random() - .5) * 9  * si;
+    const dur = 70 + Math.random() * 110;
+    gs.textContent = `@keyframes gN{0%{transform:translate(0);filter:none}25%{transform:translate(${t1}px,0);filter:hue-rotate(${Math.random()*80}deg) saturate(2)}55%{transform:translate(${t2}px,${(Math.random()-.5)*4}px);filter:hue-rotate(${-Math.random()*40}deg)}80%{transform:translate(${-t1*.3}px,0)}100%{transform:translate(0);filter:none}}body{animation:gN ${dur}ms steps(2) both}`;
+    setTimeout(() => { if (gs.parentNode) gs.textContent = ''; }, dur + 60);
   }
-  const intensidade = Math.max(0, (25 - pct) / 25);
-  const darkLevel = 0.15 + intensidade * 0.45;
-  const breathSpeed = 1.8 - intensidade * 0.8;
-
-  overlay.style.background = `rgba(0,0,0,${darkLevel})`;
-  overlay.style.animation = `respirar ${Math.max(1, breathSpeed)}s ease-in-out infinite`;
-}
-
-function pararEfeitoVida() {
-  const overlay = document.getElementById('vida-overlay');
-  if (overlay) overlay.remove();
 }
 
 // ══════════════════════════════════════════════════
