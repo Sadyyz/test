@@ -391,6 +391,7 @@ function openEquipModal(idx) {
 // ══════════════════════════════════════════════════
 function render() {
   const s = state;
+  if (!s.vida) s.vida = { atual: 10, max: 10 };
   const atrs = s.atributos;
   const san = s.sanidade || { atual: 100, max: 100 };
   const estagio = getSanidadeEstagio(san.atual);
