@@ -115,55 +115,94 @@
         .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     }
 
-    function getChars() {
-      try { return JSON.parse(localStorage.getItem('phantasos-chars') || '[]'); } catch { return []; }
-    }
+    let _chars = [];
 
-    function saveChars(list) {
-      localStorage.setItem('phantasos-chars', JSON.stringify(list));
+    async function loadChars() {
+      const el = document.getElementById('char-list');
+      el.innerHTML = '<div class="index-empty">Carregando…</div>';
+      try {
+        // Busca manifest estático + manifest dinâmico (Redis)
+        let base = [];
+        let dynamic = [];
+        try { base = await fetch('manifest.json').then(r => r.json()); } catch {}
+        try {
+          const r = await fetch('/api/manifest');
+          if (r.ok) dynamic = await r.json();
+        } catch {}
+        const baseIds = new Set(base.map(p => p.id));
+        _chars = [...base, ...dynamic.filter(p => !baseIds.has(p.id))];
+      } catch {
+        _chars = [];
+      }
+      renderList();
     }
 
     function renderList() {
-      const list = getChars();
       const el = document.getElementById('char-list');
-      if (!list.length) {
+      if (!_chars.length) {
         el.innerHTML = '<div class="index-empty">Nenhum escritor criado ainda.</div>';
         return;
       }
-      el.innerHTML = list.map((c, i) => `
+      el.innerHTML = _chars.map((c, i) => `
         <a href="ficha.html?id=${encodeURIComponent(c.id)}" class="char-entry">
           <span class="char-entry-icon">✒</span>
           <div>
             <div class="char-entry-name">${c.nome}</div>
             <div class="char-entry-sub">${c.id}</div>
           </div>
-          <button class="char-entry-del" data-idx="${i}" onclick="delChar(event, ${i})" title="Remover">✕</button>
+          <button class="char-entry-del" onclick="delChar(event, '${c.id}', '${c.nome.replace(/'/g,"\\'")}', ${isStatic(c.id)})" title="Remover">✕</button>
         </a>
       `).join('');
     }
 
-    function addChar() {
+    function isStatic(id) {
+      // IDs que vieram do manifest.json são estáticos e não podem ser removidos pela UI
+      return false; // manifest.json está vazio agora
+    }
+
+    async function addChar() {
       const input = document.getElementById('new-name');
       const nome = input.value.trim();
       if (!nome) return;
-      const id = slugify(nome) || 'escritor-' + Date.now();
-      const list = getChars();
-      if (list.find(c => c.id === id)) { alert('Já existe um escritor com esse nome.'); return; }
-      list.push({ id, nome });
-      saveChars(list);
-      input.value = '';
-      renderList();
+      const btn = document.querySelector('.new-char-btn');
+      btn.textContent = '…';
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/manifest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome })
+        });
+        if (!r.ok) {
+          const err = await r.json();
+          alert('Erro ao criar escritor: ' + (err.error || r.status));
+          return;
+        }
+        input.value = '';
+        await loadChars();
+      } catch {
+        alert('Erro de conexão ao criar escritor.');
+      } finally {
+        btn.textContent = 'Criar';
+        btn.disabled = false;
+      }
     }
 
-    function delChar(e, idx) {
+    async function delChar(e, id, nome, estatico) {
       e.preventDefault(); e.stopPropagation();
-      const list = getChars();
-      const c = list[idx];
-      if (!confirm(`Remover "${c.nome}" permanentemente?`)) return;
-      localStorage.removeItem('phantasos_' + c.id);
-      list.splice(idx, 1);
-      saveChars(list);
-      renderList();
+      if (estatico) { alert('Este personagem é parte do catálogo oficial e não pode ser removido.'); return; }
+      if (!confirm(`Remover "${nome}" permanentemente?`)) return;
+      try {
+        const r = await fetch(`/api/manifest?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!r.ok) {
+          const err = await r.json();
+          alert('Erro ao remover: ' + (err.error || r.status));
+          return;
+        }
+        await loadChars();
+      } catch {
+        alert('Erro de conexão ao remover escritor.');
+      }
     }
 
     document.getElementById('new-name').addEventListener('keydown', e => {
@@ -183,7 +222,7 @@
     }
     window.abrirMestre = abrirMestre;
 
-    renderList();
+    loadChars();
   </script>
 </body>
 </html>
