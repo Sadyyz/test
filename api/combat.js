@@ -81,7 +81,12 @@ export default async function handler(req, res) {
         sessao: body.sessao ?? null,
         rodada: Number.isFinite(body.rodada) ? body.rodada : 1,
         turnoAtual: body.turnoAtual ?? null,
-        iniciativa: Array.isArray(body.iniciativa) ? body.iniciativa : []
+        iniciativa: Array.isArray(body.iniciativa) ? body.iniciativa : [],
+        // Sinal de fim de conto: preservado se presente
+        ...(body.contoEncerrado != null && { contoEncerrado: body.contoEncerrado }),
+        ...(body.contoNome != null && { contoNome: String(body.contoNome) }),
+        // Sinal de boss atualizado: invalida cache do players.html
+        ...(body.bossUpdatedAt != null && { bossUpdatedAt: body.bossUpdatedAt }),
       };
 
       await redis.set(KEY, novo);
