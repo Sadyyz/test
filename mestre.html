@@ -1161,6 +1161,14 @@ function bsRenderEditor(){
       </div>
     </div>
 
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:22px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);">
+      <span style="font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-right:4px;">Dano Rápido</span>
+      ${[1,5,10,25].map(v=>`<button onclick="bsAplicarDano(${v})" style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.1em;padding:5px 10px;background:transparent;border:1px solid var(--crimson);color:var(--crimson-lt);cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(122,24,40,.2)'" onmouseout="this.style.background='transparent'">−${v}</button>`).join('')}
+      ${[1,5,10].map(v=>`<button onclick="bsAplicarDano(-${v})" style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.1em;padding:5px 10px;background:transparent;border:1px solid #2a7a40;color:#4a9a60;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(42,122,64,.2)'" onmouseout="this.style.background='transparent'">+${v}</button>`).join('')}
+      <div style="flex:1"></div>
+      <button onclick="bsFinalizarConto()" style="font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;padding:7px 16px;background:rgba(80,0,0,.3);border:1px solid var(--crimson);color:var(--crimson-lt);cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(122,24,40,.5)'" onmouseout="this.style.background='rgba(80,0,0,.3)'">✦ Finalizar Conto</button>
+    </div>
+
     <p class="section-label">Atributos</p>
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px">
       ${bsAtributoRow('RAZ','razao')}${bsAtributoRow('VIG','vigor')}${bsAtributoRow('VON','vontade')}${bsAtributoRow('EXP','expressao')}
@@ -1227,6 +1235,34 @@ function bsRenderEditor(){
       if(ph) ph.style.display='none';
     };
     reader.readAsDataURL(file);
+  });
+}
+
+function bsAplicarDano(valor) {
+  const inp = document.getElementById('bs-f-hpatual');
+  if (!inp) return;
+  const atual = Number(inp.value) || 0;
+  const novoHp = Math.max(0, atual - valor);
+  inp.value = novoHp;
+  // Salva automaticamente
+  bsSaveEditor().then(() => {
+    if (novoHp <= 0) {
+      const nomeEl = document.getElementById('bs-f-nome');
+      const nome = nomeEl ? nomeEl.value.trim() : 'Criatura';
+      setTimeout(() => dispararContoEncerrado(nome), 300);
+    }
+  });
+}
+
+function bsFinalizarConto() {
+  const nomeEl = document.getElementById('bs-f-nome');
+  const nome = nomeEl ? nomeEl.value.trim() : 'Criatura';
+  if (!nome) { alert('Nenhuma criatura selecionada.'); return; }
+  // Zera o HP e dispara a animação
+  const inp = document.getElementById('bs-f-hpatual');
+  if (inp) inp.value = 0;
+  bsSaveEditor().then(() => {
+    setTimeout(() => dispararContoEncerrado(nome), 300);
   });
 }
 
