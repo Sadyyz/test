@@ -1258,11 +1258,23 @@ function bsFinalizarConto() {
   const nomeEl = document.getElementById('bs-f-nome');
   const nome = nomeEl ? nomeEl.value.trim() : 'Criatura';
   if (!nome) { alert('Nenhuma criatura selecionada.'); return; }
-  // Zera o HP e dispara a animação
   const inp = document.getElementById('bs-f-hpatual');
   if (inp) inp.value = 0;
-  bsSaveEditor().then(() => {
-    setTimeout(() => dispararContoEncerrado(nome), 300);
+  bsSaveEditor().then(async () => {
+    // Sinaliza pro players.html via combat state
+    try {
+      const r = await fetch('/api/combat');
+      if (r.ok) {
+        const state = await r.json();
+        state.contoEncerrado = Date.now();
+        state.contoNome = nome;
+        await fetch('/api/combat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(state)
+        });
+      }
+    } catch {}
   });
 }
 
