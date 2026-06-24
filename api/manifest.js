@@ -34,7 +34,7 @@ try {
 const KEY = 'manifest:extra';
 
 // IDs reservados pelo manifest.json estático — nunca devem ser criados/apagados via API
-const STATIC_IDS = ['mikhail'];
+const STATIC_IDS = [];
 
 // Aceita só letras minúsculas, números e hífen (mesmo padrão usado pra id de ficha)
 function slugify(str) {
