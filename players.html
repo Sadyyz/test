@@ -638,6 +638,7 @@ let lastTurnoAtual=null;
 let lastBossId=null;
 let lastContoEncerrado=null;
 let lastBossVisHash=null;
+let lastBossUpdatedAt=null;
 
 async function renderCombat(state){
   const arena=document.getElementById('bs-arena');
@@ -712,6 +713,11 @@ async function pollCombat(){
         lastContoEncerrado=data.contoEncerrado;
         setTimeout(()=>dispararContoEncerrado(data.contoNome||''), 200);
       }
+      // Mestre salvou boss: força re-fetch do boss mesmo sem combat state visual mudar
+      if(data.bossUpdatedAt && data.bossUpdatedAt !== lastBossUpdatedAt){
+        lastBossUpdatedAt=data.bossUpdatedAt;
+        lastBossId=null; // força re-render do boss arena
+      }
       await renderCombat(data);
     }
   }catch{setBadge('offline')}
@@ -765,17 +771,18 @@ async function refreshHp(manifest){
       const r=await fetch(`/api/ficha?id=${f.id}`);
       if(!r.ok)return;
       const fresh=await r.json();
-      const oldVida=JSON.stringify(f.vida||{});
-      const newVida=JSON.stringify(fresh.vida||{});
-      const oldSan=JSON.stringify(f.sanidade||{});
-      const newSan=JSON.stringify(fresh.sanidade||{});
-      if(oldVida!==newVida||oldSan!==newSan){
+
+      // Detecta qualquer mudança na ficha (não só HP)
+      const oldHash=JSON.stringify({vida:f.vida,sanidade:f.sanidade,nome:f.nome,exposicao:f.exposicao});
+      const newHash=JSON.stringify({vida:fresh.vida,sanidade:fresh.sanidade,nome:fresh.nome,exposicao:fresh.exposicao});
+      if(oldHash!==newHash){
         fichas[i]={...fichas[i],...fresh,_avatarSrc:fichas[i]._avatarSrc};updated=true;
+
         const oldHp=Number((f.vida||{}).atual??10);
         const newHp=Number((fresh.vida||{}).atual??10);
         if(newHp!==oldHp){
           const diff=newHp-oldHp;
-          const nome=f.nome||'Escritor';
+          const nome=fresh.nome||'Escritor';
           if(diff<0)addLog(`${nome} perdeu ${Math.abs(diff)} de Vida (${newHp} restantes)`,'attack');
           else addLog(`${nome} recuperou ${diff} de Vida (${newHp} total)`,'item');
         }
@@ -783,7 +790,7 @@ async function refreshHp(manifest){
         const newS=Number((fresh.sanidade||{}).atual??100);
         if(newS!==oldS){
           const diff=newS-oldS;
-          const nome=f.nome||'Escritor';
+          const nome=fresh.nome||'Escritor';
           if(diff<0)addLog(`${nome} perdeu ${Math.abs(diff)} de Sanidade (${newS} restantes)`,'skill');
         }
       }
@@ -875,7 +882,7 @@ async function init(){
   setBadge('live');
   await Promise.allSettled([pollCombat(),pollPlayers()]);
   setInterval(pollCombat,4000);
-  setInterval(pollPlayers,10000);
+  setInterval(pollPlayers,4000);
 }
 
 init();

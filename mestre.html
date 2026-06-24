@@ -1261,6 +1261,8 @@ function bsFinalizarConto() {
   const inp = document.getElementById('bs-f-hpatual');
   if (inp) inp.value = 0;
   bsSaveEditor().then(async () => {
+    // Dispara animação local (mestre vê também)
+    setTimeout(() => dispararContoEncerrado(nome), 300);
     // Sinaliza pro players.html via combat state
     try {
       const r = await fetch('/api/combat');
@@ -1329,6 +1331,21 @@ async function bsSaveEditor(){
     toast('Criatura salva com sucesso.');
     bsCloseEditor();
     bsLoadList();
+
+    // Invalida o cache do players.html atualizando o combat state
+    // (players.html detecta a mudança via pollCombat e busca o boss atualizado)
+    try {
+      const cr = await fetch('/api/combat');
+      if (cr.ok) {
+        const cs = await cr.json();
+        cs.bossUpdatedAt = Date.now();
+        await fetch('/api/combat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cs)
+        });
+      }
+    } catch {}
   }catch{
     toast('Erro ao salvar a criatura.', true);
   }
