@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jardim do Mestre — Phantasos — Jardim do Mestre</title>
+<title>Jardim do Mestre — Phantasos</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme="dark"]{
@@ -154,7 +154,7 @@ body::before{
 <header class="top-bar">
   <div class="top-left">
     <span class="top-crest">♛</span>
-    <span class="top-title">Jardim do Mestre<small>D&amp;D Bankai — Painel de Controle</small></span>
+    <span class="top-title">Jardim do Mestre<small>Contos Distorcidos — Painel do Mestre</small></span>
   </div>
   <div class="top-right">
     <button class="icon-btn" id="theme-btn" title="Alternar tema">☽</button>
@@ -164,9 +164,9 @@ body::before{
 
 <nav class="tab-nav" id="tab-nav">
   <button class="tab-btn active" data-tab="combate"><span class="tab-ic">⚔</span><span class="tab-label">Combate</span><span class="tab-dot" id="dot-combate"></span></button>
-  <button class="tab-btn" data-tab="bosses"><span class="tab-ic">☠</span><span class="tab-label">Bosses</span></button>
+  <button class="tab-btn" data-tab="bosses"><span class="tab-ic">☠</span><span class="tab-label">Criaturas</span></button>
   <button class="tab-btn" data-tab="diario"><span class="tab-ic">📜</span><span class="tab-label">Diário</span></button>
-  <button class="tab-btn" data-tab="fichas"><span class="tab-ic">🧙</span><span class="tab-label">Fichas</span></button>
+  <button class="tab-btn" data-tab="fichas"><span class="tab-ic">✒</span><span class="tab-label">Escritores</span></button>
   <button class="tab-btn" data-tab="rpg"><span class="tab-ic">🔮</span><span class="tab-label">Modo RPG</span></button>
 </nav>
 
@@ -177,7 +177,7 @@ body::before{
     <div class="panel-head">
       <div>
         <div class="panel-title">⚔ Controle de Combate</div>
-        <div class="panel-sub">Monte a iniciativa e conduza o confronto em tempo real para os jogadores.</div>
+        <div class="panel-sub">Monte a ordem de iniciativa e conduza o confronto dos escritores.</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn" id="cb-add-player">+ Jogador</button>
@@ -215,14 +215,14 @@ body::before{
   <section class="panel" id="panel-bosses">
     <div class="panel-head">
       <div>
-        <div class="panel-title">☠ Bestiário</div>
-        <div class="panel-sub">Crie e gerencie as criaturas que os jogadores enfrentarão.</div>
+        <div class="panel-title">☠ Criaturas dos Contos</div>
+        <div class="panel-sub">Criaturas corrompidas dos contos — gerenciadas aqui.</div>
       </div>
-      <button class="btn primary" id="bs-new">+ Nova Criatura</button>
+      <button class="btn primary" id="bs-new">+ Nova Criatura dos Contos</button>
     </div>
 
     <div id="bs-list-wrap">
-      <div class="loading-state">⧖ Convocando criaturas…</div>
+      <div class="loading-state">⧖ Abrindo os contos…</div>
     </div>
 
     <!-- Editor de boss (some por padrão) -->
@@ -234,7 +234,7 @@ body::before{
     <div class="panel-head">
       <div>
         <div class="panel-title">📜 Diário de Sessões</div>
-        <div class="panel-sub">Registre o que aconteceu em cada sessão e os recursos usados.</div>
+        <div class="panel-sub">Registre o que aconteceu — pistas, sanidade perdida, livros lidos.</div>
       </div>
       <button class="btn primary" id="dr-new">+ Nova Sessão</button>
     </div>
@@ -251,14 +251,14 @@ body::before{
   <section class="panel" id="panel-fichas">
     <div class="panel-head">
       <div>
-        <div class="panel-title">🧙 Aventureiros</div>
-        <div class="panel-sub">Visão geral de HP, CA e status de todos os personagens.</div>
+        <div class="panel-title">✒ Escritores</div>
+        <div class="panel-sub">Sanidade, Vida e Exposição de todos os escritores.</div>
       </div>
       <button class="btn btn-sm" id="fc-refresh">⟳ Atualizar</button>
     </div>
 
     <div id="fc-list-wrap">
-      <div class="loading-state">⧖ Reunindo os heróis…</div>
+      <div class="loading-state">⧖ Convocando os escritores…</div>
     </div>
   </section>
 
@@ -327,11 +327,17 @@ body::before{
   btn.addEventListener('click',()=>{const n=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',n);btn.textContent=n==='dark'?'☀':'☽';localStorage.setItem('phantasos-theme',n);});
 })();
 
-// ── Guarda de acesso: exige ter vindo pela senha do index ──────────────
+// ── Guarda de acesso: exige senha do index ──────────────────────────
 (function(){
-  // Mantemos simples e consistente com index.html: sem sessão própria,
-  // apenas redireciona se o usuário cair aqui sem nunca ter passado pelo portal.
-  // (index.html já faz o gate por senha antes de linkar para mestre.html)
+  if (!localStorage.getItem('phantasos-mestre-auth')) {
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:20px;font-family:'Cinzel',serif;background:var(--bg);">
+        <div style="font-size:1.4rem;color:var(--gold);letter-spacing:.1em;">🔮 Jardim do Mestre</div>
+        <div style="font-size:.6rem;color:var(--ink-dim);letter-spacing:.2em;text-transform:uppercase;">Acesso restrito</div>
+        <a href="index.html" style="color:var(--gold);font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;border:1px solid var(--gold-dim);padding:8px 20px;margin-top:8px;">⟵ Voltar ao início</a>
+      </div>`;
+    return;
+  }
 })();
 
 // ── Toast helper ─────────────────────────────────────────────────────
@@ -474,9 +480,9 @@ function cbRenderList(){
     let hpBlock = '';
     if(entry.tipo==='jogador'){
       const ficha = cbFichasCache[entry.id];
-      if(ficha && ficha.core){
-        const hpAtual = Number(ficha.core.hpAtual)||0;
-        const hpMax = Number(ficha.core.hpMax)||1;
+      if(ficha && ficha.vida){
+        const hpAtual = Number(ficha.vida.atual ?? 10);
+        const hpMax = Number(ficha.vida.max || 10) || 1;
         const pct = cbHpPct(hpAtual, hpMax);
         hpBlock = `<div style="margin-top:6px;display:flex;align-items:center;gap:8px;max-width:220px">
           <span style="font-size:.7rem;color:var(--ink-2);white-space:nowrap;font-family:'Cinzel',serif">${hpAtual} / ${hpMax}</span>
@@ -739,7 +745,7 @@ async function cbOpenAttack(bossEntryIdx){
   function targetsHtml(){
     return jogadoresNaIniciativa.map(j=>{
       const ficha = cbFichasCache[j.id];
-      const hpInfo = ficha && ficha.core ? `${ficha.core.hpAtual}/${ficha.core.hpMax} HP` : '';
+      const hpInfo = ficha && ficha.vida ? `${ficha.vida.atual}/${ficha.vida.max} Vida` : '';
       return `<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);cursor:pointer">
         <input type="checkbox" class="cb-atk-target" data-id="${esc(j.id)}" style="flex-shrink:0">
         <span style="flex:1;font-family:'IM Fell English',serif;font-size:.9rem;color:var(--ink)">${esc(j.nome)}</span>
@@ -822,14 +828,14 @@ async function cbApplyDamage(targetIds, dano, acaoNome, atacanteNome){
   const results = [];
   for(const id of targetIds){
     const ficha = cbFichasCache[id];
-    if(!ficha || !ficha.core){ results.push({id, ok:false}); continue; }
-    const novoHp = Math.max(0, (Number(ficha.core.hpAtual)||0) - dano);
-    ficha.core.hpAtual = novoHp;
+    if(!ficha || !ficha.vida){ results.push({id, ok:false}); continue; }
+    const vidaAtualCb = Number((ficha.vida||{}).atual ?? 10); const novoHp = Math.max(0, vidaAtualCb - dano);
+    if(!ficha.vida) ficha.vida = {atual:10,max:10}; ficha.vida.atual = novoHp;
     try{
       const r = await fetch(`/api/ficha?id=${encodeURIComponent(id)}`, {
         method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ficha)
       });
-      results.push({ id, ok:r.ok, nome:ficha.nome, novoHp, hpMax:ficha.core.hpMax });
+      results.push({ id, ok:r.ok, nome:ficha.nome, novoHp, hpMax:(ficha.vida||{}).max||10 });
     }catch{
       results.push({ id, ok:false, nome:ficha.nome });
     }
@@ -894,7 +900,7 @@ let bsAvatarDataUrl = null; // base64 pendente de upload (preview local)
 function bsBlank(id){
   return {
     id, nome:'', tipo:'', cr:'', hpMax:10, hpAtual:10, ca:10,
-    atributos:{forca:10,destreza:10,constituicao:10,inteligencia:10,sabedoria:10,carisma:10},
+    atributos:{razao:5,vigor:5,vontade:5,expressao:5},
     acoes:[], habilidades:[], notasMestre:'',
     visibilidade:{imagem:false,nome:false,hp:false}
   };
@@ -921,7 +927,7 @@ async function bsLoadList(){
 function bsRenderList(){
   const wrap = document.getElementById('bs-list-wrap');
   if(bsList.length===0){
-    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">☠</span>Nenhuma criatura cadastrada ainda.</div>`;
+    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">☠</span>Nenhuma criatura dos contos cadastrada ainda.</div>`;
     return;
   }
   wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">${bsList.map(b=>{
@@ -1040,7 +1046,7 @@ function bsRenderEditor(){
   const el = document.getElementById('bs-editor');
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <div style="font-family:'Cinzel Decorative',serif;font-size:1.05rem;color:var(--crimson-lt)">${bsEditingId?'Editando Criatura':'Nova Criatura'}</div>
+      <div style="font-family:'Cinzel Decorative',serif;font-size:1.05rem;color:var(--crimson-lt)">${bsEditingId?'Editando Criatura':'Nova Criatura dos Contos'}</div>
       <button class="btn btn-sm" id="bs-editor-close">Fechar ✕</button>
     </div>
 
@@ -1081,8 +1087,7 @@ function bsRenderEditor(){
 
     <p class="section-label">Atributos</p>
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px">
-      ${bsAtributoRow('FOR','forca')}${bsAtributoRow('DES','destreza')}${bsAtributoRow('CON','constituicao')}
-      ${bsAtributoRow('INT','inteligencia')}${bsAtributoRow('SAB','sabedoria')}${bsAtributoRow('CAR','carisma')}
+      ${bsAtributoRow('RAZ','razao')}${bsAtributoRow('VIG','vigor')}${bsAtributoRow('VON','vontade')}${bsAtributoRow('EXP','expressao')}
     </div>
 
     <p class="section-label">Ações</p>
@@ -1165,9 +1170,9 @@ async function bsSaveEditor(){
   s.ca = Number(document.getElementById('bs-f-ca').value) || 10;
   s.hpMax = Number(document.getElementById('bs-f-hpmax').value) || 1;
   s.hpAtual = Number(document.getElementById('bs-f-hpatual').value) || 0;
-  ['forca','destreza','constituicao','inteligencia','sabedoria','carisma'].forEach(k=>{
+  ['razao','vigor','vontade','expressao'].forEach(k=>{
     const inp = document.querySelector(`.bs-attr-input[data-attr="${k}"]`);
-    s.atributos[k] = inp ? (Number(inp.value)||10) : 10;
+    s.atributos[k] = inp ? (Number(inp.value)||5) : 5;
   });
   s.notasMestre = document.getElementById('bs-f-notas').value;
   s.visibilidade = {
@@ -1432,7 +1437,7 @@ function fcHpPct(atual,max){ return Math.max(0,Math.min(100,((Number(atual)||0)/
 
 async function fcLoad(){
   const wrap = document.getElementById('fc-list-wrap');
-  wrap.innerHTML = `<div class="loading-state">⧖ Reunindo os heróis…</div>`;
+  wrap.innerHTML = `<div class="loading-state">⧖ Convocando os escritores…</div>`;
   let manifest = [];
   try{
     manifest = await loadFullManifest();
@@ -1441,7 +1446,7 @@ async function fcLoad(){
     return;
   }
   if(!manifest || manifest.length===0){
-    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">🧙</span>Nenhum personagem cadastrado.</div>`;
+    wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">🧙</span>Nenhum escritor cadastrado.</div>`;
     return;
   }
 
@@ -1469,9 +1474,13 @@ async function fcLoad(){
     const vida = p.vida || {};
     const sanAtual = Number(san.atual ?? 100), sanMax = Number(san.max || 100);
     const vidaAtual = Number(vida.atual ?? 10), vidaMax = Number(vida.max || 10);
+    const exp = Number(p.exposicao ?? 0);
     const sanPct  = Math.max(0,Math.min(100,Math.round((sanAtual/sanMax)*100)));
     const vidaPct = Math.max(0,Math.min(100,Math.round((vidaAtual/vidaMax)*100)));
+    const expPct  = Math.max(0,Math.min(100,exp));
     const obraAtivada = !!p.obra_ativada;
+    const sanEstagio = sanAtual<=10?'Colapso':sanAtual<=20?'Colapso':sanAtual<=40?'Incorporação':sanAtual<=60?'Distorção':sanAtual<=80?'Ecos':'Estável';
+    const sanCor = sanPct>60?'#2a7a40':sanPct>25?'#8a5010':'#7a1020';
     const avatarEl = p._avatarSrc
       ? `<img src="${p._avatarSrc}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top">`
       : `<span style="font-size:2.2rem;opacity:.3;color:var(--gold)">✒</span>`;
@@ -1481,10 +1490,12 @@ async function fcLoad(){
         <div style="padding:12px 14px 8px">
           <div style="font-family:'Cinzel',serif;font-size:.88rem;letter-spacing:.06em;color:var(--gold-lt)">${esc(p.nome||'Escritor')}</div>
           ${p.genero_principal?`<div style="font-size:.68rem;color:var(--ink-dim);font-style:italic;margin:2px 0 8px">Gênero: ${esc(p.genero_principal)}</div>`:'<div style="margin-bottom:8px"></div>'}
-          <div style="font-size:.68rem;color:var(--ink-2);margin-bottom:2px">Sanidade ${sanAtual}/${sanMax}</div>
-          <div style="height:4px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px"><div style="height:100%;width:${sanPct}%;background:${sanPct>60?'#2a7a40':sanPct>25?'#8a5010':'#7a1020'};transition:width .4s"></div></div>
+          <div style="font-size:.68rem;color:var(--ink-2);margin-bottom:2px">Sanidade ${sanAtual}/${sanMax} · <span style="color:${sanCor}">${sanEstagio}</span></div>
+          <div style="height:4px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px"><div style="height:100%;width:${sanPct}%;background:${sanCor};transition:width .4s"></div></div>
           <div style="font-size:.68rem;color:var(--ink-2);margin-bottom:2px">Vida ${vidaAtual}/${vidaMax}</div>
-          <div style="height:4px;background:var(--bg2);border:1px solid var(--border)"><div style="height:100%;width:${vidaPct}%;background:#7a1828;transition:width .4s"></div></div>
+          <div style="height:4px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px"><div style="height:100%;width:${vidaPct}%;background:#7a1828;transition:width .4s"></div></div>
+          <div style="font-size:.68rem;color:var(--teal-lt);margin-bottom:2px">Exposição ${exp}%</div>
+          <div style="height:4px;background:var(--bg2);border:1px solid var(--border)"><div style="height:100%;width:${expPct}%;background:var(--teal-lt);transition:width .4s"></div></div>
         </div>
       </a>
       <div style="padding:8px 14px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
