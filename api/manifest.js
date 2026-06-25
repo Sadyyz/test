@@ -48,7 +48,7 @@ function slugify(str) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -99,6 +99,39 @@ export default async function handler(req, res) {
       return res.status(200).json(novo);
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao salvar manifest', details: String(err) });
+    }
+  }
+
+  // ── PATCH: renomeia um personagem ────────────────────────────────
+  if (req.method === 'PATCH') {
+    try {
+      const { id } = req.query;
+      if (!id) return res.status(400).json({ error: 'Parâmetro "id" é obrigatório' });
+
+      const body = req.body || {};
+      const nome = String(body.nome || '').trim();
+      if (!nome) return res.status(400).json({ error: 'Campo "nome" é obrigatório' });
+
+      const list = (await redis.get(KEY)) || [];
+      const arr  = Array.isArray(list) ? list : [];
+      const item = arr.find(p => p.id === id);
+      if (!item) return res.status(404).json({ error: 'Personagem não encontrado' });
+
+      item.nome = nome;
+      await redis.set(KEY, arr);
+
+      // Atualiza também o nome dentro da ficha (campo nome)
+      try {
+        const ficha = await redis.get(`ficha:${id}`);
+        if (ficha && typeof ficha === 'object') {
+          ficha.nome = nome;
+          await redis.set(`ficha:${id}`, ficha);
+        }
+      } catch {}
+
+      return res.status(200).json({ ok: true, id, nome });
+    } catch (err) {
+      return res.status(500).json({ error: 'Erro ao renomear personagem', details: String(err) });
     }
   }
 
