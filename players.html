@@ -869,20 +869,18 @@ async function pollCombat(){
     const h=JSON.stringify(data);
     if(h!==lastCombatHash){
       lastCombatHash=h;
-      // Mestre pode sinalizar encerramento direto
       if(data.contoEncerrado && data.contoEncerrado !== lastContoEncerrado){
         lastContoEncerrado=data.contoEncerrado;
         setTimeout(()=>dispararContoEncerrado(data.contoNome||''), 200);
       }
-      // Fundo da arena atualizado pelo mestre
       if(data.arenaBgUpdatedAt && data.arenaBgUpdatedAt !== lastArenaBgUpdatedAt){
         lastArenaBgUpdatedAt = data.arenaBgUpdatedAt;
         applyArenaBg(data.arenaBgDim ?? 0.4);
       }
+      if(data.bossUpdatedAt && data.bossUpdatedAt !== lastBossUpdatedAt){
         lastBossUpdatedAt=data.bossUpdatedAt;
-        // Limpa cache de avatares para pegar a nova imagem
         Object.keys(_bossAvatarCache).forEach(k=>delete _bossAvatarCache[k]);
-        lastBossId=null; // força re-render do boss arena
+        lastBossId=null;
       }
       await renderCombat(data);
     }
