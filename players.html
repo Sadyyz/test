@@ -804,11 +804,8 @@ async function renderCombat(state){
   const bossEntry=bossEntries[0]||null;
   const newBossId=bossEntry?.bossId||null;
 
-  // Detecta morte: verifica se TODOS os inimigos foram derrotados
-  if(bossEntries.length>0){
-    const allDead = bossEntries.every(e=>Number(e.hpAtual??0)<=0);
-    const hadAlive = _lastBossHpMap && bossEntries.some(e=>(_lastBossHpMap[e.id]??1)>0);
-
+  // Log quando boss morre — animação SÓ pelo botão do Mestre
+  if(bossEntries.length>0 && _lastBossHpMap!==null){
     bossEntries.forEach(e=>{
       const wasAlive=(_lastBossHpMap??{})[e.id]??null;
       const nowHp=Number(e.hpAtual??0);
@@ -816,11 +813,8 @@ async function renderCombat(state){
         addLog(`${e.nome||'Criatura'} foi derrotada!`,'system');
       }
     });
-
-    if(allDead && hadAlive && _lastBossHpMap!==null){
-      const nomeBoss=bossEntry?.nome||'Criatura';
-      setTimeout(()=>dispararContoEncerrado(nomeBoss),400);
-    }
+  }
+  if(bossEntries.length>0){
     _lastBossHpMap={};
     bossEntries.forEach(e=>{ _lastBossHpMap[e.id]=Number(e.hpAtual??0); });
   } else {
@@ -892,113 +886,87 @@ async function pollCombat(){
 }
 
 // ── Poll: fichas ──────────────────────────────────────────────────────────────
-// Só carrega fichas dos jogadores que o Mestre adicionou à iniciativa
 async function pollPlayers(){
   try{
-    // Pega os ids dos jogadores na iniciativa do combate atual
-    let jogadorIds = [];
+    // Só mostra players que o Mestre adicionou à iniciativa
+    let jogadorIds=[];
     try{
-      const cr = await fetch('/api/combat');
+      const cr=await fetch('/api/combat');
       if(cr.ok){
-        const cs = await cr.json();
-        if(cs && Array.isArray(cs.iniciativa)){
-          jogadorIds = cs.iniciativa
-            .filter(e => e.tipo === 'jogador' && e.id)
-            .map(e => e.id);
+        const cs=await cr.json();
+        if(cs&&Array.isArray(cs.iniciativa)){
+          jogadorIds=cs.iniciativa.filter(e=>e.tipo==='jogador'&&e.id).map(e=>e.id);
         }
       }
     }catch{}
 
-    // Se não há jogadores na iniciativa, limpa a barra
-    if(jogadorIds.length === 0){
-      fichas = [];
-      renderPlayersBottom([]);
-      return;
+    if(jogadorIds.length===0){fichas=[];renderPlayersBottom([]);return;}
+
+    const h=jogadorIds.join(',');
+    if(h===lastPlayersHash&&fichas.length===jogadorIds.length){
+      await refreshHp(jogadorIds);return;
     }
+    lastPlayersHash=h;
 
-    const h = jogadorIds.join(',');
-    const changed = (h !== lastPlayersHash);
-
-    if(!changed && fichas.length === jogadorIds.length){
-      await refreshHp(jogadorIds);
-      return;
-    }
-
-    lastPlayersHash = h;
-
-    // Carrega fichas de quem está na iniciativa
-    const results = await Promise.allSettled(jogadorIds.map(async id => {
-      const r = await fetch(`/api/ficha?id=${encodeURIComponent(id)}`);
-      if(!r.ok) return null;
+    const results=await Promise.allSettled(jogadorIds.map(async id=>{
+      const r=await fetch(`/api/ficha?id=${encodeURIComponent(id)}`);
+      if(!r.ok)return null;
       return r.json();
     }));
+    fichas=results.filter(r=>r.status==='fulfilled'&&r.value).map(r=>r.value);
 
-    fichas = results
-      .filter(r => r.status === 'fulfilled' && r.value)
-      .map(r => r.value);
-
-    // Carrega avatares — SEMPRE retenta se cache for null ou undefined
-    await Promise.allSettled(fichas.map(async f => {
+    // Avatar: NUNCA cacheia null — só cacheia se tiver imagem de verdade
+    await Promise.allSettled(fichas.map(async f=>{
       try{
-        const cached = _playerAvatarCache[f.id];
-        // Só usa cache se for uma string (url válida) — null/undefined sempre retenta
-        if(typeof cached === 'string'){
-          f._avatarSrc = cached;
+        const cached=_playerAvatarCache[f.id];
+        if(typeof cached==='string'&&cached.length>0){
+          f._avatarSrc=cached;
         } else {
-          const r = await fetch(`/api/avatar?id=${encodeURIComponent(f.id)}`);
-          const src = r.ok ? ((await r.json()).avatar || null) : null;
-          f._avatarSrc = src;
-          if(src) _playerAvatarCache[f.id] = src; // só cacheia se tiver avatar de verdade
+          const r=await fetch(`/api/avatar?id=${encodeURIComponent(f.id)}`);
+          const src=r.ok?((await r.json()).avatar||null):null;
+          f._avatarSrc=src;
+          if(src) _playerAvatarCache[f.id]=src;
         }
-      }catch{ f._avatarSrc = null; }
+      }catch{f._avatarSrc=null;}
     }));
 
     renderPlayersBottom(fichas);
-  }catch{ setBadge('offline'); }
+  }catch{setBadge('offline');}
 }
 
-async function refreshHp(jogadorIds){
-  let updated = false;
-  await Promise.allSettled(fichas.map(async(f, i) => {
+async function refreshHp(manifest){
+  let updated=false;
+  await Promise.allSettled(fichas.map(async(f,i)=>{
     try{
-      const r = await fetch(`/api/ficha?id=${encodeURIComponent(f.id)}`);
-      if(!r.ok) return;
-      const fresh = await r.json();
+      const r=await fetch(`/api/ficha?id=${f.id}`);
+      if(!r.ok)return;
+      const fresh=await r.json();
 
-      const oldHash = JSON.stringify({vida:f.vida, sanidade:f.sanidade, nome:f.nome, exposicao:f.exposicao});
-      const newHash = JSON.stringify({vida:fresh.vida, sanidade:fresh.sanidade, nome:fresh.nome, exposicao:fresh.exposicao});
-      if(oldHash !== newHash){
-        fichas[i] = {...fichas[i], ...fresh, _avatarSrc: fichas[i]._avatarSrc};
-        updated = true;
+      // Detecta qualquer mudança na ficha (não só HP)
+      const oldHash=JSON.stringify({vida:f.vida,sanidade:f.sanidade,nome:f.nome,exposicao:f.exposicao});
+      const newHash=JSON.stringify({vida:fresh.vida,sanidade:fresh.sanidade,nome:fresh.nome,exposicao:fresh.exposicao});
+      if(oldHash!==newHash){
+        fichas[i]={...fichas[i],...fresh,_avatarSrc:fichas[i]._avatarSrc};updated=true;
 
-        const oldHp = Number((f.vida||{}).atual ?? 10);
-        const newHp = Number((fresh.vida||{}).atual ?? 10);
-        if(newHp !== oldHp){
-          const diff = newHp - oldHp;
-          const nome = fresh.nome || 'Escritor';
-          if(diff < 0) addLog(`${nome} perdeu ${Math.abs(diff)} de Vida (${newHp} restantes)`, 'attack');
-          else addLog(`${nome} recuperou ${diff} de Vida (${newHp} total)`, 'item');
+        const oldHp=Number((f.vida||{}).atual??10);
+        const newHp=Number((fresh.vida||{}).atual??10);
+        if(newHp!==oldHp){
+          const diff=newHp-oldHp;
+          const nome=fresh.nome||'Escritor';
+          if(diff<0)addLog(`${nome} perdeu ${Math.abs(diff)} de Vida (${newHp} restantes)`,'attack');
+          else addLog(`${nome} recuperou ${diff} de Vida (${newHp} total)`,'item');
         }
-        const oldS = Number((f.sanidade||{}).atual ?? 100);
-        const newS = Number((fresh.sanidade||{}).atual ?? 100);
-        if(newS !== oldS){
-          const diff = newS - oldS;
-          const nome = fresh.nome || 'Escritor';
-          if(diff < 0) addLog(`${nome} perdeu ${Math.abs(diff)} de Sanidade (${newS} restantes)`, 'skill');
-        }
-
-        // Retenta avatar se ainda não tiver
-        if(!fichas[i]._avatarSrc && !_playerAvatarCache[f.id]){
-          try{
-            const ar = await fetch(`/api/avatar?id=${encodeURIComponent(f.id)}`);
-            const src = ar.ok ? ((await ar.json()).avatar || null) : null;
-            if(src){ fichas[i]._avatarSrc = src; _playerAvatarCache[f.id] = src; }
-          }catch{}
+        const oldS=Number((f.sanidade||{}).atual??100);
+        const newS=Number((fresh.sanidade||{}).atual??100);
+        if(newS!==oldS){
+          const diff=newS-oldS;
+          const nome=fresh.nome||'Escritor';
+          if(diff<0)addLog(`${nome} perdeu ${Math.abs(diff)} de Sanidade (${newS} restantes)`,'skill');
         }
       }
     }catch{}
   }));
-  if(updated) renderPlayersBottom(fichas);
+  if(updated)renderPlayersBottom(fichas);
 }
 
 
@@ -1013,7 +981,6 @@ function dispararContoEncerrado(nomeBoss) {
   const bossImgs = document.querySelectorAll('.bs-boss-slot-img');
   const arena    = document.getElementById('bs-arena');
 
-  // Injeta keyframes
   if (!document.getElementById('quake-keyframes')) {
     const style = document.createElement('style');
     style.id = 'quake-keyframes';
@@ -1022,158 +989,137 @@ function dispararContoEncerrado(nomeBoss) {
         0%   { transform:translate(0,0) rotate(0deg); }
         5%   { transform:translate(-7px,4px) rotate(-.5deg); }
         10%  { transform:translate(9px,-5px) rotate(.6deg); }
-        15%  { transform:translate(-6px,8px) rotate(-.4deg); }
         20%  { transform:translate(10px,-3px) rotate(.7deg); }
-        25%  { transform:translate(-8px,5px) rotate(-.6deg); }
         30%  { transform:translate(6px,-8px) rotate(.4deg); }
-        35%  { transform:translate(-10px,4px) rotate(-.7deg); }
         40%  { transform:translate(8px,-5px) rotate(.5deg); }
-        50%  { transform:translate(9px,-4px) rotate(.6deg); }
-        60%  { transform:translate(5px,-7px) rotate(.4deg); }
-        75%  { transform:translate(-3px,2px) rotate(-.2deg); }
-        90%  { transform:translate(-1px,1px) rotate(0deg); }
+        55%  { transform:translate(-7px,6px) rotate(-.5deg); }
+        70%  { transform:translate(-4px,3px) rotate(-.2deg); }
+        85%  { transform:translate(2px,-2px) rotate(.1deg); }
         100% { transform:translate(0,0) rotate(0deg); }
       }
       @keyframes quakeBg {
-        0%,100% { transform:translate(0,0) scale(1); }
-        15%  { transform:translate(-5px,3px) scale(1.003); }
-        30%  { transform:translate(6px,-4px) scale(1.005); }
-        45%  { transform:translate(-4px,5px) scale(1.003); }
-        60%  { transform:translate(5px,-3px) scale(1.004); }
+        0%,100%{ transform:translate(0,0); }
+        20%{ transform:translate(-5px,3px); }
+        40%{ transform:translate(6px,-4px); }
+        60%{ transform:translate(-4px,5px); }
+        80%{ transform:translate(5px,-3px); }
       }
       @keyframes bossSink {
         0%   { transform:translateY(0px)   scale(1)    rotate(0deg);    filter:brightness(0.55) saturate(0) contrast(0.9); opacity:1; }
-        15%  { transform:translateY(8px)   scale(0.99) rotate(-.3deg);  filter:brightness(0.40) saturate(0) contrast(0.85); opacity:1; }
-        40%  { transform:translateY(50px)  scale(0.97) rotate(-1deg);   filter:brightness(0.22) saturate(0) contrast(0.80); opacity:.85; }
-        70%  { transform:translateY(130px) scale(0.93) rotate(-2deg);   filter:brightness(0.07) saturate(0) contrast(0.70); opacity:.4; }
-        100% { transform:translateY(280px) scale(0.88) rotate(-3.5deg); filter:brightness(0)    saturate(0) contrast(0.5);  opacity:0; }
+        10%  { transform:translateY(5px)   scale(0.99) rotate(-.2deg);  filter:brightness(0.45) saturate(0) contrast(0.88); opacity:1; }
+        30%  { transform:translateY(35px)  scale(0.97) rotate(-.8deg);  filter:brightness(0.25) saturate(0) contrast(0.82); opacity:.9; }
+        60%  { transform:translateY(110px) scale(0.93) rotate(-1.8deg); filter:brightness(0.08) saturate(0) contrast(0.72); opacity:.5; }
+        100% { transform:translateY(280px) scale(0.87) rotate(-3deg);   filter:brightness(0)    saturate(0) contrast(0.5);  opacity:0; }
       }
       @keyframes bossVignette {
-        0%   { opacity:0; }
-        20%  { opacity:.4; }
-        100% { opacity:.92; }
+        0%  { opacity:0; }
+        20% { opacity:.35; }
+        100%{ opacity:.9; }
       }
     `;
     document.head.appendChild(style);
   }
 
-  // Vinheta escura crescendo sobre a arena
+  // Vinheta escura crescendo
   const vignette = document.createElement('div');
   vignette.id = 'conto-vignette';
-  vignette.style.cssText = [
-    'position:absolute;inset:0;z-index:4;pointer-events:none;',
-    'background:radial-gradient(ellipse at center, transparent 15%, rgba(0,0,0,.92) 100%);',
-    'animation:bossVignette 5.6s ease forwards;'
-  ].join('');
+  vignette.style.cssText = 'position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse at center,transparent 10%,rgba(0,0,0,.93) 100%);animation:bossVignette 5.8s ease forwards;';
   if (arena) arena.appendChild(vignette);
 
-  // Zera barra HP
-  document.querySelectorAll('.bs-hp-fill').forEach(fill => {
-    fill.style.transition = 'width 1.2s ease';
-    fill.style.width = '0%';
+  document.querySelectorAll('.bs-hp-fill').forEach(fill=>{
+    fill.style.transition='width 1.2s ease'; fill.style.width='0%';
   });
 
-  // FASE 1: Terremoto 1.8s
-  bossImgs.forEach(img => {
-    img.style.transformOrigin = 'bottom center';
-    img.style.animation = 'quake 0.09s ease-in-out infinite';
+  // FASE 1 — terremoto 1.8s
+  bossImgs.forEach(img=>{
+    img.style.transformOrigin='bottom center';
+    img.style.animation='quake 0.09s ease-in-out infinite';
   });
-  if (arena) arena.style.animation = 'quakeBg 0.13s ease-in-out 14';
+  if(arena) arena.style.animation='quakeBg 0.13s ease-in-out 14';
 
-  // Flash branco no pico
-  setTimeout(() => {
-    const flash = document.createElement('div');
-    flash.style.cssText = 'position:absolute;inset:0;z-index:6;background:#fff;pointer-events:none;opacity:0;transition:opacity .07s ease;';
-    if (arena) arena.appendChild(flash);
-    requestAnimationFrame(() => {
-      flash.style.opacity = '.22';
-      setTimeout(() => {
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 200);
-      }, 70);
+  // flash no pico
+  setTimeout(()=>{
+    const fl=document.createElement('div');
+    fl.style.cssText='position:absolute;inset:0;z-index:6;background:#fff;pointer-events:none;opacity:0;transition:opacity .07s;';
+    if(arena) arena.appendChild(fl);
+    requestAnimationFrame(()=>{
+      fl.style.opacity='.2';
+      setTimeout(()=>{ fl.style.opacity='0'; setTimeout(()=>fl.remove(),200); },70);
     });
-  }, 900);
+  },900);
 
-  // FASE 2: Para tremor, dessatura (0.5s no lugar)
-  setTimeout(() => {
-    if (arena) arena.style.animation = '';
-    bossImgs.forEach(img => {
-      img.style.animation = '';
-      img.style.transformOrigin = 'bottom center';
-      img.style.transition = 'filter 0.5s ease';
-      img.style.filter = 'brightness(0.55) saturate(0) contrast(0.9)';
+  // FASE 2 — para tremor, dessatura (0.5s parado)
+  setTimeout(()=>{
+    if(arena) arena.style.animation='';
+    bossImgs.forEach(img=>{
+      img.style.animation='';
+      img.style.transformOrigin='bottom center';
+      img.style.transition='filter 0.5s ease';
+      img.style.filter='brightness(0.55) saturate(0) contrast(0.9)';
     });
 
-    // FASE 3: Afunda — estilo Black Souls 2
-    setTimeout(() => {
-      bossImgs.forEach(img => {
-        img.style.transition = 'none';
-        img.style.animation = 'bossSink 3.8s cubic-bezier(0.18, 0.0, 0.40, 1) forwards';
+    // FASE 3 — afunda pesado estilo Black Souls 2
+    setTimeout(()=>{
+      bossImgs.forEach(img=>{
+        img.style.transition='none';
+        img.style.animation='bossSink 3.8s cubic-bezier(0.16,0,0.38,1) forwards';
       });
-      document.querySelectorAll('.bs-boss-slot-hpbar').forEach(bar => {
-        bar.style.transition = 'opacity 0.7s ease';
-        bar.style.opacity = '0';
+      document.querySelectorAll('.bs-boss-slot-hpbar').forEach(bar=>{
+        bar.style.transition='opacity 0.7s ease'; bar.style.opacity='0';
       });
-    }, 480);
+    },480);
+  },1800);
 
-  }, 1800);
+  // FASE 4 — overlay CONTO ENCERRADO
+  setTimeout(()=>{
+    const ov=document.createElement('div');
+    ov.id='conto-encerrado-overlay';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:#000;opacity:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:28px;transition:opacity 1.1s ease;cursor:pointer;';
 
-  // FASE 4: Overlay CONTO ENCERRADO — aparece quando boss sumiu (1.8+0.48+3.8 = ~6.1s)
-  setTimeout(() => {
-    const ov = document.createElement('div');
-    ov.id = 'conto-encerrado-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;opacity:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:28px;transition:opacity 1.1s ease;cursor:pointer;';
+    const lT=document.createElement('div');
+    lT.style.cssText='width:0;height:1px;background:linear-gradient(90deg,transparent,#8B1A1A,transparent);transition:width 1.6s ease 0.3s;';
 
-    const lT = document.createElement('div');
-    lT.style.cssText = 'width:0;height:1px;background:linear-gradient(90deg,transparent,#8B1A1A,transparent);transition:width 1.6s ease 0.3s;';
+    const txt=document.createElement('div');
+    txt.style.cssText='font-family:Cinzel,serif;font-size:clamp(1.1rem,4vw,2.2rem);letter-spacing:.55em;text-transform:uppercase;color:#c8a878;opacity:0;transform:translateY(14px);transition:opacity 1.2s ease 0.7s,transform 1.2s ease 0.7s;text-align:center;padding:0 24px;text-shadow:0 0 40px rgba(180,100,20,.4);';
+    txt.textContent='CONTO ENCERRADO';
 
-    const txt = document.createElement('div');
-    txt.style.cssText = 'font-family:Cinzel,serif;font-size:clamp(1.1rem,4vw,2.2rem);letter-spacing:.55em;text-transform:uppercase;color:#c8a878;opacity:0;transform:translateY(14px);transition:opacity 1.2s ease 0.7s,transform 1.2s ease 0.7s;text-align:center;padding:0 24px;text-shadow:0 0 40px rgba(180,100,20,.4);';
-    txt.textContent = 'CONTO ENCERRADO';
+    const sub=document.createElement('div');
+    sub.style.cssText='font-family:IM Fell English,serif;font-size:clamp(.65rem,2vw,.95rem);letter-spacing:.2em;color:#5a3a20;font-style:italic;opacity:0;transition:opacity 0.9s ease 1.9s;text-align:center;padding:0 24px;';
+    sub.textContent=nomeBoss||'';
 
-    const sub = document.createElement('div');
-    sub.style.cssText = 'font-family:IM Fell English,serif;font-size:clamp(.65rem,2vw,.95rem);letter-spacing:.2em;color:#5a3a20;font-style:italic;opacity:0;transition:opacity 0.9s ease 1.9s;text-align:center;padding:0 24px;';
-    sub.textContent = nomeBoss || '';
+    const lB=document.createElement('div');
+    lB.style.cssText='width:0;height:1px;background:linear-gradient(90deg,transparent,#8B1A1A,transparent);transition:width 1.6s ease 0.3s;';
 
-    const lB = document.createElement('div');
-    lB.style.cssText = 'width:0;height:1px;background:linear-gradient(90deg,transparent,#8B1A1A,transparent);transition:width 1.6s ease 0.3s;';
+    const hint=document.createElement('div');
+    hint.style.cssText='position:absolute;bottom:28px;font-family:Cinzel,serif;font-size:.42rem;letter-spacing:.3em;text-transform:uppercase;color:#2a1508;opacity:0;transition:opacity 0.6s ease 2.8s;';
+    hint.textContent='toque para continuar';
 
-    const hint = document.createElement('div');
-    hint.style.cssText = 'position:absolute;bottom:28px;font-family:Cinzel,serif;font-size:.42rem;letter-spacing:.3em;text-transform:uppercase;color:#2a1508;opacity:0;transition:opacity 0.6s ease 2.8s;';
-    hint.textContent = 'toque para continuar';
-
-    ov.appendChild(lT);
-    ov.appendChild(txt);
-    if (nomeBoss) ov.appendChild(sub);
-    ov.appendChild(lB);
-    ov.appendChild(hint);
+    ov.appendChild(lT); ov.appendChild(txt);
+    if(nomeBoss) ov.appendChild(sub);
+    ov.appendChild(lB); ov.appendChild(hint);
     document.body.appendChild(ov);
 
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      ov.style.opacity = '1';
-      setTimeout(() => { lT.style.width = 'min(380px,60vw)'; lB.style.width = 'min(380px,60vw)'; }, 150);
-      setTimeout(() => { txt.style.opacity = '1'; txt.style.transform = 'translateY(0)'; }, 600);
-      setTimeout(() => { sub.style.opacity = '1'; }, 1800);
-      setTimeout(() => { hint.style.opacity = '1'; }, 2600);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      ov.style.opacity='1';
+      setTimeout(()=>{ lT.style.width='min(380px,60vw)'; lB.style.width='min(380px,60vw)'; },150);
+      setTimeout(()=>{ txt.style.opacity='1'; txt.style.transform='translateY(0)'; },600);
+      setTimeout(()=>{ sub.style.opacity='1'; },1800);
+      setTimeout(()=>{ hint.style.opacity='1'; },2600);
     }));
 
-    ov.addEventListener('click', () => {
-      ov.style.transition = 'opacity 0.5s ease';
-      ov.style.opacity = '0';
-      setTimeout(() => {
+    ov.addEventListener('click',()=>{
+      ov.style.transition='opacity 0.5s ease'; ov.style.opacity='0';
+      setTimeout(()=>{
         ov.remove();
         document.getElementById('conto-vignette')?.remove();
-        document.querySelectorAll('.bs-boss-slot-img').forEach(el => {
-          el.style.filter = '';
-          el.style.transform = '';
-          el.style.opacity = '';
-          el.style.transition = '';
-          el.style.animation = '';
+        document.querySelectorAll('.bs-boss-slot-img').forEach(el=>{
+          el.style.filter=''; el.style.transform=''; el.style.opacity='';
+          el.style.transition=''; el.style.animation='';
         });
-        _lastBossHpMap = null;
-      }, 550);
+        _lastBossHpMap=null;
+      },550);
     });
-  }, 6200);
+  },6300);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
