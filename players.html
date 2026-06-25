@@ -459,23 +459,6 @@ body::before{
   <div id="standby">
     <div class="standby-ring">⧖</div>
     <p class="standby-text">Aguardando o Mestre iniciar o combate</p>
-    <button id="btn-enter-arena" onclick="entrarNaArena()" style="
-      margin-top:28px;
-      font-family:'Cinzel',serif;
-      font-size:.5rem;
-      letter-spacing:.35em;
-      text-transform:uppercase;
-      padding:10px 28px;
-      background:rgba(80,0,0,.25);
-      border:1px solid var(--crimson);
-      color:var(--crimson-lt);
-      cursor:pointer;
-      transition:all .25s;
-      opacity:.7;
-    "
-    onmouseover="this.style.opacity='1';this.style.background='rgba(122,24,40,.45)'"
-    onmouseout="this.style.opacity='.7';this.style.background='rgba(80,0,0,.25)'"
-    >⚔ Entrar no Combate</button>
   </div>
 </div>
 
@@ -988,16 +971,6 @@ async function refreshHp(manifest){
   if(updated)renderPlayersBottom(fichas);
 }
 
-
-// ══════════════════════════════════════════════════
-//  ENTRAR NA ARENA MANUALMENTE
-// ══════════════════════════════════════════════════
-function entrarNaArena() {
-  const arena   = document.getElementById('bs-arena');
-  const standby = document.getElementById('standby').closest('.page-standby');
-  standby.style.display = 'none';
-  arena.classList.add('show');
-}
 
 // ══════════════════════════════════════════════════
 //  ANIMAÇÃO: CONTO ENCERRADO (disparada pelo mestre)
