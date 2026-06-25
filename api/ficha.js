@@ -59,10 +59,10 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const data = await redis.get(key);
-      if (data) return res.status(200).json(data);
+      if (data) return res.status(200).json({ ...data, id });
       // Fallback: tenta carregar ficha estática do repositório
       const staticData = loadStaticFicha(id);
-      if (staticData) return res.status(200).json(staticData);
+      if (staticData) return res.status(200).json({ ...staticData, id });
       return res.status(404).json({ error: 'Ficha não encontrada' });
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao buscar ficha', details: String(err) });
