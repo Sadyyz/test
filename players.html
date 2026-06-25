@@ -871,7 +871,11 @@ async function pollCombat(){
       lastCombatHash=h;
       if(data.contoEncerrado && data.contoEncerrado !== lastContoEncerrado){
         lastContoEncerrado=data.contoEncerrado;
-        setTimeout(()=>dispararContoEncerrado(data.contoNome||''), 200);
+        // Só dispara se o combate está ativo e há/havia inimigos na iniciativa
+        const temInimigos = Array.isArray(data.iniciativa) && data.iniciativa.some(e=>e.tipo==='boss'||e.tipo==='inimigo');
+        if(data.ativo && temInimigos){
+          setTimeout(()=>dispararContoEncerrado(data.contoNome||''), 200);
+        }
       }
       if(data.arenaBgUpdatedAt && data.arenaBgUpdatedAt !== lastArenaBgUpdatedAt){
         lastArenaBgUpdatedAt = data.arenaBgUpdatedAt;
@@ -978,9 +982,9 @@ let _lastBossHpMap = null;
 function dispararContoEncerrado(nomeBoss) {
   if (document.getElementById('conto-encerrado-overlay')) return;
 
-  // ── FASE 1: Terremoto nos bosses (1.6s de tremida intensa) ──
   const bossSlots = document.querySelectorAll('.bs-boss-slot');
   const bossImgs  = document.querySelectorAll('.bs-boss-slot-img');
+  const arena     = document.getElementById('bs-arena');
 
   // Zera HP imediatamente
   document.querySelectorAll('.bs-hp-fill').forEach(fill => {
@@ -1026,30 +1030,44 @@ function dispararContoEncerrado(nomeBoss) {
     document.head.appendChild(style);
   }
 
-  // Aplica tremida nas imagens dos bosses
+  // ── FASE 1: Terremoto (1.6s) ──
   bossImgs.forEach(img => {
-    img.style.animation = 'quake 0.1s ease-in-out infinite';
     img.style.transformOrigin = 'bottom center';
+    img.style.animation = 'quake 0.1s ease-in-out infinite';
   });
-
-  // Tremida suave na arena inteira (sensação de estrondo)
-  const arena = document.getElementById('bs-arena');
   if (arena) arena.style.animation = 'quakeBg 0.15s ease-in-out 8';
 
-  // ── FASE 2: Após terremoto, boss desce lento e desaparece (1.6s depois) ──
+  // Zera HP imediatamente
+  document.querySelectorAll('.bs-hp-fill').forEach(fill => {
+    fill.style.transition = 'width 0.8s ease';
+    fill.style.width = '0%';
+  });
+
+  // ── FASE 2: Desaturação + descida lenta estilo Souls (começa em 1.6s) ──
   setTimeout(() => {
+    if (arena) arena.style.animation = '';
     bossImgs.forEach(img => {
       img.style.animation = '';
-      img.style.transition = 'all 2.2s cubic-bezier(.2, 0, .4, 1)';
-      img.style.filter     = 'brightness(0.06) sepia(1) saturate(0.2)';
-      img.style.transform  = 'translateY(130px) scale(0.88)';
-      img.style.opacity    = '0';
+      img.style.transformOrigin = 'bottom center';
+      // Primeiro: desaturação rápida (0.6s) enquanto ainda está no lugar
+      img.style.transition = 'filter 0.6s ease';
+      img.style.filter = 'brightness(0.55) saturate(0) contrast(0.9)';
     });
-    bossSlots.forEach(slot => {
-      slot.style.transition = 'opacity 2s ease';
-      slot.style.opacity = '0';
-    });
-    if (arena) arena.style.animation = '';
+
+    // Depois da desaturação: desce lentamente e some (começa em 0.7s)
+    setTimeout(() => {
+      bossImgs.forEach(img => {
+        img.style.transition = 'transform 2.8s cubic-bezier(0.1, 0, 0.3, 1), filter 2.4s ease, opacity 2.6s ease 0.4s';
+        img.style.transform  = 'translateY(160px) scale(0.9)';
+        img.style.filter     = 'brightness(0.08) saturate(0) contrast(0.8)';
+        img.style.opacity    = '0';
+      });
+      // Labels de HP somem junto
+      document.querySelectorAll('.bs-boss-slot-hpbar').forEach(bar => {
+        bar.style.transition = 'opacity 1s ease';
+        bar.style.opacity = '0';
+      });
+    }, 650);
   }, 1600);
 
   // ── FASE 3: Overlay de conto encerrado (após boss sumir) ──
@@ -1107,7 +1125,7 @@ function dispararContoEncerrado(nomeBoss) {
         _lastBossHpMap = null;
       }, 550);
     });
-  }, 3600); // tremida 1.6s + descida 2s
+  }, 4800); // tremida 1.6s + desaturação 0.65s + descida 2.8s ≈ 5s, overlay aparece um pouco antes
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
