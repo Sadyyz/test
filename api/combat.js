@@ -87,6 +87,8 @@ export default async function handler(req, res) {
         ...(body.contoNome != null && { contoNome: String(body.contoNome) }),
         // Sinal de boss atualizado: invalida cache do players.html
         ...(body.bossUpdatedAt != null && { bossUpdatedAt: body.bossUpdatedAt }),
+        // Sinal de fundo da arena atualizado
+        ...(body.arenaBgUpdatedAt != null && { arenaBgUpdatedAt: body.arenaBgUpdatedAt }),
       };
 
       await redis.set(KEY, novo);

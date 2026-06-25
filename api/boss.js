@@ -109,6 +109,7 @@ export default async function handler(req, res) {
         id,
         nome: String(body.nome ?? existente?.nome ?? ''),
         tipo: String(body.tipo ?? existente?.tipo ?? ''),
+        categoria: String(body.categoria ?? existente?.categoria ?? 'Sem Categoria'),
         cr: body.cr ?? existente?.cr ?? '',
         hpMax: Number.isFinite(body.hpMax) ? body.hpMax : (existente?.hpMax ?? 10),
         hpAtual: Number.isFinite(body.hpAtual) ? body.hpAtual : (existente?.hpAtual ?? body.hpMax ?? existente?.hpMax ?? 10),
