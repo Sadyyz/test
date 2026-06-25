@@ -804,8 +804,11 @@ async function renderCombat(state){
   const bossEntry=bossEntries[0]||null;
   const newBossId=bossEntry?.bossId||null;
 
-  // Log quando um boss morre (sem disparar animação — só o Mestre dispara via botão)
-  if(bossEntries.length>0 && _lastBossHpMap!==null){
+  // Detecta morte: verifica se TODOS os inimigos foram derrotados
+  if(bossEntries.length>0){
+    const allDead = bossEntries.every(e=>Number(e.hpAtual??0)<=0);
+    const hadAlive = _lastBossHpMap && bossEntries.some(e=>(_lastBossHpMap[e.id]??1)>0);
+
     bossEntries.forEach(e=>{
       const wasAlive=(_lastBossHpMap??{})[e.id]??null;
       const nowHp=Number(e.hpAtual??0);
@@ -813,8 +816,11 @@ async function renderCombat(state){
         addLog(`${e.nome||'Criatura'} foi derrotada!`,'system');
       }
     });
-  }
-  if(bossEntries.length>0){
+
+    if(allDead && hadAlive && _lastBossHpMap!==null){
+      const nomeBoss=bossEntry?.nome||'Criatura';
+      setTimeout(()=>dispararContoEncerrado(nomeBoss),400);
+    }
     _lastBossHpMap={};
     bossEntries.forEach(e=>{ _lastBossHpMap[e.id]=Number(e.hpAtual??0); });
   } else {
@@ -886,85 +892,113 @@ async function pollCombat(){
 }
 
 // ── Poll: fichas ──────────────────────────────────────────────────────────────
+// Só carrega fichas dos jogadores que o Mestre adicionou à iniciativa
 async function pollPlayers(){
   try{
-    const [staticRes,dynRes]=await Promise.allSettled([
-      fetch('manifest.json').then(r=>r.ok?r.json():[]),
-      fetch('/api/manifest').then(r=>r.ok?r.json():[])
-    ]);
-    const staticList=staticRes.status==='fulfilled'&&Array.isArray(staticRes.value)?staticRes.value:[];
-    const dynList=dynRes.status==='fulfilled'&&Array.isArray(dynRes.value)?dynRes.value:[];
-    const seen=new Set();
-    const manifest=[...staticList,...dynList].filter(m=>{if(!m||seen.has(m.id))return false;seen.add(m.id);return true;});
-    if(!Array.isArray(manifest)||manifest.length===0){fichas=[];renderPlayersBottom([]);return;}
+    // Pega os ids dos jogadores na iniciativa do combate atual
+    let jogadorIds = [];
+    try{
+      const cr = await fetch('/api/combat');
+      if(cr.ok){
+        const cs = await cr.json();
+        if(cs && Array.isArray(cs.iniciativa)){
+          jogadorIds = cs.iniciativa
+            .filter(e => e.tipo === 'jogador' && e.id)
+            .map(e => e.id);
+        }
+      }
+    }catch{}
 
-    const h=JSON.stringify(manifest.map(m=>m.id+m.nome));
-    const changed=(h!==lastPlayersHash);
-    if(!changed&&fichas.length===manifest.length){
-      await refreshHp(manifest);return;
+    // Se não há jogadores na iniciativa, limpa a barra
+    if(jogadorIds.length === 0){
+      fichas = [];
+      renderPlayersBottom([]);
+      return;
     }
 
-    lastPlayersHash=h;
-    setBadge(combatAtivo?'combat':'live');
+    const h = jogadorIds.join(',');
+    const changed = (h !== lastPlayersHash);
 
-    const results=await Promise.allSettled(manifest.map(async m=>{
-      const r=await fetch(`/api/ficha?id=${m.id}`);
-      if(!r.ok)return null;
+    if(!changed && fichas.length === jogadorIds.length){
+      await refreshHp(jogadorIds);
+      return;
+    }
+
+    lastPlayersHash = h;
+
+    // Carrega fichas de quem está na iniciativa
+    const results = await Promise.allSettled(jogadorIds.map(async id => {
+      const r = await fetch(`/api/ficha?id=${encodeURIComponent(id)}`);
+      if(!r.ok) return null;
       return r.json();
     }));
 
-    fichas=results.filter(r=>r.status==='fulfilled'&&r.value).map(r=>r.value);
+    fichas = results
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => r.value);
 
-    await Promise.allSettled(fichas.map(async f=>{
+    // Carrega avatares — SEMPRE retenta se cache for null ou undefined
+    await Promise.allSettled(fichas.map(async f => {
       try{
-        if(_playerAvatarCache[f.id] !== undefined){
-          f._avatarSrc = _playerAvatarCache[f.id];
+        const cached = _playerAvatarCache[f.id];
+        // Só usa cache se for uma string (url válida) — null/undefined sempre retenta
+        if(typeof cached === 'string'){
+          f._avatarSrc = cached;
         } else {
-          const r=await fetch(`/api/avatar?id=${f.id}`);
-          const src = r.ok ? ((await r.json()).avatar||null) : null;
+          const r = await fetch(`/api/avatar?id=${encodeURIComponent(f.id)}`);
+          const src = r.ok ? ((await r.json()).avatar || null) : null;
           f._avatarSrc = src;
-          _playerAvatarCache[f.id] = src;
+          if(src) _playerAvatarCache[f.id] = src; // só cacheia se tiver avatar de verdade
         }
-      }catch{}
+      }catch{ f._avatarSrc = null; }
     }));
 
     renderPlayersBottom(fichas);
-  }catch{setBadge('offline')}
+  }catch{ setBadge('offline'); }
 }
 
-async function refreshHp(manifest){
-  let updated=false;
-  await Promise.allSettled(fichas.map(async(f,i)=>{
+async function refreshHp(jogadorIds){
+  let updated = false;
+  await Promise.allSettled(fichas.map(async(f, i) => {
     try{
-      const r=await fetch(`/api/ficha?id=${f.id}`);
-      if(!r.ok)return;
-      const fresh=await r.json();
+      const r = await fetch(`/api/ficha?id=${encodeURIComponent(f.id)}`);
+      if(!r.ok) return;
+      const fresh = await r.json();
 
-      // Detecta qualquer mudança na ficha (não só HP)
-      const oldHash=JSON.stringify({vida:f.vida,sanidade:f.sanidade,nome:f.nome,exposicao:f.exposicao});
-      const newHash=JSON.stringify({vida:fresh.vida,sanidade:fresh.sanidade,nome:fresh.nome,exposicao:fresh.exposicao});
-      if(oldHash!==newHash){
-        fichas[i]={...fichas[i],...fresh,_avatarSrc:fichas[i]._avatarSrc};updated=true;
+      const oldHash = JSON.stringify({vida:f.vida, sanidade:f.sanidade, nome:f.nome, exposicao:f.exposicao});
+      const newHash = JSON.stringify({vida:fresh.vida, sanidade:fresh.sanidade, nome:fresh.nome, exposicao:fresh.exposicao});
+      if(oldHash !== newHash){
+        fichas[i] = {...fichas[i], ...fresh, _avatarSrc: fichas[i]._avatarSrc};
+        updated = true;
 
-        const oldHp=Number((f.vida||{}).atual??10);
-        const newHp=Number((fresh.vida||{}).atual??10);
-        if(newHp!==oldHp){
-          const diff=newHp-oldHp;
-          const nome=fresh.nome||'Escritor';
-          if(diff<0)addLog(`${nome} perdeu ${Math.abs(diff)} de Vida (${newHp} restantes)`,'attack');
-          else addLog(`${nome} recuperou ${diff} de Vida (${newHp} total)`,'item');
+        const oldHp = Number((f.vida||{}).atual ?? 10);
+        const newHp = Number((fresh.vida||{}).atual ?? 10);
+        if(newHp !== oldHp){
+          const diff = newHp - oldHp;
+          const nome = fresh.nome || 'Escritor';
+          if(diff < 0) addLog(`${nome} perdeu ${Math.abs(diff)} de Vida (${newHp} restantes)`, 'attack');
+          else addLog(`${nome} recuperou ${diff} de Vida (${newHp} total)`, 'item');
         }
-        const oldS=Number((f.sanidade||{}).atual??100);
-        const newS=Number((fresh.sanidade||{}).atual??100);
-        if(newS!==oldS){
-          const diff=newS-oldS;
-          const nome=fresh.nome||'Escritor';
-          if(diff<0)addLog(`${nome} perdeu ${Math.abs(diff)} de Sanidade (${newS} restantes)`,'skill');
+        const oldS = Number((f.sanidade||{}).atual ?? 100);
+        const newS = Number((fresh.sanidade||{}).atual ?? 100);
+        if(newS !== oldS){
+          const diff = newS - oldS;
+          const nome = fresh.nome || 'Escritor';
+          if(diff < 0) addLog(`${nome} perdeu ${Math.abs(diff)} de Sanidade (${newS} restantes)`, 'skill');
+        }
+
+        // Retenta avatar se ainda não tiver
+        if(!fichas[i]._avatarSrc && !_playerAvatarCache[f.id]){
+          try{
+            const ar = await fetch(`/api/avatar?id=${encodeURIComponent(f.id)}`);
+            const src = ar.ok ? ((await ar.json()).avatar || null) : null;
+            if(src){ fichas[i]._avatarSrc = src; _playerAvatarCache[f.id] = src; }
+          }catch{}
         }
       }
     }catch{}
   }));
-  if(updated)renderPlayersBottom(fichas);
+  if(updated) renderPlayersBottom(fichas);
 }
 
 
@@ -979,29 +1013,26 @@ function dispararContoEncerrado(nomeBoss) {
   const bossImgs = document.querySelectorAll('.bs-boss-slot-img');
   const arena    = document.getElementById('bs-arena');
 
-  // ── Injeta keyframes ──────────────────────────────────────────────────────
+  // Injeta keyframes
   if (!document.getElementById('quake-keyframes')) {
     const style = document.createElement('style');
     style.id = 'quake-keyframes';
     style.textContent = `
       @keyframes quake {
-        0%   { transform: translate(0,0) rotate(0deg); }
-        5%   { transform: translate(-7px,4px) rotate(-.5deg); }
-        10%  { transform: translate(9px,-5px) rotate(.6deg); }
-        15%  { transform: translate(-6px,8px) rotate(-.4deg); }
-        20%  { transform: translate(10px,-3px) rotate(.7deg); }
-        25%  { transform: translate(-8px,5px) rotate(-.6deg); }
-        30%  { transform: translate(6px,-8px) rotate(.4deg); }
-        35%  { transform: translate(-10px,4px) rotate(-.7deg); }
-        40%  { transform: translate(8px,-5px) rotate(.5deg); }
-        45%  { transform: translate(-5px,9px) rotate(-.4deg); }
-        50%  { transform: translate(9px,-4px) rotate(.6deg); }
-        55%  { transform: translate(-7px,6px) rotate(-.5deg); }
-        60%  { transform: translate(5px,-7px) rotate(.4deg); }
-        70%  { transform: translate(-4px,3px) rotate(-.2deg); }
-        80%  { transform: translate(3px,-3px) rotate(.2deg); }
-        90%  { transform: translate(-1px,1px) rotate(0deg); }
-        100% { transform: translate(0,0) rotate(0deg); }
+        0%   { transform:translate(0,0) rotate(0deg); }
+        5%   { transform:translate(-7px,4px) rotate(-.5deg); }
+        10%  { transform:translate(9px,-5px) rotate(.6deg); }
+        15%  { transform:translate(-6px,8px) rotate(-.4deg); }
+        20%  { transform:translate(10px,-3px) rotate(.7deg); }
+        25%  { transform:translate(-8px,5px) rotate(-.6deg); }
+        30%  { transform:translate(6px,-8px) rotate(.4deg); }
+        35%  { transform:translate(-10px,4px) rotate(-.7deg); }
+        40%  { transform:translate(8px,-5px) rotate(.5deg); }
+        50%  { transform:translate(9px,-4px) rotate(.6deg); }
+        60%  { transform:translate(5px,-7px) rotate(.4deg); }
+        75%  { transform:translate(-3px,2px) rotate(-.2deg); }
+        90%  { transform:translate(-1px,1px) rotate(0deg); }
+        100% { transform:translate(0,0) rotate(0deg); }
       }
       @keyframes quakeBg {
         0%,100% { transform:translate(0,0) scale(1); }
@@ -1009,47 +1040,47 @@ function dispararContoEncerrado(nomeBoss) {
         30%  { transform:translate(6px,-4px) scale(1.005); }
         45%  { transform:translate(-4px,5px) scale(1.003); }
         60%  { transform:translate(5px,-3px) scale(1.004); }
-        75%  { transform:translate(-3px,4px) scale(1.002); }
       }
       @keyframes bossSink {
-        0%   { transform:translateY(0)    scale(1)    rotate(0deg);   filter:brightness(0.55) saturate(0) contrast(0.9); opacity:1; }
-        15%  { transform:translateY(8px)  scale(0.99) rotate(-.3deg); filter:brightness(0.40) saturate(0) contrast(0.85); }
-        40%  { transform:translateY(45px) scale(0.97) rotate(-1deg);  filter:brightness(0.22) saturate(0) contrast(0.80); opacity:.85; }
-        70%  { transform:translateY(120px) scale(0.93) rotate(-2deg); filter:brightness(0.08) saturate(0) contrast(0.70); opacity:.45; }
-        100% { transform:translateY(260px) scale(0.88) rotate(-3.5deg); filter:brightness(0) saturate(0) contrast(0.5); opacity:0; }
+        0%   { transform:translateY(0px)   scale(1)    rotate(0deg);    filter:brightness(0.55) saturate(0) contrast(0.9); opacity:1; }
+        15%  { transform:translateY(8px)   scale(0.99) rotate(-.3deg);  filter:brightness(0.40) saturate(0) contrast(0.85); opacity:1; }
+        40%  { transform:translateY(50px)  scale(0.97) rotate(-1deg);   filter:brightness(0.22) saturate(0) contrast(0.80); opacity:.85; }
+        70%  { transform:translateY(130px) scale(0.93) rotate(-2deg);   filter:brightness(0.07) saturate(0) contrast(0.70); opacity:.4; }
+        100% { transform:translateY(280px) scale(0.88) rotate(-3.5deg); filter:brightness(0)    saturate(0) contrast(0.5);  opacity:0; }
       }
       @keyframes bossVignette {
         0%   { opacity:0; }
-        25%  { opacity:.45; }
+        20%  { opacity:.4; }
         100% { opacity:.92; }
       }
     `;
     document.head.appendChild(style);
   }
 
-  // ── Vinheta escura que cresce sobre a arena ───────────────────────────────
+  // Vinheta escura crescendo sobre a arena
   const vignette = document.createElement('div');
+  vignette.id = 'conto-vignette';
   vignette.style.cssText = [
     'position:absolute;inset:0;z-index:4;pointer-events:none;',
-    'background:radial-gradient(ellipse at center, transparent 15%, rgba(0,0,0,.9) 100%);',
-    'animation:bossVignette 5.4s ease forwards;'
+    'background:radial-gradient(ellipse at center, transparent 15%, rgba(0,0,0,.92) 100%);',
+    'animation:bossVignette 5.6s ease forwards;'
   ].join('');
   if (arena) arena.appendChild(vignette);
 
-  // ── Zera barra de HP ─────────────────────────────────────────────────────
+  // Zera barra HP
   document.querySelectorAll('.bs-hp-fill').forEach(fill => {
     fill.style.transition = 'width 1.2s ease';
     fill.style.width = '0%';
   });
 
-  // ── FASE 1: Terremoto (1.8s) ─────────────────────────────────────────────
+  // FASE 1: Terremoto 1.8s
   bossImgs.forEach(img => {
     img.style.transformOrigin = 'bottom center';
     img.style.animation = 'quake 0.09s ease-in-out infinite';
   });
   if (arena) arena.style.animation = 'quakeBg 0.13s ease-in-out 14';
 
-  // ── Flash branco no pico do terremoto ────────────────────────────────────
+  // Flash branco no pico
   setTimeout(() => {
     const flash = document.createElement('div');
     flash.style.cssText = 'position:absolute;inset:0;z-index:6;background:#fff;pointer-events:none;opacity:0;transition:opacity .07s ease;';
@@ -1058,12 +1089,12 @@ function dispararContoEncerrado(nomeBoss) {
       flash.style.opacity = '.22';
       setTimeout(() => {
         flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 180);
+        setTimeout(() => flash.remove(), 200);
       }, 70);
     });
   }, 900);
 
-  // ── FASE 2: Para tremor → dessatura (ainda no lugar, 0.5s) ───────────────
+  // FASE 2: Para tremor, dessatura (0.5s no lugar)
   setTimeout(() => {
     if (arena) arena.style.animation = '';
     bossImgs.forEach(img => {
@@ -1073,11 +1104,11 @@ function dispararContoEncerrado(nomeBoss) {
       img.style.filter = 'brightness(0.55) saturate(0) contrast(0.9)';
     });
 
-    // ── FASE 3: Afunda pesado — estilo Black Souls 2 ─────────────────────
+    // FASE 3: Afunda — estilo Black Souls 2
     setTimeout(() => {
       bossImgs.forEach(img => {
         img.style.transition = 'none';
-        img.style.animation = 'bossSink 3.6s cubic-bezier(0.22, 0.0, 0.42, 1) forwards';
+        img.style.animation = 'bossSink 3.8s cubic-bezier(0.18, 0.0, 0.40, 1) forwards';
       });
       document.querySelectorAll('.bs-boss-slot-hpbar').forEach(bar => {
         bar.style.transition = 'opacity 0.7s ease';
@@ -1087,8 +1118,7 @@ function dispararContoEncerrado(nomeBoss) {
 
   }, 1800);
 
-  // ── FASE 4: Overlay "CONTO ENCERRADO" (aparece após o boss sumir) ─────────
-  // 1.8s tremor + 0.48s dessaturação + 3.6s afundando = 5.88s
+  // FASE 4: Overlay CONTO ENCERRADO — aparece quando boss sumiu (1.8+0.48+3.8 = ~6.1s)
   setTimeout(() => {
     const ov = document.createElement('div');
     ov.id = 'conto-encerrado-overlay';
@@ -1132,8 +1162,8 @@ function dispararContoEncerrado(nomeBoss) {
       ov.style.opacity = '0';
       setTimeout(() => {
         ov.remove();
-        if (vignette?.parentNode) vignette.remove();
-        document.querySelectorAll('.bs-boss-slot, .bs-boss-slot-img').forEach(el => {
+        document.getElementById('conto-vignette')?.remove();
+        document.querySelectorAll('.bs-boss-slot-img').forEach(el => {
           el.style.filter = '';
           el.style.transform = '';
           el.style.opacity = '';
@@ -1143,7 +1173,7 @@ function dispararContoEncerrado(nomeBoss) {
         _lastBossHpMap = null;
       }, 550);
     });
-  }, 6000);
+  }, 6200);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
