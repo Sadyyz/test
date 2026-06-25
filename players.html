@@ -305,7 +305,7 @@ body::before{
   background:rgba(10,6,8,.6);
   cursor:pointer;
 }
-.bs-player-card:hover{background:rgba(200,146,42,.05);border-color:rgba(200,146,42,.25)}
+.bs-player-card:hover{background:rgba(200,146,42,.05);border-color:rgba(200,146,42,.25);transform:translateY(-1px);transition:all .18s}
 .bs-player-card.is-turn{background:rgba(200,146,42,.08);border-color:rgba(200,146,42,.5)}
 .bs-player-card.is-turn::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
@@ -728,13 +728,16 @@ function renderPlayersBottom(list){
       ?`<img src="${esc(p._avatarSrc)}" alt="${esc(p.nome)}">`
       :`<div class="bs-player-avatar-placeholder">✒</div>`;
 
-    return `<div class="bs-player-card${isTurn?' is-turn':''}" data-player-id="${esc(p.id)}" title="Abrir ficha de ${esc(p.nome||'Escritor')}">
+    return `<div class="bs-player-card${isTurn?' is-turn':''}" data-player-id="${esc(p.id)}" title="Abrir ficha de ${esc(p.nome||'Escritor')}" style="cursor:pointer">
       <div class="bs-player-avatar">
         ${avatarEl}
         ${isTurn?'<div class="bs-player-turn-badge">VEZ</div>':''}
       </div>
       <div class="bs-player-info">
-        <div class="bs-player-name">${esc(p.nome||'Escritor')}</div>
+        <div class="bs-player-name" style="display:flex;align-items:center;gap:5px">
+          ${esc(p.nome||'Escritor')}
+          <span class="bs-ficha-hint" style="font-size:.5rem;opacity:0;transition:opacity .2s;color:var(--gold-dim);font-family:'Cinzel',serif;letter-spacing:.1em;flex-shrink:0">✦ ficha</span>
+        </div>
         <div class="bs-stat-row">
           <span class="bs-stat-label" style="color:#7a1828">VIDA</span>
           <span class="bs-stat-val">${hpAtual}/${hpMax}</span>
@@ -747,9 +750,26 @@ function renderPlayersBottom(list){
 
   // Click no card abre a ficha do personagem
   row.querySelectorAll('.bs-player-card').forEach(card=>{
+    // Mostra hint "✦ ficha" no hover
+    card.addEventListener('mouseenter',()=>{
+      const hint = card.querySelector('.bs-ficha-hint');
+      if(hint) hint.style.opacity='1';
+    });
+    card.addEventListener('mouseleave',()=>{
+      const hint = card.querySelector('.bs-ficha-hint');
+      if(hint) hint.style.opacity='0';
+    });
     card.addEventListener('click',()=>{
       const id=card.dataset.playerId;
-      if(id) window.open(`ficha.html?id=${encodeURIComponent(id)}`,'_blank');
+      if(!id){ return; }
+      // Flash de feedback antes de abrir
+      card.style.transition='background .1s';
+      card.style.background='rgba(200,146,42,.18)';
+      setTimeout(()=>{
+        card.style.background='';
+        card.style.transition='';
+        window.open(`ficha.html?id=${encodeURIComponent(id)}`,'_blank');
+      },120);
     });
   });
 }

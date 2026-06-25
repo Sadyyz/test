@@ -230,22 +230,6 @@ body::before{
       <button class="btn primary" id="bs-new">+ Nova Criatura dos Contos</button>
     </div>
 
-    <!-- Filtros -->
-    <div id="bs-filters" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-      <input id="bs-filter-nome" type="text" placeholder="🔍 Buscar por nome…"
-        style="flex:1;min-width:160px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 12px;font-family:'IM Fell English',serif;font-size:.84rem;outline:none;">
-      <select id="bs-filter-tipo"
-        style="background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.1em;outline:none;cursor:pointer;">
-        <option value="">Tipo: Todos</option>
-      </select>
-      <select id="bs-filter-cr"
-        style="background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.1em;outline:none;cursor:pointer;min-width:110px;">
-        <option value="">CR: Todos</option>
-      </select>
-      <button id="bs-filter-clear" style="background:transparent;border:1px solid var(--border);color:var(--ink-dim);padding:7px 12px;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .2s"
-        title="Limpar filtros">✕ Limpar</button>
-    </div>
-
     <div id="bs-list-wrap">
       <div class="loading-state">⧖ Abrindo os contos…</div>
     </div>
@@ -1071,91 +1055,33 @@ async function bsLoadList(){
   bsRenderList();
 }
 
-function bsPopulateFilters(){
-  const tipoSel = document.getElementById('bs-filter-tipo');
-  const crSel   = document.getElementById('bs-filter-cr');
-  if(!tipoSel||!crSel) return;
-
-  const tipoAtual = tipoSel.value;
-  const crAtual   = crSel.value;
-
-  // Tipos únicos (ordenados)
-  const tipos = [...new Set(bsList.map(b=>(b.tipo||'').trim()).filter(Boolean))].sort();
-  tipoSel.innerHTML = '<option value="">Tipo: Todos</option>' +
-    tipos.map(t=>`<option value="${esc(t)}"${tipoAtual===t?' selected':''}>${esc(t)}</option>`).join('');
-
-  // CRs únicos (ordenados numericamente)
-  const crs = [...new Set(bsList.map(b=>(b.cr||'').trim()).filter(Boolean))]
-    .sort((a,b)=>{ const na=parseFloat(a), nb=parseFloat(b); return isNaN(na)||isNaN(nb)?a.localeCompare(b):na-nb; });
-  crSel.innerHTML = '<option value="">CR: Todos</option>' +
-    crs.map(c=>`<option value="${esc(c)}"${crAtual===c?' selected':''}>${esc(c)}</option>`).join('');
-}
-
-function bsGetFiltered(){
-  const nome  = (document.getElementById('bs-filter-nome')?.value||'').toLowerCase().trim();
-  const tipo  = (document.getElementById('bs-filter-tipo')?.value||'').trim();
-  const cr    = (document.getElementById('bs-filter-cr')?.value||'').trim();
-  return bsList.filter(b=>{
-    if(nome && !((b.nome||'').toLowerCase().includes(nome))) return false;
-    if(tipo && (b.tipo||'').trim()!==tipo) return false;
-    if(cr   && (b.cr||'').trim()!==cr)    return false;
-    return true;
-  });
-}
-
 function bsRenderList(){
   const wrap = document.getElementById('bs-list-wrap');
-  bsPopulateFilters();
-  const lista = bsGetFiltered();
-
   if(bsList.length===0){
     wrap.innerHTML = `<div class="empty-state"><span class="empty-icon">☠</span>Nenhuma criatura dos contos cadastrada ainda.</div>`;
     return;
   }
-  if(lista.length===0){
-    wrap.innerHTML = `<div class="empty-state" style="font-size:.8rem;color:var(--ink-dim);padding:32px 0;text-align:center">Nenhuma criatura corresponde aos filtros.</div>`;
-    return;
-  }
-
-  // Agrupa por tipo para exibir seções
-  const porTipo = {};
-  lista.forEach(b=>{
-    const t = (b.tipo||'').trim() || '(sem tipo)';
-    if(!porTipo[t]) porTipo[t]=[];
-    porTipo[t].push(b);
-  });
-
-  const crColor = cr => {
-    const n = parseFloat(cr);
-    if(isNaN(n)) return 'var(--ink-dim)';
-    if(n<=2)  return '#4a9060';
-    if(n<=5)  return '#8a8020';
-    if(n<=10) return '#a05020';
-    if(n<=15) return '#8a1828';
-    return 'var(--crimson-lt)';
-  };
-
-  let html = '';
-  // Se filtrou tipo específico ou não tem agrupamento, não agrupa
-  const filtroTipo = (document.getElementById('bs-filter-tipo')?.value||'').trim();
-  if(filtroTipo || Object.keys(porTipo).length===1){
-    html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
-      ${lista.map(b=>bsBossCard(b, crColor)).join('')}
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">${bsList.map(b=>{
+    const pct = Math.max(0,Math.min(100,((Number(b.hpAtual)||0)/(Math.max(1,Number(b.hpMax)||1)))*100));
+    return `<div class="box bs-card" data-id="${esc(b.id)}" style="cursor:pointer;transition:all .25s">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+        <div style="font-family:'Cinzel',serif;font-size:.92rem;color:var(--crimson-lt);letter-spacing:.04em">${esc(b.nome||'(sem nome)')}</div>
+        <button class="bs-del" data-id="${esc(b.id)}" title="Remover" style="background:none;border:none;color:var(--crimson-lt);opacity:.6;cursor:pointer;font-size:.9rem">🗑</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--ink-dim);font-style:italic;margin-bottom:10px">${esc(b.tipo||'')}${b.cr?' · CR '+esc(String(b.cr)):''}</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink-2)">
+        <span>HP ${b.hpAtual}/${b.hpMax}</span><span>·</span><span>CA ${b.ca}</span>
+      </div>
+      <div style="height:5px;background:var(--bg2);border:1px solid var(--border);margin-top:8px">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--crimson),var(--crimson-lt))"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        ${b.visibilidade?.nome?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">nome visível</span>':''}
+        ${b.visibilidade?.hp?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">hp visível</span>':''}
+        ${b.visibilidade?.imagem?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">imagem visível</span>':''}
+      </div>
     </div>`;
-  } else {
-    // Agrupa por tipo
-    html = Object.entries(porTipo).sort((a,b)=>a[0].localeCompare(b[0])).map(([tipo, bosses])=>`
-      <div style="margin-bottom:20px">
-        <div style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.35em;text-transform:uppercase;color:var(--gold-dim);border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:10px">
-          ${esc(tipo)} <span style="color:var(--ink-dim);font-size:.44rem">(${bosses.length})</span>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
-          ${bosses.map(b=>bsBossCard(b, crColor)).join('')}
-        </div>
-      </div>`).join('');
-  }
-
-  wrap.innerHTML = html;
+  }).join('')}</div>`;
 
   wrap.querySelectorAll('.bs-card').forEach(card=>{
     card.addEventListener('mouseenter',()=>{card.style.borderColor='var(--crimson)';});
@@ -1171,32 +1097,6 @@ function bsRenderList(){
       bsDelete(btn.dataset.id);
     });
   });
-}
-
-function bsBossCard(b, crColor){
-  const pct = Math.max(0,Math.min(100,((Number(b.hpAtual)||0)/(Math.max(1,Number(b.hpMax)||1)))*100));
-  const crVal = b.cr ? String(b.cr) : null;
-  return `<div class="box bs-card" data-id="${esc(b.id)}" style="cursor:pointer;transition:all .25s;position:relative">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
-      <div style="font-family:'Cinzel',serif;font-size:.92rem;color:var(--crimson-lt);letter-spacing:.04em">${esc(b.nome||'(sem nome)')}</div>
-      <button class="bs-del" data-id="${esc(b.id)}" title="Remover" style="background:none;border:none;color:var(--crimson-lt);opacity:.6;cursor:pointer;font-size:.9rem;flex-shrink:0">🗑</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-      ${b.tipo?`<span style="font-size:.58rem;font-family:'Cinzel',serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);border:1px solid var(--border);padding:1px 6px">${esc(b.tipo)}</span>`:''}
-      ${crVal?`<span style="font-size:.62rem;font-family:'Cinzel',serif;font-weight:700;color:${crColor(crVal)};border:1px solid ${crColor(crVal)};padding:1px 6px">CR ${esc(crVal)}</span>`:''}
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink-2)">
-      <span>HP ${b.hpAtual}/${b.hpMax}</span><span>·</span><span>CA ${b.ca}</span>
-    </div>
-    <div style="height:5px;background:var(--bg2);border:1px solid var(--border);margin-top:8px">
-      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--crimson),var(--crimson-lt))"></div>
-    </div>
-    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
-      ${b.visibilidade?.nome?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">nome visível</span>':''}
-      ${b.visibilidade?.hp?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">hp visível</span>':''}
-      ${b.visibilidade?.imagem?'<span style="font-size:.6rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:2px 6px">imagem visível</span>':''}
-    </div>
-  </div>`;
 }
 
 async function bsDelete(id){
@@ -1541,17 +1441,6 @@ async function bsSaveEditor(){
 
 function initBossesTab(){
   document.getElementById('bs-new').addEventListener('click', ()=>bsOpenEditor(null));
-  // Filtros do bestiário
-  ['bs-filter-nome','bs-filter-tipo','bs-filter-cr'].forEach(id=>{
-    document.getElementById(id)?.addEventListener('input', bsRenderList);
-    document.getElementById(id)?.addEventListener('change', bsRenderList);
-  });
-  document.getElementById('bs-filter-clear')?.addEventListener('click',()=>{
-    document.getElementById('bs-filter-nome').value='';
-    document.getElementById('bs-filter-tipo').value='';
-    document.getElementById('bs-filter-cr').value='';
-    bsRenderList();
-  });
   bsLoadList();
 }
 </script>
