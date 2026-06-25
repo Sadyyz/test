@@ -42,6 +42,20 @@
       cursor: pointer; font-size: .7rem; padding: 4px 8px; transition: color .2s;
     }
     .char-entry-del:hover { color: var(--crimson-lt); }
+    .char-entry-edit {
+      background: transparent; border: none; color: var(--ink-dim);
+      cursor: pointer; font-size: .7rem; padding: 4px 6px; transition: color .2s;
+      opacity: 0; transition: opacity .15s, color .15s;
+    }
+    .char-entry:hover .char-entry-edit { opacity: 1; }
+    .char-entry-edit:hover { color: var(--gold-lt); }
+    /* Modo edição inline */
+    .char-entry.editing { border-color: var(--gold); }
+    .char-name-input {
+      flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--gold);
+      color: var(--ink); font-family: 'Cinzel', serif; font-size: .85rem;
+      letter-spacing: .05em; outline: none; padding: 2px 0; width: 100%;
+    }
     .new-char-form {
       display: flex; gap: 8px; margin-top: 8px;
     }
@@ -143,21 +157,69 @@
         el.innerHTML = '<div class="index-empty">Nenhum escritor criado ainda.</div>';
         return;
       }
-      el.innerHTML = _chars.map((c, i) => `
-        <a href="ficha.html?id=${encodeURIComponent(c.id)}" class="char-entry">
+      el.innerHTML = _chars.map((c) => `
+        <a href="ficha.html?id=${encodeURIComponent(c.id)}" class="char-entry" id="entry-${c.id}">
           <span class="char-entry-icon">✒</span>
-          <div>
-            <div class="char-entry-name">${c.nome}</div>
+          <div style="flex:1;min-width:0">
+            <div class="char-entry-name" id="name-display-${c.id}">${c.nome}</div>
             <div class="char-entry-sub">${c.id}</div>
           </div>
-          <button class="char-entry-del" onclick="delChar(event, '${c.id}', '${c.nome.replace(/'/g,"\\'")}', ${isStatic(c.id)})" title="Remover">✕</button>
+          <button class="char-entry-edit" onclick="startEdit(event,'${c.id}')" title="Editar nome">✎</button>
+          <button class="char-entry-del" onclick="delChar(event,'${c.id}','${c.nome.replace(/'/g,"\'")}')" title="Remover">✕</button>
         </a>
       `).join('');
     }
 
+    function startEdit(e, id) {
+      e.preventDefault(); e.stopPropagation();
+      const entry = document.getElementById('entry-' + id);
+      const nameDisplay = document.getElementById('name-display-' + id);
+      const currentName = nameDisplay.textContent;
+      entry.classList.add('editing');
+      nameDisplay.outerHTML = `<input class="char-name-input" id="name-input-${id}"
+        value="${currentName.replace(/"/g,'&quot;')}"
+        onclick="event.preventDefault();event.stopPropagation()"
+        onkeydown="handleEditKey(event,'${id}')"
+        onblur="confirmEdit('${id}')">`;
+      const inp = document.getElementById('name-input-' + id);
+      inp.focus(); inp.select();
+    }
+
+    function handleEditKey(e, id) {
+      e.stopPropagation();
+      if (e.key === 'Enter')  { e.preventDefault(); confirmEdit(id); }
+      if (e.key === 'Escape') { e.preventDefault(); cancelEdit(id); }
+    }
+
+    async function confirmEdit(id) {
+      const inp = document.getElementById('name-input-' + id);
+      if (!inp) return;
+      const novoNome = inp.value.trim();
+      const char = _chars.find(c => c.id === id);
+      if (!novoNome || novoNome === char?.nome) { cancelEdit(id); return; }
+      inp.disabled = true;
+      try {
+        const r = await fetch(`/api/manifest?id=${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: novoNome })
+        });
+        if (!r.ok) throw new Error();
+        if (char) char.nome = novoNome;
+        renderList();
+      } catch { cancelEdit(id); }
+    }
+
+    function cancelEdit(id) {
+      const char = _chars.find(c => c.id === id);
+      if (!char) return;
+      const inp = document.getElementById('name-input-' + id);
+      if (inp) inp.outerHTML = `<div class="char-entry-name" id="name-display-${id}">${char.nome}</div>`;
+      document.getElementById('entry-' + id)?.classList.remove('editing');
+    }
+
     function isStatic(id) {
-      // IDs que vieram do manifest.json são estáticos e não podem ser removidos pela UI
-      return false; // manifest.json está vazio agora
+      return false;
     }
 
     async function addChar() {

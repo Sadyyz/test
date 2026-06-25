@@ -783,11 +783,11 @@ const _playerAvatarCache = {};
 
 async function renderCombat(state){
   const arena=document.getElementById('bs-arena');
-  const standby=document.getElementById('standby');
+  const standbyWrap=document.getElementById('standby').closest('.page-standby');
 
   if(!state||!state.ativo){
     arena.classList.remove('show');
-    standby.style.display='';
+    standbyWrap.style.display='';
     combatAtivo=false;currentTurno=null;setBadge('live');
     return;
   }
@@ -795,7 +795,7 @@ async function renderCombat(state){
   combatAtivo=true;
   currentTurno=state.turnoAtual;
   arena.classList.add('show');
-  standby.style.display='none';
+  standbyWrap.style.display='none';
   setBadge('combat');
 
   const rodada=state.rodada||1;
