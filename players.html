@@ -911,11 +911,12 @@ async function pollPlayers(){
     const results=await Promise.allSettled(jogadorIds.map(async id=>{
       const r=await fetch(`/api/ficha?id=${encodeURIComponent(id)}`);
       if(!r.ok)return null;
-      return r.json();
+      const data=await r.json();
+      return {...data, id}; // garante id mesmo se a API não retornar
     }));
     fichas=results.filter(r=>r.status==='fulfilled'&&r.value).map(r=>r.value);
 
-    // Avatar: NUNCA cacheia null — só cacheia se tiver imagem de verdade
+    // Avatar: nunca cacheia null — só cacheia URL real, retenta se não tiver
     await Promise.allSettled(fichas.map(async f=>{
       try{
         const cached=_playerAvatarCache[f.id];
@@ -923,9 +924,13 @@ async function pollPlayers(){
           f._avatarSrc=cached;
         } else {
           const r=await fetch(`/api/avatar?id=${encodeURIComponent(f.id)}`);
-          const src=r.ok?((await r.json()).avatar||null):null;
-          f._avatarSrc=src;
-          if(src) _playerAvatarCache[f.id]=src;
+          if(r.ok){
+            const src=(await r.json()).avatar||null;
+            f._avatarSrc=src;
+            if(src) _playerAvatarCache[f.id]=src;
+          } else {
+            f._avatarSrc=null; // não cacheia, retenta na próxima poll
+          }
         }
       }catch{f._avatarSrc=null;}
     }));
