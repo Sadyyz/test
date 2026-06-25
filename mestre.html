@@ -631,17 +631,8 @@ function cbAttachListListeners(){
       cbState.iniciativa[idx][field] = val;
       cbRenderList();
       cbMarkDirty();
-      // Dispara animação só quando TODOS os inimigos estiverem mortos
-      if(field === 'hpAtual' && val <= 0){
-        const entry = cbState.iniciativa[idx];
-        if(entry && (entry.tipo === 'boss' || entry.tipo === 'inimigo' || entry.tipo === 'custom')){
-          const todosInimigos = cbState.iniciativa.filter(e=>e.tipo==='boss'||e.tipo==='inimigo'||e.tipo==='custom');
-          const todosMortos = todosInimigos.every(e=>Number(e.hpAtual??0)<=0);
-          if(todosMortos){
-            setTimeout(() => dispararContoEncerrado(entry.nome || 'Criatura'), 400);
-          }
-        }
-      }
+      // REMOVIDO: não dispara conto encerrado automaticamente ao zerar HP
+      // O Mestre precisa clicar em "Finalizar Conto" explicitamente
     }
   });
 }
@@ -962,7 +953,6 @@ function dispararContoEncerrado(nomeBoss) {
 
 async function cbApplyDamage(targetIds, dano, acaoNome, atacanteNome){
   const results = [];
-  let deadName = null;
   for(const id of targetIds){
     const ficha = cbFichasCache[id];
     if(!ficha || !ficha.vida){ results.push({id, ok:false}); continue; }
@@ -980,18 +970,16 @@ async function cbApplyDamage(targetIds, dano, acaoNome, atacanteNome){
     }
   }
   const sucesso = results.filter(r=>r.ok);
-  const falha = results.filter(r=>!r.ok);
+  const falha   = results.filter(r=>!r.ok);
   if(sucesso.length>0){
     const nomes = sucesso.map(r=>`${r.nome} (${r.novoHp}/${r.hpMax})`).join(', ');
     toast(`${atacanteNome} usou ${acaoNome}: ${dano} de dano em ${nomes}.`);
-    const morto = sucesso.find(r => r.novoHp <= 0);
-    if(morto) deadName = atacanteNome || morto.nome;
   }
   if(falha.length>0){
     toast(`Falha ao aplicar dano em ${falha.length} alvo(s).`, true);
   }
   cbRenderList();
-  if(deadName) setTimeout(() => dispararContoEncerrado(deadName), 400);
+  // Conto Encerrado NÃO é disparado aqui — só o Mestre decide via botão "Finalizar Conto"
 }
 
 function initCombateTab(){
@@ -1322,14 +1310,9 @@ function bsAplicarDano(valor) {
   const atual = Number(inp.value) || 0;
   const novoHp = Math.max(0, atual - valor);
   inp.value = novoHp;
-  // Salva automaticamente
-  bsSaveEditor().then(() => {
-    if (novoHp <= 0) {
-      const nomeEl = document.getElementById('bs-f-nome');
-      const nome = nomeEl ? nomeEl.value.trim() : 'Criatura';
-      setTimeout(() => dispararContoEncerrado(nome), 300);
-    }
-  });
+  // Salva automaticamente — sem disparar conto encerrado aqui
+  // O Mestre clica em "Finalizar Conto" quando quiser
+  bsSaveEditor();
 }
 
 function bsFinalizarConto() {

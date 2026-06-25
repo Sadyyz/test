@@ -804,11 +804,8 @@ async function renderCombat(state){
   const bossEntry=bossEntries[0]||null;
   const newBossId=bossEntry?.bossId||null;
 
-  // Detecta morte: verifica se TODOS os inimigos foram derrotados
-  if(bossEntries.length>0){
-    const allDead = bossEntries.every(e=>Number(e.hpAtual??0)<=0);
-    const hadAlive = _lastBossHpMap && bossEntries.some(e=>(_lastBossHpMap[e.id]??1)>0);
-
+  // Log quando um boss morre (sem disparar animação — só o Mestre dispara via botão)
+  if(bossEntries.length>0 && _lastBossHpMap!==null){
     bossEntries.forEach(e=>{
       const wasAlive=(_lastBossHpMap??{})[e.id]??null;
       const nowHp=Number(e.hpAtual??0);
@@ -816,11 +813,8 @@ async function renderCombat(state){
         addLog(`${e.nome||'Criatura'} foi derrotada!`,'system');
       }
     });
-
-    if(allDead && hadAlive && _lastBossHpMap!==null){
-      const nomeBoss=bossEntry?.nome||'Criatura';
-      setTimeout(()=>dispararContoEncerrado(nomeBoss),400);
-    }
+  }
+  if(bossEntries.length>0){
     _lastBossHpMap={};
     bossEntries.forEach(e=>{ _lastBossHpMap[e.id]=Number(e.hpAtual??0); });
   } else {
