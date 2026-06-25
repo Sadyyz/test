@@ -519,6 +519,9 @@ let combatAtivo=false;
 let fichas=[];
 let currentTurno=null;
 let combatLog=[];
+// Guarda o contoEncerrado que JÁ EXISTIA no Redis quando a página abriu.
+// Evita que reloads ou reconexões disparem a animação de conto encerrado de novo.
+let _contoEncerradoIniciado = null;
 
 // ── Live Badge ────────────────────────────────────────────────────────────────
 function setBadge(mode){
@@ -755,7 +758,7 @@ function renderPlayersBottom(list){
 let lastRodada=null;
 let lastTurnoAtual=null;
 let lastBossId=null;
-let lastContoEncerrado=null;
+let lastContoEncerrado=null;   // valor da ÚLTIMA poll (para detectar mudança)
 let lastBossVisHash=null;
 let lastBossUpdatedAt=null;
 let lastArenaBgUpdatedAt=null;
@@ -863,13 +866,26 @@ async function pollCombat(){
     const h=JSON.stringify(data);
     if(h!==lastCombatHash){
       lastCombatHash=h;
-      if(data.contoEncerrado && data.contoEncerrado !== lastContoEncerrado){
-        lastContoEncerrado=data.contoEncerrado;
-        // Só dispara se o combate está ativo e há/havia inimigos na iniciativa
-        const temInimigos = Array.isArray(data.iniciativa) && data.iniciativa.some(e=>e.tipo==='boss'||e.tipo==='inimigo');
-        if(data.ativo && temInimigos){
-          setTimeout(()=>dispararContoEncerrado(data.contoNome||''), 200);
+      if(data.contoEncerrado){
+        // Na PRIMEIRA poll após abrir a página, registramos o valor atual como
+        // "já visto" — isso evita que reloads ou reconexões disparem a animação.
+        if(_contoEncerradoIniciado === null){
+          _contoEncerradoIniciado = data.contoEncerrado;
+          lastContoEncerrado      = data.contoEncerrado;
         }
+        // Só dispara se o valor MUDOU desde a última poll desta sessão
+        // E é diferente do que já existia quando a página abriu
+        if(data.contoEncerrado !== lastContoEncerrado){
+          lastContoEncerrado = data.contoEncerrado;
+          const temInimigos  = Array.isArray(data.iniciativa) && data.iniciativa.some(e=>e.tipo==='boss'||e.tipo==='inimigo');
+          if(data.ativo && temInimigos){
+            setTimeout(()=>dispararContoEncerrado(data.contoNome||''), 200);
+          }
+        }
+      } else {
+        // Campo foi limpo (mestre encerrou o combate) — reseta estado local
+        _contoEncerradoIniciado = null;
+        lastContoEncerrado      = null;
       }
       if(data.arenaBgUpdatedAt && data.arenaBgUpdatedAt !== lastArenaBgUpdatedAt){
         lastArenaBgUpdatedAt = data.arenaBgUpdatedAt;
@@ -1130,8 +1146,23 @@ function dispararContoEncerrado(nomeBoss) {
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init(){
   setBadge('live');
+
+  // Carrega o estado atual do Redis ANTES dos polls para registrar
+  // o contoEncerrado já existente — evita que a animação dispare no reload.
+  try{
+    const r = await fetch('/api/combat');
+    if(r.ok){
+      const data = await r.json();
+      // Registra o valor atual como "já visto por esta sessão"
+      if(data.contoEncerrado){
+        _contoEncerradoIniciado = data.contoEncerrado;
+        lastContoEncerrado      = data.contoEncerrado;
+      }
+    }
+  }catch{}
+
   await Promise.allSettled([pollCombat(),pollPlayers()]);
-  applyArenaBg(0.4); // carrega fundo salvo no Redis ao abrir
+  applyArenaBg(0.4);
   setInterval(pollCombat,4000);
   setInterval(pollPlayers,4000);
 }

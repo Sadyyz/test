@@ -1322,14 +1322,13 @@ function bsFinalizarConto() {
   const inp = document.getElementById('bs-f-hpatual');
   if (inp) inp.value = 0;
   bsSaveEditor().then(async () => {
-    // Dispara animação local (mestre vê também)
-    setTimeout(() => dispararContoEncerrado(nome), 300);
-    // Sinaliza pro players.html via combat state
+    // Sinaliza pro players.html via combat state com timestamp único
+    const timestamp = Date.now();
     try {
       const r = await fetch('/api/combat');
       if (r.ok) {
         const state = await r.json();
-        state.contoEncerrado = Date.now();
+        state.contoEncerrado = timestamp;
         state.contoNome = nome;
         await fetch('/api/combat', {
           method: 'POST',
@@ -1338,6 +1337,32 @@ function bsFinalizarConto() {
         });
       }
     } catch {}
+
+    // Dispara animação local no mestre também
+    setTimeout(() => dispararContoEncerrado(nome), 300);
+
+    // Após a animação terminar (~8s), limpa o contoEncerrado do Redis.
+    // Sem isso, qualquer reload do players.html veria o campo e dispararia
+    // a animação de novo em loop.
+    setTimeout(async () => {
+      try {
+        const r2 = await fetch('/api/combat');
+        if (r2.ok) {
+          const state2 = await r2.json();
+          // Só limpa se ainda for o mesmo evento (nenhum outro conto foi
+          // encerrado entre o disparo e agora)
+          if (state2.contoEncerrado === timestamp) {
+            delete state2.contoEncerrado;
+            delete state2.contoNome;
+            await fetch('/api/combat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(state2)
+            });
+          }
+        }
+      } catch {}
+    }, 9000); // 9s: animação dura ~7s + 2s de margem
   });
 }
 
