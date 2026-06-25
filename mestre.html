@@ -112,6 +112,14 @@ body::before{
 .btn:disabled{opacity:.45;cursor:default;box-shadow:none!important}
 .btn .spin{display:inline-block;animation:spinCW .8s linear infinite}
 .btn-sm{padding:7px 13px;font-size:.58rem}
+.arena-bg-preset{
+  font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.15em;
+  padding:6px 10px;border:1px solid var(--border);background:transparent;
+  color:var(--ink-2);cursor:pointer;transition:all .18s;
+}
+.arena-bg-preset:hover,.arena-bg-preset.active{
+  border-color:var(--crimson);color:var(--crimson-lt);background:rgba(80,0,0,.2);
+}
 
 /* ── Cards (generic surface) ─────────────────────────────────────────── */
 .box{
@@ -168,6 +176,7 @@ body::before{
   <button class="tab-btn" data-tab="diario"><span class="tab-ic">📜</span><span class="tab-label">Diário</span></button>
   <button class="tab-btn" data-tab="fichas"><span class="tab-ic">✒</span><span class="tab-label">Escritores</span></button>
   <button class="tab-btn" data-tab="rpg"><span class="tab-ic">🔮</span><span class="tab-label">Modo RPG</span></button>
+  <a class="tab-btn" href="bestiary.html" target="_blank" style="text-decoration:none"><span class="tab-ic">📖</span><span class="tab-label">Bestiário</span></a>
 </nav>
 
 <main class="page" id="page">
@@ -291,7 +300,60 @@ body::before{
         Esta tela atualiza sozinha (a cada poucos segundos) mostrando a ordem de iniciativa, o boss em combate (conforme a visibilidade que você definir na aba Bosses) e o HP dos jogadores. Não exige senha — qualquer pessoa com o link pode visualizá-la.
       </p>
     </div>
-  </section>
+
+    <!-- ── Fundo da Arena ── -->
+    <div class="box" style="margin-top:18px">
+      <p class="section-label" style="margin-bottom:14px">🖼 Fundo da Arena</p>
+
+      <!-- Preview -->
+      <div id="arena-bg-preview" style="
+        width:100%;height:160px;border:1px solid var(--border);
+        background:var(--bg2);position:relative;overflow:hidden;
+        display:flex;align-items:center;justify-content:center;
+        margin-bottom:14px;cursor:pointer;transition:border-color .2s;
+      " onclick="document.getElementById('arena-bg-file').click()"
+         onmouseover="this.style.borderColor='var(--gold-dim)'"
+         onmouseout="this.style.borderColor='var(--border)'">
+        <img id="arena-bg-preview-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none">
+        <div id="arena-bg-preview-ph" style="text-align:center;color:var(--ink-dim)">
+          <div style="font-size:2rem;opacity:.3;margin-bottom:6px">🌄</div>
+          <div style="font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.3em;text-transform:uppercase">Clique para escolher imagem</div>
+        </div>
+      </div>
+      <input type="file" id="arena-bg-file" accept="image/*" style="display:none" onchange="arenaBgHandleFile(this.files[0])">
+
+      <!-- Presets de atmosfera -->
+      <div style="margin-bottom:12px">
+        <div style="font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px">Atmosfera rápida</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="arena-bg-presets">
+          <button class="arena-bg-preset" data-color="#0a0809" data-label="Trevas">⬛ Trevas</button>
+          <button class="arena-bg-preset" data-color="#0a0f1a" data-label="Abismo">🌑 Abismo</button>
+          <button class="arena-bg-preset" data-color="#1a0a08" data-label="Brasas">🔥 Brasas</button>
+          <button class="arena-bg-preset" data-color="#0a1a0f" data-label="Floresta">🌿 Floresta</button>
+          <button class="arena-bg-preset" data-color="#0f0a1a" data-label="Arcano">🔮 Arcano</button>
+          <button class="arena-bg-preset" data-color="#1a1508" data-label="Ruínas">🏛 Ruínas</button>
+          <button class="arena-bg-preset" data-color="#0a1520" data-label="Oceano">🌊 Oceano</button>
+          <button class="arena-bg-preset" data-color="#201010" data-label="Sangue">🩸 Sangue</button>
+        </div>
+      </div>
+
+      <!-- Opacidade do overlay escurecedor -->
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim)">Escurecimento</div>
+          <span id="arena-bg-dim-val" style="font-family:'Cinzel',serif;font-size:.55rem;color:var(--ink-2)">40%</span>
+        </div>
+        <input type="range" id="arena-bg-dim" min="0" max="90" value="40" step="5"
+          style="width:100%;accent-color:var(--crimson)"
+          oninput="document.getElementById('arena-bg-dim-val').textContent=this.value+'%'">
+      </div>
+
+      <!-- Botões de ação -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" onclick="arenaBgApply()" style="flex:1">✦ Aplicar Fundo</button>
+        <button class="btn" onclick="arenaBgClear()">✕ Remover</button>
+      </div>
+    </div>
 
 </main>
 
@@ -569,11 +631,15 @@ function cbAttachListListeners(){
       cbState.iniciativa[idx][field] = val;
       cbRenderList();
       cbMarkDirty();
-      // Dispara animação se HP zerou manualmente
+      // Dispara animação só quando TODOS os inimigos estiverem mortos
       if(field === 'hpAtual' && val <= 0){
         const entry = cbState.iniciativa[idx];
         if(entry && (entry.tipo === 'boss' || entry.tipo === 'inimigo' || entry.tipo === 'custom')){
-          setTimeout(() => dispararContoEncerrado(entry.nome || 'Criatura'), 400);
+          const todosInimigos = cbState.iniciativa.filter(e=>e.tipo==='boss'||e.tipo==='inimigo'||e.tipo==='custom');
+          const todosMortos = todosInimigos.every(e=>Number(e.hpAtual??0)<=0);
+          if(todosMortos){
+            setTimeout(() => dispararContoEncerrado(entry.nome || 'Criatura'), 400);
+          }
         }
       }
     }
@@ -972,6 +1038,7 @@ let bsList = [];
 let bsEditingId = null; // null = não editando / criando novo ainda sem salvar
 let bsEditState = null;
 let bsAvatarDataUrl = null; // base64 pendente de upload (preview local)
+const _mestreAvatarCache = {}; // cache avatares de jogadores
 
 function bsBlank(id){
   return {
@@ -1225,14 +1292,25 @@ function bsRenderEditor(){
   fileInput.addEventListener('change', ()=>{
     const file = fileInput.files[0];
     if(!file) return;
-    if(file.size > 800*1024){ toast('Imagem muito grande (máx. 800KB).', true); return; }
     const reader = new FileReader();
     reader.onload = ()=>{
-      bsAvatarDataUrl = reader.result;
-      const img = document.getElementById('bs-avatar-preview');
-      const ph = document.getElementById('bs-avatar-placeholder');
-      img.src = bsAvatarDataUrl; img.style.display='block';
-      if(ph) ph.style.display='none';
+      const rawImg = new Image();
+      rawImg.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        // Boss pode ser maior que avatar de jogador: até 600px de altura
+        const MAX_H = 600, MAX_W = 500;
+        let w = rawImg.width, h = rawImg.height;
+        if(h > MAX_H){ w = Math.round(w * MAX_H / h); h = MAX_H; }
+        if(w > MAX_W){ h = Math.round(h * MAX_W / w); w = MAX_W; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(rawImg, 0, 0, w, h);
+        bsAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const img = document.getElementById('bs-avatar-preview');
+        const ph = document.getElementById('bs-avatar-placeholder');
+        img.src = bsAvatarDataUrl; img.style.display='block';
+        if(ph) ph.style.display='none';
+      };
+      rawImg.src = reader.result;
     };
     reader.readAsDataURL(file);
   });
@@ -1600,8 +1678,14 @@ async function fcLoad(){
 
   await Promise.allSettled(fichas.map(async f=>{
     try{
-      const r = await fetch(`/api/avatar?id=${f.id}`);
-      if(r.ok){ const d = await r.json(); if(d.avatar) f._avatarSrc = d.avatar; }
+      if(_mestreAvatarCache[f.id] !== undefined){
+        f._avatarSrc = _mestreAvatarCache[f.id];
+      } else {
+        const r = await fetch(`/api/avatar?id=${f.id}`);
+        const src = r.ok ? ((await r.json()).avatar||null) : null;
+        f._avatarSrc = src;
+        _mestreAvatarCache[f.id] = src;
+      }
     }catch{}
   }));
 
@@ -1728,8 +1812,129 @@ function initRpgTab(){
       toast('Link copiado.');
     }
   });
+
+  // Presets de atmosfera
+  document.querySelectorAll('.arena-bg-preset').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const color = btn.dataset.color;
+      document.querySelectorAll('.arena-bg-preset').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      // Cor sólida = sem imagem, só cor de fundo
+      _arenaBgPendente = { type:'color', value: color };
+      const prevImg = document.getElementById('arena-bg-preview-img');
+      const prevPh  = document.getElementById('arena-bg-preview-ph');
+      prevImg.style.display='none';
+      prevPh.style.display='flex';
+      prevPh.innerHTML=`<div style="font-size:1.4rem;margin-bottom:4px">🎨</div><div style="font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim)">${btn.dataset.label}</div>`;
+      document.getElementById('arena-bg-preview').style.background=color;
+    });
+  });
+
+  // Carrega bg existente
+  arenaBgLoad();
   rpgRefreshStatus();
   setInterval(rpgRefreshStatus, 5000);
+}
+
+// ── Arena Background ──────────────────────────────────────────────────────────
+let _arenaBgPendente = null; // { type: 'image'|'color', value: string }
+
+async function arenaBgLoad(){
+  try{
+    const r = await fetch('/api/arena-bg');
+    if(!r.ok) return;
+    const { bg } = await r.json();
+    if(bg){
+      const img = document.getElementById('arena-bg-preview-img');
+      const ph  = document.getElementById('arena-bg-preview-ph');
+      if(bg.startsWith('data:image/')){
+        img.src = bg; img.style.display='block'; ph.style.display='none';
+        document.getElementById('arena-bg-preview').style.background='';
+        _arenaBgPendente = { type:'image', value: bg };
+      } else {
+        // cor sólida salva
+        document.getElementById('arena-bg-preview').style.background = bg;
+        _arenaBgPendente = { type:'color', value: bg };
+      }
+    }
+  }catch{}
+}
+
+function arenaBgHandleFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const rawImg = new Image();
+    rawImg.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      // Background: resolução maior que avatar, mas ainda controlada
+      const MAX_W = 1920, MAX_H = 1080;
+      let w = rawImg.width, h = rawImg.height;
+      if(w > MAX_W){ h = Math.round(h * MAX_W / w); w = MAX_W; }
+      if(h > MAX_H){ w = Math.round(w * MAX_H / h); h = MAX_H; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(rawImg, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      _arenaBgPendente = { type:'image', value: dataUrl };
+      const img = document.getElementById('arena-bg-preview-img');
+      const ph  = document.getElementById('arena-bg-preview-ph');
+      img.src = dataUrl; img.style.display='block'; ph.style.display='none';
+      document.getElementById('arena-bg-preview').style.background='';
+      document.querySelectorAll('.arena-bg-preset').forEach(b=>b.classList.remove('active'));
+    };
+    rawImg.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function arenaBgApply(){
+  if(!_arenaBgPendente){ toast('Escolha uma imagem ou atmosfera primeiro.', true); return; }
+  const dim = Number(document.getElementById('arena-bg-dim').value) / 100;
+  try{
+    const payload = _arenaBgPendente.type === 'image'
+      ? { bg: _arenaBgPendente.value }
+      : { bg: _arenaBgPendente.value }; // cor: salva hex direto
+
+    const r = await fetch('/api/arena-bg', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!r.ok) throw new Error('Erro ao salvar fundo');
+
+    // Sinaliza players.html via combat state
+    const cr = await fetch('/api/combat');
+    if(cr.ok){
+      const cs = await cr.json();
+      cs.arenaBgUpdatedAt = Date.now();
+      cs.arenaBgDim = dim;
+      await fetch('/api/combat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cs)});
+    }
+    toast('Fundo da arena aplicado!');
+  }catch(e){ toast(e.message||'Erro ao aplicar fundo.', true); }
+}
+
+async function arenaBgClear(){
+  try{
+    await fetch('/api/arena-bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bg:null})});
+    _arenaBgPendente = null;
+    const img = document.getElementById('arena-bg-preview-img');
+    const ph  = document.getElementById('arena-bg-preview-ph');
+    img.src=''; img.style.display='none';
+    ph.style.display='flex';
+    ph.innerHTML='<div style="font-size:2rem;opacity:.3;margin-bottom:6px">🌄</div><div style="font-family:\'Cinzel\',serif;font-size:.5rem;letter-spacing:.3em;text-transform:uppercase">Clique para escolher imagem</div>';
+    document.getElementById('arena-bg-preview').style.background='';
+    document.querySelectorAll('.arena-bg-preset').forEach(b=>b.classList.remove('active'));
+
+    // Sinaliza players.html
+    const cr = await fetch('/api/combat');
+    if(cr.ok){
+      const cs = await cr.json();
+      cs.arenaBgUpdatedAt = Date.now();
+      cs.arenaBgDim = 0;
+      await fetch('/api/combat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cs)});
+    }
+    toast('Fundo removido.');
+  }catch{ toast('Erro ao remover fundo.', true); }
 }
 </script>
 

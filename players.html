@@ -76,19 +76,89 @@ body::before{
 }
 #bs-arena.show{display:flex;flex-direction:column}
 
+/* ── Arena Background ── */
+#bs-arena-bg{
+  position:absolute;inset:0;z-index:0;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  transition:opacity .8s ease, background .8s ease;
+}
+#bs-arena-bg-dim{
+  position:absolute;inset:0;z-index:1;
+  background:rgba(0,0,0,0);
+  transition:background .8s ease;
+  pointer-events:none;
+}
+/* Garante que o conteúdo da arena fica acima do fundo */
+#bs-boss-area, #bs-round-badge, #bs-log-toggle, #standby-bs{
+  position:relative;z-index:2;
+}
+#bs-players-bottom{
+  position:relative;z-index:2;
+}
+
 /* ── Boss Area (imagem) */
 #bs-boss-area{
   flex:1;position:relative;overflow:hidden;min-height:0;
   display:flex;align-items:center;justify-content:center;
 }
-#bs-boss-img{
-  max-height:85%;max-width:70%;width:auto;height:auto;
-  object-fit:contain;object-position:center;
-  display:block;filter:brightness(.9) contrast(1.05) drop-shadow(0 0 32px rgba(120,0,0,.5));
-}
 #bs-boss-placeholder{
   width:100%;height:100%;display:flex;align-items:center;justify-content:center;
   font-size:8rem;opacity:.08;color:var(--crimson-lt);
+}
+
+/* ── Grid de bosses ── */
+#bs-boss-grid{
+  width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  gap:0;
+  position:relative;
+}
+
+/* Slot individual de boss */
+.bs-boss-slot{
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  height:100%;
+  flex:1;min-width:0;
+  transition:all .4s ease;
+}
+
+/* Imagem dentro do slot */
+.bs-boss-slot-img{
+  max-height:85%;max-width:100%;width:auto;height:auto;
+  object-fit:contain;object-position:bottom center;
+  display:block;
+  filter:brightness(.9) contrast(1.05) drop-shadow(0 0 32px rgba(120,0,0,.5));
+  transition:all .5s ease;
+}
+
+/* Slot central (boss primário) — ligeiramente maior */
+.bs-boss-slot.primary .bs-boss-slot-img{
+  max-height:92%;
+  filter:brightness(.95) contrast(1.08) drop-shadow(0 0 40px rgba(160,20,20,.6));
+}
+
+/* Slots laterais — levemente menores e atrás */
+.bs-boss-slot.secondary{
+  z-index:0;
+}
+.bs-boss-slot.primary{
+  z-index:1;
+}
+.bs-boss-slot.secondary .bs-boss-slot-img{
+  max-height:78%;
+  filter:brightness(.75) contrast(1.02) drop-shadow(0 0 20px rgba(80,0,0,.4));
+}
+
+/* HP bar por boss */
+.bs-boss-slot-hpbar{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  width:min(280px,85%);z-index:5;
+}
+.bs-boss-slot-hp-label{
+  font-family:'Cinzel',serif;font-size:.42rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--crimson-lt);text-align:center;margin-bottom:3px;text-shadow:0 0 8px #000;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
 /* Boss HP bar (flutuante sobre a imagem, no centro) */
@@ -334,22 +404,17 @@ body::before{
 
 <!-- ══ ARENA: Black Souls 2 Layout (aparece em combate) ══ -->
 <div id="bs-arena">
+  <!-- Fundo customizável -->
+  <div id="bs-arena-bg"></div>
+  <div id="bs-arena-bg-dim"></div>
 
   <!-- Área do Boss (imagem grande) -->
   <div id="bs-boss-area">
     <div id="bs-boss-placeholder">☠</div>
-    <img id="bs-boss-img" src="" alt="" style="display:none">
+    <div id="bs-boss-grid"></div>
 
     <!-- Rodada -->
     <div id="bs-round-badge">Rodada <span id="bs-round-num">1</span></div>
-
-    <!-- HP bar do boss centralizada na parte de baixo da imagem -->
-    <div id="bs-boss-hpbar-wrap" style="display:none">
-      <div class="bs-boss-hp-label" id="bs-boss-hp-name">BOSS</div>
-      <div class="bs-hp-track">
-        <div class="bs-hp-fill" id="bs-boss-hp-fill" style="width:100%"></div>
-      </div>
-    </div>
 
     <!-- Botão de abrir histórico -->
     <button id="bs-log-toggle">📜 Histórico</button>
@@ -394,6 +459,23 @@ body::before{
   <div id="standby">
     <div class="standby-ring">⧖</div>
     <p class="standby-text">Aguardando o Mestre iniciar o combate</p>
+    <button id="btn-enter-arena" onclick="entrarNaArena()" style="
+      margin-top:28px;
+      font-family:'Cinzel',serif;
+      font-size:.5rem;
+      letter-spacing:.35em;
+      text-transform:uppercase;
+      padding:10px 28px;
+      background:rgba(80,0,0,.25);
+      border:1px solid var(--crimson);
+      color:var(--crimson-lt);
+      cursor:pointer;
+      transition:all .25s;
+      opacity:.7;
+    "
+    onmouseover="this.style.opacity='1';this.style.background='rgba(122,24,40,.45)'"
+    onmouseout="this.style.opacity='.7';this.style.background='rgba(80,0,0,.25)'"
+    >⚔ Entrar no Combate</button>
   </div>
 </div>
 
@@ -521,52 +603,106 @@ function sendLog(){
 document.getElementById('log-init-time').textContent=nowTime();
 
 // ── Render: Boss (arena) ──────────────────────────────────────────────────────
-async function renderBossArena(bossEntry){
-  const img=document.getElementById('bs-boss-img');
-  const ph=document.getElementById('bs-boss-placeholder');
-  const hpWrap=document.getElementById('bs-boss-hpbar-wrap');
-  const hpFill=document.getElementById('bs-boss-hp-fill');
-  const hpName=document.getElementById('bs-boss-hp-name');
+async function renderBossArena(bossEntries){
+  // Aceita array ou entry único (retrocompatibilidade)
+  const entries = Array.isArray(bossEntries)
+    ? bossEntries.filter(e => e && e.bossId)
+    : (bossEntries && bossEntries.bossId ? [bossEntries] : []);
 
-  if(!bossEntry||!bossEntry.bossId){
-    img.style.display='none';ph.style.display='flex';hpWrap.style.display='none';
+  const grid = document.getElementById('bs-boss-grid');
+  const ph   = document.getElementById('bs-boss-placeholder');
+
+  if(entries.length === 0){
+    grid.innerHTML = '';
+    grid.style.display = 'none';
+    ph.style.display = 'flex';
     return;
   }
 
-  try{
-    const r=await fetch(`/api/boss?id=${bossEntry.bossId}`);
-    if(!r.ok)throw new Error();
-    const b=await r.json();
+  ph.style.display = 'none';
+  grid.style.display = 'flex';
 
-    // Imagem
-    if(b.visibilidade&&b.visibilidade.imagem){
-      try{
-        const ar=await fetch(`/api/boss-avatar?id=${b.id}`);
-        if(ar.ok){
-          const ad=await ar.json();
-          if(ad.avatar){
-            img.src=ad.avatar;img.style.display='block';ph.style.display='none';
-          }else{
-            img.src='';img.style.display='none';ph.style.display='flex';
+  // Busca dados de todos os bosses em paralelo
+  const bossData = await Promise.all(entries.map(async entry => {
+    try{
+      const r = await fetch(`/api/boss?id=${entry.bossId}`);
+      if(!r.ok) return null;
+      const b = await r.json();
+
+      let avatarSrc = null;
+      if(b.visibilidade && b.visibilidade.imagem){
+        try{
+          // Usa cache; limpa quando bossUpdatedAt muda (via pollCombat)
+          if(_bossAvatarCache[b.id] !== undefined){
+            avatarSrc = _bossAvatarCache[b.id];
+          } else {
+            const ar = await fetch(`/api/boss-avatar?id=${b.id}`);
+            if(ar.ok){ const ad = await ar.json(); avatarSrc = ad.avatar || null; }
+            _bossAvatarCache[b.id] = avatarSrc;
           }
-        }
-      }catch{}
-    }else{
-      img.src='';img.style.display='none';ph.style.display='flex';
-    }
+        }catch{}
+      }
+      return { ...b, _avatarSrc: avatarSrc, _entry: entry };
+    }catch{ return null; }
+  }));
 
-    // HP
-    if(b.visibilidade&&b.visibilidade.hp){
-      const pct=hpPct(b.hpAtual,b.hpMax);
-      hpFill.style.width=pct+'%';
-      if(b.visibilidade.nome)hpName.textContent=esc(b.nome);
-      hpWrap.style.display='block';
-    }else{
-      hpWrap.style.display='none';
-    }
-  }catch{
-    img.style.display='none';ph.style.display='flex';hpWrap.style.display='none';
+  const valid = bossData.filter(Boolean);
+  if(valid.length === 0){
+    grid.innerHTML = '';
+    grid.style.display = 'none';
+    ph.style.display = 'flex';
+    return;
   }
+
+  // Layout: determina quem é primário (centro) e secundários (lados)
+  // 1 boss  → só primário
+  // 2 bosses → primário esquerda, secundário direita
+  // 3 bosses → secundário, primário (centro), secundário
+  // N bosses → alterna: centro é o primeiro, depois distribui
+  function getSlotOrder(n){
+    if(n === 1) return [{ idx:0, role:'primary' }];
+    if(n === 2) return [
+      { idx:0, role:'primary' },
+      { idx:1, role:'secondary' }
+    ];
+    if(n === 3) return [
+      { idx:1, role:'secondary' },
+      { idx:0, role:'primary' },
+      { idx:2, role:'secondary' }
+    ];
+    // 4+ → todos secondary exceto o primeiro que fica no centro
+    const order = [];
+    const leftSide  = [];
+    const rightSide = [];
+    for(let i=1;i<n;i++){ if(i%2===1) leftSide.push(i); else rightSide.push(i); }
+    leftSide.reverse().forEach(i => order.push({ idx:i, role:'secondary' }));
+    order.push({ idx:0, role:'primary' });
+    rightSide.forEach(i => order.push({ idx:i, role:'secondary' }));
+    return order;
+  }
+
+  const slotOrder = getSlotOrder(valid.length);
+
+  grid.innerHTML = slotOrder.map(({ idx, role }) => {
+    const b = valid[idx];
+    const imgHtml = b._avatarSrc
+      ? `<img class="bs-boss-slot-img" src="${b._avatarSrc}" alt="${esc(b.nome||'')}">`
+      : `<div style="font-size:5rem;opacity:.15;color:var(--crimson-lt);padding-bottom:40px">☠</div>`;
+
+    const showHp = b.visibilidade && b.visibilidade.hp;
+    const pct    = showHp ? hpPct(b.hpAtual ?? b._entry?.hpAtual, b.hpMax ?? b._entry?.hpMax) : 100;
+    const nome   = (b.visibilidade && b.visibilidade.nome) ? esc(b.nome||'BOSS') : 'BOSS';
+
+    const hpHtml = showHp ? `
+      <div class="bs-boss-slot-hpbar">
+        <div class="bs-boss-slot-hp-label">${nome}</div>
+        <div class="bs-hp-track">
+          <div class="bs-hp-fill" style="width:${pct}%"></div>
+        </div>
+      </div>` : '';
+
+    return `<div class="bs-boss-slot ${role}" data-boss-id="${esc(b.id||'')}">${imgHtml}${hpHtml}</div>`;
+  }).join('');
 }
 
 // ── Render: Players (barra inferior) ─────────────────────────────────────────
@@ -639,6 +775,11 @@ let lastBossId=null;
 let lastContoEncerrado=null;
 let lastBossVisHash=null;
 let lastBossUpdatedAt=null;
+let lastArenaBgUpdatedAt=null;
+
+// Cache de avatares para não buscar toda poll
+const _bossAvatarCache = {};
+const _playerAvatarCache = {};
 
 async function renderCombat(state){
   const arena=document.getElementById('bs-arena');
@@ -674,29 +815,66 @@ async function renderCombat(state){
   }
   lastTurnoAtual=state.turnoAtual;
 
-  // Boss
+  // Bosses (múltiplos)
   const iniciativa=Array.isArray(state.iniciativa)?state.iniciativa:[];
-  const bossEntry=iniciativa.find(e=>e.tipo==='boss'||e.tipo==='inimigo');
+  const bossEntries=iniciativa.filter(e=>e.tipo==='boss'||e.tipo==='inimigo');
+  const bossEntry=bossEntries[0]||null;
   const newBossId=bossEntry?.bossId||null;
 
-  // Detecta morte do boss: HP foi para 0 agora
-  if(bossEntry){
-    const bossHpNow=Number(bossEntry.hpAtual??0);
-    if(_lastBossHp!==null && _lastBossHp>0 && bossHpNow<=0){
-      const nomeBoss=bossEntry.nome||'Criatura';
-      addLog(`${nomeBoss} foi derrotado!`,'system');
+  // Detecta morte: verifica se TODOS os inimigos foram derrotados
+  if(bossEntries.length>0){
+    const allDead = bossEntries.every(e=>Number(e.hpAtual??0)<=0);
+    const hadAlive = _lastBossHpMap && bossEntries.some(e=>(_lastBossHpMap[e.id]??1)>0);
+
+    bossEntries.forEach(e=>{
+      const wasAlive=(_lastBossHpMap??{})[e.id]??null;
+      const nowHp=Number(e.hpAtual??0);
+      if(wasAlive!==null && wasAlive>0 && nowHp<=0){
+        addLog(`${e.nome||'Criatura'} foi derrotada!`,'system');
+      }
+    });
+
+    if(allDead && hadAlive && _lastBossHpMap!==null){
+      const nomeBoss=bossEntry?.nome||'Criatura';
       setTimeout(()=>dispararContoEncerrado(nomeBoss),400);
     }
-    _lastBossHp=bossHpNow;
+    _lastBossHpMap={};
+    bossEntries.forEach(e=>{ _lastBossHpMap[e.id]=Number(e.hpAtual??0); });
   } else {
-    _lastBossHp=null;
+    _lastBossHpMap=null;
   }
 
-  await renderBossArena(bossEntry||null);
-  lastBossId=newBossId;
+  await renderBossArena(bossEntries);
+  lastBossId = bossEntries.map(e=>e.bossId).join(',');
 
   // Players
   renderPlayersBottom(fichas);
+}
+
+// ── Arena Background ─────────────────────────────────────────────────────────
+async function applyArenaBg(dim=0.4){
+  try{
+    const r = await fetch('/api/arena-bg');
+    if(!r.ok) return;
+    const { bg } = await r.json();
+    const bgEl  = document.getElementById('bs-arena-bg');
+    const dimEl = document.getElementById('bs-arena-bg-dim');
+    if(!bg){
+      bgEl.style.background='';
+      bgEl.style.backgroundImage='';
+      dimEl.style.background='rgba(0,0,0,0)';
+      return;
+    }
+    if(bg.startsWith('data:image/')){
+      bgEl.style.backgroundImage=`url(${JSON.stringify(bg)})`;
+      bgEl.style.background='';
+    } else {
+      // cor sólida
+      bgEl.style.backgroundImage='';
+      bgEl.style.background=bg;
+    }
+    dimEl.style.background=`rgba(0,0,0,${Math.min(0.95,dim)})`;
+  }catch{}
 }
 
 // ── Poll: combate ─────────────────────────────────────────────────────────────
@@ -713,9 +891,14 @@ async function pollCombat(){
         lastContoEncerrado=data.contoEncerrado;
         setTimeout(()=>dispararContoEncerrado(data.contoNome||''), 200);
       }
-      // Mestre salvou boss: força re-fetch do boss mesmo sem combat state visual mudar
-      if(data.bossUpdatedAt && data.bossUpdatedAt !== lastBossUpdatedAt){
+      // Fundo da arena atualizado pelo mestre
+      if(data.arenaBgUpdatedAt && data.arenaBgUpdatedAt !== lastArenaBgUpdatedAt){
+        lastArenaBgUpdatedAt = data.arenaBgUpdatedAt;
+        applyArenaBg(data.arenaBgDim ?? 0.4);
+      }
         lastBossUpdatedAt=data.bossUpdatedAt;
+        // Limpa cache de avatares para pegar a nova imagem
+        Object.keys(_bossAvatarCache).forEach(k=>delete _bossAvatarCache[k]);
         lastBossId=null; // força re-render do boss arena
       }
       await renderCombat(data);
@@ -755,8 +938,14 @@ async function pollPlayers(){
 
     await Promise.allSettled(fichas.map(async f=>{
       try{
-        const r=await fetch(`/api/avatar?id=${f.id}`);
-        if(r.ok){const d=await r.json();if(d.avatar)f._avatarSrc=d.avatar;}
+        if(_playerAvatarCache[f.id] !== undefined){
+          f._avatarSrc = _playerAvatarCache[f.id];
+        } else {
+          const r=await fetch(`/api/avatar?id=${f.id}`);
+          const src = r.ok ? ((await r.json()).avatar||null) : null;
+          f._avatarSrc = src;
+          _playerAvatarCache[f.id] = src;
+        }
       }catch{}
     }));
 
@@ -801,29 +990,98 @@ async function refreshHp(manifest){
 
 
 // ══════════════════════════════════════════════════
+//  ENTRAR NA ARENA MANUALMENTE
+// ══════════════════════════════════════════════════
+function entrarNaArena() {
+  const arena   = document.getElementById('bs-arena');
+  const standby = document.getElementById('standby').closest('.page-standby');
+  standby.style.display = 'none';
+  arena.classList.add('show');
+}
+
+// ══════════════════════════════════════════════════
 //  ANIMAÇÃO: CONTO ENCERRADO (disparada pelo mestre)
 // ══════════════════════════════════════════════════
-let _lastBossHp = null;
+let _lastBossHpMap = null;
 
 function dispararContoEncerrado(nomeBoss) {
   if (document.getElementById('conto-encerrado-overlay')) return;
 
-  // Afunda o boss da arena
-  const bossImg = document.getElementById('bs-boss-img');
-  const bossPh = document.getElementById('bs-boss-placeholder');
-  [bossImg, bossPh].forEach(el => {
-    if (el) {
-      el.style.transition = 'all 1.4s cubic-bezier(.4,0,.2,1)';
-      el.style.filter = 'brightness(0.08) sepia(1) saturate(0.3)';
-      el.style.transform = 'translateY(90px) scale(0.93)';
-      el.style.opacity = '0';
-    }
+  // ── FASE 1: Terremoto nos bosses (1.6s de tremida intensa) ──
+  const bossSlots = document.querySelectorAll('.bs-boss-slot');
+  const bossImgs  = document.querySelectorAll('.bs-boss-slot-img');
+
+  // Zera HP imediatamente
+  document.querySelectorAll('.bs-hp-fill').forEach(fill => {
+    fill.style.transition = 'width 0.8s ease';
+    fill.style.width = '0%';
   });
 
-  // Zera a barra de HP do boss
-  const fill = document.getElementById('bs-boss-hp-fill');
-  if (fill) { fill.style.transition = 'width 1s ease'; fill.style.width = '0%'; }
+  // Injeta keyframes do terremoto no <head> se ainda não existir
+  if (!document.getElementById('quake-keyframes')) {
+    const style = document.createElement('style');
+    style.id = 'quake-keyframes';
+    style.textContent = `
+      @keyframes quake {
+        0%   { transform: translate(0,0) rotate(0deg); }
+        5%   { transform: translate(-6px, 3px) rotate(-.4deg); }
+        10%  { transform: translate(7px, -4px) rotate(.5deg); }
+        15%  { transform: translate(-5px, 6px) rotate(-.3deg); }
+        20%  { transform: translate(8px, -2px) rotate(.6deg); }
+        25%  { transform: translate(-7px, 4px) rotate(-.5deg); }
+        30%  { transform: translate(5px, -6px) rotate(.3deg); }
+        35%  { transform: translate(-8px, 3px) rotate(-.6deg); }
+        40%  { transform: translate(6px, -4px) rotate(.4deg); }
+        45%  { transform: translate(-4px, 7px) rotate(-.3deg); }
+        50%  { transform: translate(7px, -3px) rotate(.5deg); }
+        55%  { transform: translate(-6px, 5px) rotate(-.4deg); }
+        60%  { transform: translate(4px, -6px) rotate(.3deg); }
+        65%  { transform: translate(-5px, 3px) rotate(-.2deg); }
+        70%  { transform: translate(3px, -4px) rotate(.3deg); }
+        75%  { transform: translate(-3px, 2px) rotate(-.2deg); }
+        80%  { transform: translate(2px, -2px) rotate(.1deg); }
+        90%  { transform: translate(-1px, 1px) rotate(0deg); }
+        100% { transform: translate(0,0) rotate(0deg); }
+      }
+      @keyframes quakeBg {
+        0%,100% { transform: translate(0,0); }
+        15%  { transform: translate(-4px, 2px); }
+        30%  { transform: translate(5px, -3px); }
+        45%  { transform: translate(-3px, 4px); }
+        60%  { transform: translate(4px, -2px); }
+        75%  { transform: translate(-2px, 3px); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
+  // Aplica tremida nas imagens dos bosses
+  bossImgs.forEach(img => {
+    img.style.animation = 'quake 0.1s ease-in-out infinite';
+    img.style.transformOrigin = 'bottom center';
+  });
+
+  // Tremida suave na arena inteira (sensação de estrondo)
+  const arena = document.getElementById('bs-arena');
+  if (arena) arena.style.animation = 'quakeBg 0.15s ease-in-out 8';
+
+  // ── FASE 2: Após terremoto, boss desce lento e desaparece (1.6s depois) ──
+  setTimeout(() => {
+    bossImgs.forEach(img => {
+      img.style.animation = '';
+      img.style.transition = 'all 2.2s cubic-bezier(.2, 0, .4, 1)';
+      img.style.filter     = 'brightness(0.06) sepia(1) saturate(0.2)';
+      img.style.transform  = 'translateY(130px) scale(0.88)';
+      img.style.opacity    = '0';
+    });
+    bossSlots.forEach(slot => {
+      slot.style.transition = 'opacity 2s ease';
+      slot.style.opacity = '0';
+    });
+    if (arena) arena.style.animation = '';
+  }, 1600);
+
+  // ── FASE 3: Overlay de conto encerrado (após boss sumir) ──
   setTimeout(() => {
     const ov = document.createElement('div');
     ov.id = 'conto-encerrado-overlay';
@@ -867,20 +1125,25 @@ function dispararContoEncerrado(nomeBoss) {
       ov.style.opacity = '0';
       setTimeout(() => {
         ov.remove();
-        // Reseta a aparência do boss
-        [bossImg, bossPh].forEach(el => {
-          if (el) { el.style.filter = ''; el.style.transform = ''; el.style.opacity = ''; }
+        // Reseta aparência dos slots
+        document.querySelectorAll('.bs-boss-slot, .bs-boss-slot-img').forEach(el => {
+          el.style.filter = '';
+          el.style.transform = '';
+          el.style.opacity = '';
+          el.style.transition = '';
+          el.style.animation = '';
         });
-        _lastBossHp = null;
+        _lastBossHpMap = null;
       }, 550);
     });
-  }, 1100);
+  }, 3600); // tremida 1.6s + descida 2s
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init(){
   setBadge('live');
   await Promise.allSettled([pollCombat(),pollPlayers()]);
+  applyArenaBg(0.4); // carrega fundo salvo no Redis ao abrir
   setInterval(pollCombat,4000);
   setInterval(pollPlayers,4000);
 }

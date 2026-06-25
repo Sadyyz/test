@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bestiário — Phantasos</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{
+  --bg:#0a0809;--bg2:#100d12;--surface:#161219;--surface2:#1e1825;
+  --border:#2c2238;--ink:#ede0c8;--ink-2:#b8a890;--ink-dim:#6a5a48;
+  --gold:#c8922a;--gold-lt:#e8be68;--gold-hot:#f2d078;--gold-dim:#5a3e10;
+  --crimson:#7a1828;--crimson-lt:#b83040;--crimson-glow:rgba(122,24,40,.25);
+  --glow-g:rgba(200,146,42,.2);--card-s:0 2px 20px rgba(0,0,0,.75);
+}
+[data-theme="light"]{
+  --bg:#f4ede0;--bg2:#ece4d4;--surface:#fdf8f0;--surface2:#f5eddc;
+  --border:#c8a870;--ink:#18100a;--ink-2:#5a4030;--ink-dim:#8a6a50;
+  --gold:#8a5a10;--gold-lt:#aa7830;--gold-hot:#7a4808;--gold-dim:#e8d4b0;
+  --crimson:#6a0f1e;--crimson-lt:#9a1830;--crimson-glow:rgba(106,15,30,.12);
+  --glow-g:rgba(138,90,16,.1);--card-s:0 2px 20px rgba(60,30,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'IM Fell English',Georgia,serif;min-height:100vh;overflow-x:hidden}
+
+/* ── Header ── */
+.page-header{
+  border-bottom:1px solid var(--border);
+  padding:18px 28px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  position:sticky;top:0;z-index:100;background:var(--bg);
+}
+.page-header h1{
+  font-family:'Cinzel Decorative',serif;font-size:1.1rem;
+  color:var(--crimson-lt);letter-spacing:.06em;
+}
+.header-nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{
+  font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.3em;text-transform:uppercase;
+  padding:8px 18px;border:1px solid var(--border);background:transparent;
+  color:var(--ink-2);cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{border-color:var(--gold);color:var(--gold-lt)}
+.btn.primary{border-color:var(--crimson);color:var(--crimson-lt);background:rgba(80,0,0,.2)}
+.btn.primary:hover{background:rgba(122,24,40,.4);color:var(--ink)}
+
+/* ── Layout ── */
+.layout{display:flex;height:calc(100vh - 61px)}
+
+/* ── Sidebar: categorias ── */
+.sidebar{
+  width:220px;min-width:180px;border-right:1px solid var(--border);
+  overflow-y:auto;padding:16px 0;flex-shrink:0;
+}
+.sidebar-title{
+  font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--ink-dim);padding:0 16px 10px;
+}
+.cat-item{
+  padding:9px 16px;cursor:pointer;font-size:.82rem;
+  color:var(--ink-2);transition:all .18s;
+  display:flex;justify-content:space-between;align-items:center;
+  border-left:2px solid transparent;
+}
+.cat-item:hover{background:var(--surface);color:var(--ink)}
+.cat-item.active{
+  border-left-color:var(--crimson-lt);color:var(--crimson-lt);
+  background:var(--surface);
+}
+.cat-count{
+  font-family:'Cinzel',serif;font-size:.55rem;
+  color:var(--ink-dim);background:var(--bg2);
+  padding:1px 6px;border:1px solid var(--border);
+}
+.cat-add-btn{
+  margin:12px 16px 0;width:calc(100% - 32px);
+  font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.25em;
+  text-transform:uppercase;padding:7px;border:1px dashed var(--border);
+  background:transparent;color:var(--ink-dim);cursor:pointer;transition:all .2s;
+}
+.cat-add-btn:hover{border-color:var(--gold-dim);color:var(--gold)}
+
+/* ── Main content ── */
+.main{flex:1;overflow-y:auto;padding:24px 28px}
+
+/* ── Toolbar ── */
+.toolbar{
+  display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;
+}
+.search-input{
+  flex:1;min-width:200px;
+  background:var(--surface);border:1px solid var(--border);color:var(--ink);
+  padding:9px 14px;font-family:'IM Fell English',serif;font-size:.88rem;outline:none;
+  transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--gold-dim)}
+.search-input::placeholder{color:var(--ink-dim)}
+
+/* ── Cards grid ── */
+.cat-section{margin-bottom:32px}
+.cat-section-title{
+  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.cat-section-title span{color:var(--ink-dim);font-size:.5rem}
+.cards-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;
+}
+.beast-card{
+  background:var(--surface);border:1px solid var(--border);
+  padding:14px;cursor:pointer;transition:all .2s;position:relative;
+}
+.beast-card:hover{border-color:var(--crimson);background:var(--surface2)}
+.beast-card-name{
+  font-family:'Cinzel',serif;font-size:.88rem;color:var(--crimson-lt);
+  margin-bottom:4px;padding-right:28px;
+}
+.beast-card-meta{font-size:.72rem;color:var(--ink-dim);font-style:italic;margin-bottom:10px}
+.beast-card-stats{
+  display:flex;gap:10px;font-size:.72rem;color:var(--ink-2);
+}
+.beast-hp-bar{height:4px;background:var(--bg2);border:1px solid var(--border);margin-top:8px}
+.beast-hp-fill{height:100%;background:linear-gradient(90deg,var(--crimson),var(--crimson-lt));transition:width .4s}
+.beast-del{
+  position:absolute;top:10px;right:10px;background:none;border:none;
+  color:var(--crimson-lt);opacity:.5;cursor:pointer;font-size:.85rem;transition:opacity .2s;
+}
+.beast-del:hover{opacity:1}
+.vis-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.vis-tag{
+  font-size:.55rem;color:var(--gold-lt);border:1px solid var(--gold-dim);
+  padding:1px 5px;
+}
+.empty-cat{
+  color:var(--ink-dim);font-style:italic;font-size:.82rem;
+  padding:20px 0;text-align:center;grid-column:1/-1;
+}
+
+/* ── Modal editor ── */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-backdrop.hidden{display:none}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  width:100%;max-width:660px;max-height:90vh;overflow-y:auto;
+  padding:28px;position:relative;
+}
+.modal-title{
+  font-family:'Cinzel Decorative',serif;font-size:1rem;
+  color:var(--crimson-lt);margin-bottom:20px;
+}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.form-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px}
+.form-label{
+  font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--ink-dim);
+}
+.form-input,.form-select,.form-textarea{
+  background:var(--bg2);border:1px solid var(--border);color:var(--ink);
+  padding:9px 12px;font-family:'IM Fell English',serif;font-size:.88rem;outline:none;
+  transition:border-color .2s;width:100%;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--gold-dim)}
+.form-textarea{resize:vertical;min-height:80px}
+.form-select option{background:var(--bg2)}
+.section-divider{
+  font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.35em;text-transform:uppercase;
+  color:var(--ink-dim);border-bottom:1px solid var(--border);padding-bottom:6px;
+  margin:18px 0 12px;
+}
+.attr-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;
+}
+.attr-item{display:flex;flex-direction:column;gap:4px;align-items:center}
+.attr-label{
+  font-family:'Cinzel',serif;font-size:.45rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-dim);text-align:center;
+}
+.attr-input{
+  background:var(--bg2);border:1px solid var(--border);color:var(--ink);
+  padding:6px;text-align:center;font-family:'Cinzel',serif;font-size:.88rem;
+  outline:none;width:100%;transition:border-color .2s;
+}
+.attr-input:focus{border-color:var(--gold-dim)}
+
+/* Ações / habilidades */
+.list-area{margin-bottom:12px}
+.list-item{
+  display:flex;gap:8px;align-items:flex-start;
+  background:var(--bg2);border:1px solid var(--border);padding:8px 10px;margin-bottom:6px;
+}
+.list-item-content{flex:1;display:flex;flex-direction:column;gap:4px}
+.list-item input,.list-item textarea{
+  background:transparent;border:none;color:var(--ink);font-family:'IM Fell English',serif;
+  font-size:.82rem;outline:none;width:100%;
+}
+.list-item input{font-weight:bold;color:var(--gold-lt)}
+.list-item textarea{resize:none;min-height:40px;font-size:.78rem;color:var(--ink-2)}
+.list-item-del{background:none;border:none;color:var(--crimson-lt);opacity:.5;cursor:pointer;font-size:.8rem;flex-shrink:0;transition:opacity .15s;padding:2px}
+.list-item-del:hover{opacity:1}
+.add-item-btn{
+  font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.25em;text-transform:uppercase;
+  padding:6px 14px;border:1px dashed var(--border);background:transparent;
+  color:var(--ink-dim);cursor:pointer;transition:all .2s;
+}
+.add-item-btn:hover{border-color:var(--gold-dim);color:var(--gold)}
+
+/* Vis toggles */
+.vis-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.vis-toggle{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.vis-toggle input{accent-color:var(--crimson-lt)}
+.vis-toggle span{font-size:.78rem;color:var(--ink-2)}
+
+/* Avatar upload */
+.avatar-upload-area{
+  border:1px dashed var(--border);padding:16px;text-align:center;
+  cursor:pointer;transition:border-color .2s;margin-bottom:12px;
+  position:relative;
+}
+.avatar-upload-area:hover{border-color:var(--gold-dim)}
+.avatar-preview{max-width:160px;max-height:160px;display:block;margin:0 auto 8px;object-fit:contain}
+.avatar-hint{font-size:.72rem;color:var(--ink-dim)}
+#avatar-file-input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* Modal footer */
+.modal-footer{
+  display:flex;gap:10px;justify-content:flex-end;margin-top:20px;
+  padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap;
+}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--surface2);border:1px solid var(--border);
+  padding:12px 20px;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink);box-shadow:var(--card-s);
+  opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:none}
+.toast.err{border-color:var(--crimson);color:var(--crimson-lt)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── Nova categoria inline ── */
+.cat-new-input{
+  margin:8px 16px 0;width:calc(100% - 32px);
+  background:var(--bg2);border:1px solid var(--gold-dim);color:var(--ink);
+  padding:7px 10px;font-family:'IM Fell English',serif;font-size:.82rem;outline:none;
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>☠ Bestiário</h1>
+  <div class="header-nav">
+    <input class="search-input" id="search" placeholder="Buscar criatura..." oninput="renderAll()" style="max-width:260px">
+    <button class="btn primary" onclick="openModal(null)">✦ Nova Criatura</button>
+    <a class="btn" href="mestre.html">← Voltar</a>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar: categorias -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Categorias</div>
+    <div id="cat-list"></div>
+    <button class="cat-add-btn" onclick="showNewCatInput()">+ Nova categoria</button>
+    <input class="cat-new-input" id="cat-new-input" placeholder="Nome da categoria..." style="display:none"
+      onkeydown="handleNewCatKey(event)" onblur="hideNewCatInput()">
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="main-content">
+    <div id="beast-sections"></div>
+  </main>
+
+</div>
+
+<!-- Modal de edição -->
+<div class="modal-backdrop hidden" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-title" id="modal-title">Nova Criatura</div>
+
+    <!-- Nome + Categoria -->
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label class="form-label">Nome</label>
+        <input class="form-input" id="f-nome" placeholder="Nome da criatura">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label class="form-label">Categoria</label>
+        <select class="form-select" id="f-categoria"></select>
+      </div>
+    </div>
+
+    <!-- Tipo + CR -->
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label class="form-label">Tipo</label>
+        <input class="form-input" id="f-tipo" placeholder="ex: Dragão, Morto-vivo, Aberração">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label class="form-label">CR</label>
+        <input class="form-input" id="f-cr" placeholder="ex: 5">
+      </div>
+    </div>
+
+    <!-- HP + CA -->
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">HP Máximo</label>
+        <input class="form-input" id="f-hpmax" type="number" min="1" value="10">
+      </div>
+      <div class="form-group">
+        <label class="form-label">HP Atual</label>
+        <input class="form-input" id="f-hpatual" type="number" min="0" value="10" style="border-color:var(--crimson);color:var(--crimson-lt)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">CA</label>
+        <input class="form-input" id="f-ca" type="number" min="0" value="10">
+      </div>
+    </div>
+
+    <!-- Atributos -->
+    <div class="section-divider">Atributos</div>
+    <div class="attr-grid">
+      <div class="attr-item"><div class="attr-label">Razão</div><input class="attr-input" id="a-razao" type="number" value="5"></div>
+      <div class="attr-item"><div class="attr-label">Vigor</div><input class="attr-input" id="a-vigor" type="number" value="5"></div>
+      <div class="attr-item"><div class="attr-label">Vontade</div><input class="attr-input" id="a-vontade" type="number" value="5"></div>
+      <div class="attr-item"><div class="attr-label">Expressão</div><input class="attr-input" id="a-expressao" type="number" value="5"></div>
+    </div>
+
+    <!-- Avatar -->
+    <div class="section-divider">Imagem</div>
+    <div class="avatar-upload-area" id="avatar-drop-area">
+      <input type="file" id="avatar-file-input" accept="image/*" onchange="handleAvatarFile(this.files[0])">
+      <img id="avatar-preview" class="avatar-preview" style="display:none">
+      <div class="avatar-hint" id="avatar-hint">Clique ou arraste uma imagem aqui</div>
+    </div>
+    <button class="add-item-btn" onclick="clearAvatar()" style="margin-bottom:12px" id="avatar-clear-btn">✕ Remover imagem</button>
+
+    <!-- Ações -->
+    <div class="section-divider">Ações</div>
+    <div class="list-area" id="acoes-list"></div>
+    <button class="add-item-btn" onclick="addAcao()">+ Adicionar ação</button>
+
+    <!-- Habilidades -->
+    <div class="section-divider">Habilidades Passivas</div>
+    <div class="list-area" id="habs-list"></div>
+    <button class="add-item-btn" onclick="addHab()" style="margin-bottom:12px">+ Adicionar habilidade</button>
+
+    <!-- Notas -->
+    <div class="section-divider">Notas do Mestre</div>
+    <textarea class="form-textarea" id="f-notas" rows="3" placeholder="Táticas, gatilhos, segredos..."></textarea>
+
+    <!-- Visibilidade -->
+    <div class="section-divider">Visibilidade para Jogadores</div>
+    <div class="vis-row">
+      <label class="vis-toggle"><input type="checkbox" id="v-nome"><span>Mostrar Nome</span></label>
+      <label class="vis-toggle"><input type="checkbox" id="v-hp"><span>Mostrar HP</span></label>
+      <label class="vis-toggle"><input type="checkbox" id="v-imagem"><span>Mostrar Imagem</span></label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn primary" onclick="saveCreature()">✦ Salvar Criatura</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Estado ────────────────────────────────────────────────────────────────────
+let beasts = [];
+let cats   = ['Sem Categoria'];
+let activeCat = 'todas';
+let editingId = null;
+let avatarData = null; // base64
+let editingAcoes = [];
+let editingHabs  = [];
+
+function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function slugify(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)||'criatura';
+}
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(err?' err':'');
+  void t.offsetWidth;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+function hpPct(a,m){ return Math.max(0,Math.min(100,((Number(a)||0)/(Math.max(1,Number(m)||1)))*100)); }
+
+// ── Carregar dados ────────────────────────────────────────────────────────────
+async function loadBeasts(){
+  try{
+    const r=await fetch('/api/boss');
+    beasts = r.ok ? await r.json() : [];
+  }catch{ beasts=[]; }
+  syncCats();
+  renderSidebar();
+  renderAll();
+}
+
+function syncCats(){
+  const set=new Set(['Sem Categoria']);
+  beasts.forEach(b=>{ if(b.categoria) set.add(b.categoria); });
+  cats=[...set];
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function renderSidebar(){
+  const el=document.getElementById('cat-list');
+  const counts={};
+  beasts.forEach(b=>{ const c=b.categoria||'Sem Categoria'; counts[c]=(counts[c]||0)+1; });
+  const total=beasts.length;
+
+  const allItem=`<div class="cat-item${activeCat==='todas'?' active':''}" onclick="setActiveCat('todas')">
+    Todas as criaturas <span class="cat-count">${total}</span>
+  </div>`;
+
+  const catItems=cats.map(c=>`
+    <div class="cat-item${activeCat===c?' active':''}" onclick="setActiveCat(${JSON.stringify(c)})">
+      ${esc(c)} <span class="cat-count">${counts[c]||0}</span>
+    </div>
+  `).join('');
+
+  el.innerHTML=allItem+catItems;
+}
+
+function setActiveCat(c){
+  activeCat=c;
+  renderSidebar();
+  renderAll();
+}
+
+function showNewCatInput(){
+  const inp=document.getElementById('cat-new-input');
+  inp.style.display='block';inp.focus();
+}
+function hideNewCatInput(){
+  const inp=document.getElementById('cat-new-input');
+  setTimeout(()=>{inp.style.display='none';inp.value='';},150);
+}
+function handleNewCatKey(e){
+  if(e.key==='Enter'){
+    const v=e.target.value.trim();
+    if(v&&!cats.includes(v)){ cats.push(v); renderSidebar(); }
+    hideNewCatInput();
+  }
+  if(e.key==='Escape') hideNewCatInput();
+}
+
+// ── Render main ───────────────────────────────────────────────────────────────
+function renderAll(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  const main=document.getElementById('beast-sections');
+
+  let filtered=beasts.filter(b=>{
+    if(q && !((b.nome||'').toLowerCase().includes(q)||(b.tipo||'').toLowerCase().includes(q)||(b.categoria||'').toLowerCase().includes(q))) return false;
+    if(activeCat!=='todas' && (b.categoria||'Sem Categoria')!==activeCat) return false;
+    return true;
+  });
+
+  if(filtered.length===0){
+    main.innerHTML=`<div style="text-align:center;padding:60px;color:var(--ink-dim);font-style:italic">Nenhuma criatura encontrada.</div>`;
+    return;
+  }
+
+  // Agrupa por categoria quando mostrando "todas"
+  let groups=[];
+  if(activeCat==='todas'){
+    const map={};
+    filtered.forEach(b=>{
+      const c=b.categoria||'Sem Categoria';
+      if(!map[c]) map[c]=[];
+      map[c].push(b);
+    });
+    groups=Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0]));
+  } else {
+    groups=[[activeCat, filtered]];
+  }
+
+  main.innerHTML=groups.map(([cat,list])=>`
+    <div class="cat-section">
+      <div class="cat-section-title">${esc(cat)} <span>${list.length} ${list.length===1?'criatura':'criaturas'}</span></div>
+      <div class="cards-grid">
+        ${list.map(b=>{
+          const pct=hpPct(b.hpAtual,b.hpMax);
+          const hpColor=pct>60?'linear-gradient(90deg,#1a5a28,#2a8a40)':pct>25?'linear-gradient(90deg,#5a4010,#9a7020)':'linear-gradient(90deg,var(--crimson),var(--crimson-lt))';
+          return `<div class="beast-card" data-id="${esc(b.id)}" onclick="openModal('${esc(b.id)}')">
+            <button class="beast-del" onclick="event.stopPropagation();deleteBeast('${esc(b.id)}')">🗑</button>
+            <div class="beast-card-name">${esc(b.nome||'(sem nome)')}</div>
+            <div class="beast-card-meta">${esc(b.tipo||'')}${b.cr?' · CR '+esc(String(b.cr)):''}</div>
+            <div class="beast-card-stats">
+              <span>HP ${b.hpAtual??b.hpMax}/${b.hpMax}</span>·<span>CA ${b.ca}</span>
+            </div>
+            <div class="beast-hp-bar"><div class="beast-hp-fill" style="width:${pct}%;background:${hpColor}"></div></div>
+            <div class="vis-tags">
+              ${b.visibilidade?.nome?'<span class="vis-tag">nome</span>':''}
+              ${b.visibilidade?.hp?'<span class="vis-tag">hp</span>':''}
+              ${b.visibilidade?.imagem?'<span class="vis-tag">imagem</span>':''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function populateCatSelect(current){
+  const sel=document.getElementById('f-categoria');
+  sel.innerHTML=[...cats,'+ Nova categoria'].map(c=>
+    `<option value="${esc(c)}" ${c===current?'selected':''}>${esc(c)}</option>`
+  ).join('');
+  sel.onchange=function(){
+    if(this.value==='+ Nova categoria'){
+      const n=prompt('Nome da nova categoria:');
+      if(n&&n.trim()){
+        if(!cats.includes(n.trim())) cats.push(n.trim());
+        populateCatSelect(n.trim());
+      } else {
+        this.value=current||'Sem Categoria';
+      }
+    }
+  };
+}
+
+async function openModal(id){
+  editingId=id;
+  avatarData=null;
+  editingAcoes=[];
+  editingHabs=[];
+
+  document.getElementById('modal-title').textContent=id?'Editar Criatura':'Nova Criatura';
+
+  if(id){
+    const b=beasts.find(x=>x.id===id)||{};
+    document.getElementById('f-nome').value=b.nome||'';
+    document.getElementById('f-tipo').value=b.tipo||'';
+    document.getElementById('f-cr').value=b.cr||'';
+    document.getElementById('f-hpmax').value=b.hpMax||10;
+    document.getElementById('f-hpatual').value=b.hpAtual??b.hpMax??10;
+    document.getElementById('f-ca').value=b.ca||10;
+    document.getElementById('a-razao').value=(b.atributos?.razao??5);
+    document.getElementById('a-vigor').value=(b.atributos?.vigor??5);
+    document.getElementById('a-vontade').value=(b.atributos?.vontade??5);
+    document.getElementById('a-expressao').value=(b.atributos?.expressao??5);
+    document.getElementById('f-notas').value=b.notasMestre||'';
+    document.getElementById('v-nome').checked=b.visibilidade?.nome||false;
+    document.getElementById('v-hp').checked=b.visibilidade?.hp||false;
+    document.getElementById('v-imagem').checked=b.visibilidade?.imagem||false;
+    editingAcoes=(b.acoes||[]).map(a=>({...a}));
+    editingHabs=(b.habilidades||[]).map(h=>({...h}));
+    populateCatSelect(b.categoria||'Sem Categoria');
+
+    // Carrega avatar existente
+    try{
+      const ar=await fetch(`/api/boss-avatar?id=${encodeURIComponent(id)}`);
+      if(ar.ok){ const ad=await ar.json(); if(ad.avatar){ setAvatarPreview(ad.avatar);avatarData=ad.avatar; } }
+    }catch{}
+  } else {
+    document.getElementById('f-nome').value='';
+    document.getElementById('f-tipo').value='';
+    document.getElementById('f-cr').value='';
+    document.getElementById('f-hpmax').value=10;
+    document.getElementById('f-hpatual').value=10;
+    document.getElementById('f-ca').value=10;
+    document.getElementById('a-razao').value=5;
+    document.getElementById('a-vigor').value=5;
+    document.getElementById('a-vontade').value=5;
+    document.getElementById('a-expressao').value=5;
+    document.getElementById('f-notas').value='';
+    document.getElementById('v-nome').checked=false;
+    document.getElementById('v-hp').checked=false;
+    document.getElementById('v-imagem').checked=false;
+    clearAvatar();
+    populateCatSelect('Sem Categoria');
+  }
+
+  renderAcoes();
+  renderHabs();
+  document.getElementById('modal-backdrop').classList.remove('hidden');
+  document.getElementById('f-nome').focus();
+}
+
+function closeModal(){
+  document.getElementById('modal-backdrop').classList.add('hidden');
+  editingId=null;avatarData=null;
+}
+function handleBackdropClick(e){
+  if(e.target.id==='modal-backdrop') closeModal();
+}
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+function handleAvatarFile(file){
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rawImg = new Image();
+    rawImg.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      const MAX_H = 600, MAX_W = 500;
+      let w = rawImg.width, h = rawImg.height;
+      if(h > MAX_H){ w = Math.round(w * MAX_H / h); h = MAX_H; }
+      if(w > MAX_W){ h = Math.round(h * MAX_W / w); w = MAX_W; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(rawImg, 0, 0, w, h);
+      avatarData = canvas.toDataURL('image/jpeg', 0.85);
+      setAvatarPreview(avatarData);
+    };
+    rawImg.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function setAvatarPreview(src){
+  const img=document.getElementById('avatar-preview');
+  const hint=document.getElementById('avatar-hint');
+  img.src=src;img.style.display='block';hint.style.display='none';
+}
+function clearAvatar(){
+  avatarData=null;
+  const img=document.getElementById('avatar-preview');
+  const hint=document.getElementById('avatar-hint');
+  img.src='';img.style.display='none';hint.style.display='block';
+}
+
+// ── Ações & Habilidades ───────────────────────────────────────────────────────
+function renderAcoes(){
+  const el=document.getElementById('acoes-list');
+  el.innerHTML=editingAcoes.map((a,i)=>`
+    <div class="list-item">
+      <div class="list-item-content">
+        <input placeholder="Nome da ação" value="${esc(a.nome||'')}" oninput="editingAcoes[${i}].nome=this.value">
+        <textarea placeholder="Descrição" rows="2" oninput="editingAcoes[${i}].desc=this.value">${esc(a.desc||'')}</textarea>
+      </div>
+      <button class="list-item-del" onclick="editingAcoes.splice(${i},1);renderAcoes()">✕</button>
+    </div>
+  `).join('')||'<div class="empty-cat">Nenhuma ação cadastrada.</div>';
+}
+function addAcao(){ editingAcoes.push({nome:'',desc:''});renderAcoes(); }
+
+function renderHabs(){
+  const el=document.getElementById('habs-list');
+  el.innerHTML=editingHabs.map((h,i)=>`
+    <div class="list-item">
+      <div class="list-item-content">
+        <input placeholder="Nome da habilidade" value="${esc(h.nome||'')}" oninput="editingHabs[${i}].nome=this.value">
+        <textarea placeholder="Descrição" rows="2" oninput="editingHabs[${i}].desc=this.value">${esc(h.desc||'')}</textarea>
+      </div>
+      <button class="list-item-del" onclick="editingHabs.splice(${i},1);renderHabs()">✕</button>
+    </div>
+  `).join('')||'<div class="empty-cat">Nenhuma habilidade cadastrada.</div>';
+}
+function addHab(){ editingHabs.push({nome:'',desc:''});renderHabs(); }
+
+// ── Salvar ────────────────────────────────────────────────────────────────────
+async function saveCreature(){
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!nome){ toast('Nome é obrigatório.',true);return; }
+
+  const id=editingId||('beast-'+slugify(nome)+'-'+Date.now().toString(36));
+  const categoria=document.getElementById('f-categoria').value;
+  const hpMax=Number(document.getElementById('f-hpmax').value)||1;
+
+  const body={
+    id,nome,
+    categoria,
+    tipo:document.getElementById('f-tipo').value.trim(),
+    cr:document.getElementById('f-cr').value.trim(),
+    hpMax,
+    hpAtual:Number(document.getElementById('f-hpatual').value)??hpMax,
+    ca:Number(document.getElementById('f-ca').value)||10,
+    atributos:{
+      razao:Number(document.getElementById('a-razao').value)||5,
+      vigor:Number(document.getElementById('a-vigor').value)||5,
+      vontade:Number(document.getElementById('a-vontade').value)||5,
+      expressao:Number(document.getElementById('a-expressao').value)||5,
+    },
+    acoes:editingAcoes,
+    habilidades:editingHabs,
+    notasMestre:document.getElementById('f-notas').value,
+    visibilidade:{
+      nome:document.getElementById('v-nome').checked,
+      hp:document.getElementById('v-hp').checked,
+      imagem:document.getElementById('v-imagem').checked,
+    }
+  };
+
+  try{
+    const r=await fetch(`/api/boss?id=${encodeURIComponent(id)}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error();
+
+    // Salva avatar se houver
+    if(avatarData){
+      await fetch(`/api/boss-avatar?id=${encodeURIComponent(id)}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({avatar:avatarData})
+      });
+    } else if(editingId) {
+      // Se limpou o avatar, remove
+      await fetch(`/api/boss-avatar?id=${encodeURIComponent(id)}`,{method:'DELETE'}).catch(()=>{});
+    }
+
+    // Invalida cache do players.html
+    try{
+      const cr=await fetch('/api/combat');
+      if(cr.ok){ const cs=await cr.json();cs.bossUpdatedAt=Date.now();
+        await fetch('/api/combat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cs)}); }
+    }catch{}
+
+    toast('Criatura salva!');
+    closeModal();
+    await loadBeasts();
+  }catch{
+    toast('Erro ao salvar criatura.',true);
+  }
+}
+
+// ── Deletar ───────────────────────────────────────────────────────────────────
+async function deleteBeast(id){
+  const b=beasts.find(x=>x.id===id);
+  if(!confirm(`Remover "${b?.nome||id}" permanentemente?`)) return;
+  try{
+    const r=await fetch(`/api/boss?id=${encodeURIComponent(id)}`,{method:'DELETE'});
+    if(!r.ok) throw new Error();
+    toast('Criatura removida.');
+    await loadBeasts();
+  }catch{ toast('Erro ao remover.',true); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadBeasts();
+</script>
+</body>
+</html>
