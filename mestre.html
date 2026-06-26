@@ -218,8 +218,6 @@ body::before{
       <button class="btn primary" id="cb-start-combat">Iniciar Combate ⚔</button>
       <button class="btn primary" id="cb-save-combat" style="display:none">Salvar Alterações</button>
     </div>
-
-    <!-- Log de Combate -->
     <div style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <span style="font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-dim)">Histórico de Combate</span>
@@ -246,9 +244,9 @@ body::before{
     </div>
     <div id="bs-filters" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
       <input id="bs-filter-nome" type="text" placeholder="🔍 Buscar por nome…" style="flex:1;min-width:160px;background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 12px;font-family:'IM Fell English',serif;font-size:.84rem;outline:none;">
-      <select id="bs-filter-tipo" style="background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.1em;outline:none;cursor:pointer;"><option value="">Tipo: Todos</option></select>
-      <select id="bs-filter-cr" style="background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.1em;outline:none;cursor:pointer;min-width:110px;"><option value="">CR: Todos</option></select>
-      <button id="bs-filter-clear" style="background:transparent;border:1px solid var(--border);color:var(--ink-dim);padding:7px 12px;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer">✕ Limpar</button>
+      <select id="bs-filter-tipo" style="background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.56rem;outline:none;cursor:pointer;"><option value="">Tipo: Todos</option></select>
+      <select id="bs-filter-cr" style="background:var(--bg2);border:1px solid var(--border);color:var(--ink);padding:7px 10px;font-family:'Cinzel',serif;font-size:.56rem;outline:none;cursor:pointer;min-width:110px;"><option value="">CR: Todos</option></select>
+      <button id="bs-filter-clear" style="background:transparent;border:1px solid var(--border);color:var(--ink-dim);padding:7px 12px;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.15em;text-transform:uppercase;cursor:pointer">✕ Limpar</button>
     </div>
     <div id="bs-list-wrap"><div class="loading-state">⧖ Abrindo os contos…</div></div>
     <div id="bs-editor" class="box" style="display:none;margin-top:24px"></div>
@@ -488,6 +486,9 @@ function initTab(name){
 //  ABA: COMBATE
 // ════════════════════════════════════════════════════════════════════════
 let cbState = { ativo:false, sessao:null, rodada:1, turnoAtual:null, iniciativa:[] };
+let cbLog   = [];
+let cbConditions = {};
+const CONDICOES = ['Atordoado','Assustado','Paralisado','Cego','Surdo','Envenenado','Sangrando','Concentrado','Invisível','Maldito'];
 let cbDirty = false;
 let cbManifestCache = null;
 let cbBossesCache = null;
@@ -541,62 +542,63 @@ function cbRenderStatus(){
   endBtn.style.display = cbState.ativo ? 'inline-flex' : 'none';
 }
 
-// ── Histórico de combate ────────────────────────────────────────────────────
 function cbAddLog(msg, type='system'){
-  const time = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  cbLog.unshift({ msg, type, time });
+  const time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  cbLog.unshift({msg,type,time});
   if(cbLog.length>60) cbLog.pop();
   cbRenderLog();
 }
-
 function cbRenderLog(){
-  const el = document.getElementById('cb-log-body');
+  const el=document.getElementById('cb-log-body');
   if(!el) return;
-  if(cbLog.length===0){ el.innerHTML='<div style="color:var(--ink-dim);font-size:.7rem;font-style:italic;padding:6px 0">Nenhuma ação registrada ainda.</div>'; return; }
+  if(cbLog.length===0){el.innerHTML='<div style="color:var(--ink-dim);font-size:.7rem;font-style:italic">Nenhuma ação registrada ainda.</div>';return;}
   const icons={system:'⚙',damage:'⚔',heal:'✦',turn:'▶',round:'⟳',condition:'◈',manual:'✒'};
   const cols={system:'var(--ink-dim)',damage:'var(--crimson-lt)',heal:'#50a060',turn:'var(--gold)',round:'var(--gold-dim)',condition:'#6090d0',manual:'var(--ink-2)'};
-  el.innerHTML = cbLog.map(e=>`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);font-size:.7rem;line-height:1.4">
+  el.innerHTML=cbLog.map(e=>`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);font-size:.7rem;line-height:1.4">
     <span style="color:${cols[e.type]||cols.system};flex-shrink:0">${icons[e.type]||'•'}</span>
     <span style="flex:1;color:var(--ink-2)">${e.msg}</span>
     <span style="color:var(--ink-dim);font-size:.58rem;flex-shrink:0;white-space:nowrap">${e.time}</span>
   </div>`).join('');
 }
-
-// ── Condições de combate ────────────────────────────────────────────────────
-function cbGetConditions(entryId){ return cbConditions[entryId] || []; }
-function cbToggleCondition(entryId, cond){
-  if(!cbConditions[entryId]) cbConditions[entryId]=[];
-  const idx = cbConditions[entryId].indexOf(cond);
-  if(idx===-1){ cbConditions[entryId].push(cond); cbAddLog(`${cbEntryNome(entryId)}: +${cond}`,'condition'); }
-  else        { cbConditions[entryId].splice(idx,1); cbAddLog(`${cbEntryNome(entryId)}: -${cond}`,'condition'); }
+function cbGetConditions(id){return cbConditions[id]||[];}
+function cbEntryNome(id){return(cbState.iniciativa||[]).find(e=>e.id===id)?.nome||id;}
+function cbToggleCondition(entryId,cond){
+  if(!cbConditions[entryId])cbConditions[entryId]=[];
+  const idx=cbConditions[entryId].indexOf(cond);
+  if(idx===-1){cbConditions[entryId].push(cond);cbAddLog(`${cbEntryNome(entryId)}: +${cond}`,'condition');}
+  else{cbConditions[entryId].splice(idx,1);cbAddLog(`${cbEntryNome(entryId)}: -${cond}`,'condition');}
   cbRenderList();
 }
-function cbEntryNome(id){ return (cbState.iniciativa||[]).find(e=>e.id===id)?.nome||id; }
-
-// ── Ordenar por iniciativa ──────────────────────────────────────────────────
-function cbSortByInit(){
-  cbState.iniciativa.sort((a,b)=>{
-    const ai=Number(a.iniciativa)??-1, bi=Number(b.iniciativa)??-1;
-    if(!isFinite(ai)&&!isFinite(bi)) return 0;
-    if(!isFinite(ai)) return 1;
-    if(!isFinite(bi)) return -1;
-    return bi-ai;
-  });
-  cbRenderList(); cbMarkDirty();
-  cbAddLog('Iniciativa ordenada','system');
+function cbOpenConditionPicker(entryId){
+  const current=cbGetConditions(entryId);
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:700;background:rgba(6,4,7,.85);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px';
+  ov.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);padding:22px;max-width:340px;width:100%">
+    <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold-lt);margin-bottom:14px">Condições — ${esc(cbEntryNome(entryId))}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px">
+      ${CONDICOES.map(cond=>{const active=current.includes(cond);return`<button class="cb-cond-pick" data-cond="${esc(cond)}" style="font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 10px;border:1px solid ${active?'#6090d0':'var(--border)'};color:${active?'#6090d0':'var(--ink-dim)'};background:${active?'rgba(96,144,208,.12)':'transparent'};cursor:pointer;transition:all .2s">${esc(cond)}</button>`;}).join('')}
+    </div>
+    <div style="text-align:right"><button class="btn btn-sm" id="cb-cond-close">Fechar</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelectorAll('.cb-cond-pick').forEach(btn=>btn.addEventListener('click',()=>{cbToggleCondition(entryId,btn.dataset.cond);ov.remove();}));
+  ov.querySelector('#cb-cond-close').addEventListener('click',()=>ov.remove());
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
-
-// ── Heal rápido ─────────────────────────────────────────────────────────────
-async function cbQuickHeal(entryId, amount){
-  const ficha = cbFichasCache[entryId];
-  if(!ficha||!ficha.vida) return;
-  const novoHp = Math.min(Number(ficha.vida.max||10), Number(ficha.vida.atual||0)+amount);
-  ficha.vida.atual = novoHp;
+function cbSortByInit(){
+  cbState.iniciativa.sort((a,b)=>{const ai=Number(a.iniciativa),bi=Number(b.iniciativa);if(!isFinite(ai)&&!isFinite(bi))return 0;if(!isFinite(ai))return 1;if(!isFinite(bi))return -1;return bi-ai;});
+  cbRenderList();cbMarkDirty();cbAddLog('Iniciativa ordenada','system');
+}
+async function cbQuickHeal(entryId,amount){
+  const ficha=cbFichasCache[entryId];
+  if(!ficha||!ficha.vida)return;
+  const novo=Math.min(Number(ficha.vida.max||10),Number(ficha.vida.atual||0)+amount);
+  ficha.vida.atual=novo;
   try{
     await fetch(`/api/ficha?id=${encodeURIComponent(entryId)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ficha)});
-    cbAddLog(`${ficha.nome} recuperou ${amount} Vida (${novoHp}/${ficha.vida.max})`,'heal');
+    cbAddLog(`${ficha.nome} recuperou ${amount} Vida (${novo}/${ficha.vida.max})`,'heal');
     cbRenderList();
-  }catch{ toast('Erro ao curar.', true); }
+  }catch{toast('Erro ao curar.',true);}
 }
 
 function cbRenderList(){
@@ -607,131 +609,80 @@ function cbRenderList(){
     return;
   }
 
-  // Botão ordenar por iniciativa
-  const sortBar = `<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-    <button id="cb-sort-init" style="background:transparent;border:1px solid var(--border);color:var(--ink-dim);padding:4px 12px;font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s" title="Ordenar pela iniciativa">↕ Ordenar por iniciativa</button>
+  const sortBar=`<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+    <button id="cb-sort-init" style="background:transparent;border:1px solid var(--border);color:var(--ink-dim);padding:4px 12px;font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer">↕ Ordenar por iniciativa</button>
   </div>`;
 
   wrap.innerHTML = sortBar + `<div style="display:flex;flex-direction:column;gap:6px">${list.map((entry,i)=>{
-    const isBoss   = entry.tipo==='boss';
-    const isCustom = entry.tipo==='inimigo';
-    const isEnemy  = isBoss || isCustom;
-    const isTurn   = cbState.turnoAtual === entry.id;
-    const conds    = cbGetConditions(entry.id);
+    const isBoss=entry.tipo==='boss', isCustom=entry.tipo==='inimigo';
+    const isEnemy=isBoss||isCustom, isTurn=cbState.turnoAtual===entry.id;
+    const conds=cbGetConditions(entry.id);
 
-    // ── HP Block ──────────────────────────────────────────────
-    let hpBlock = '';
-    let hpAtualV = 0, hpMaxV = 1;
+    let hpBlock='';
     if(entry.tipo==='jogador'){
-      const ficha = cbFichasCache[entry.id];
-      if(ficha && ficha.vida){
-        hpAtualV = Number(ficha.vida.atual ?? 10);
-        hpMaxV   = Number(ficha.vida.max || 10) || 1;
-        const pct = cbHpPct(hpAtualV, hpMaxV);
-        hpBlock = `<div style="margin-top:5px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:.68rem;color:var(--ink-2);white-space:nowrap;font-family:'Cinzel',serif;min-width:60px">${hpAtualV}/${hpMaxV}</span>
-          <div style="flex:1;height:5px;background:var(--bg);border:1px solid var(--border);min-width:60px"><div style="height:100%;width:${pct}%;background:${cbHpColor(pct)};transition:width .4s"></div></div>
-          <button data-action="quickheal" data-idx="${i}" title="Curar 1d6" style="background:rgba(80,160,96,.15);border:1px solid #50a060;color:#50a060;padding:2px 7px;font-size:.58rem;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.05em">+Cura</button>
-          <button data-action="quickdmg" data-idx="${i}" title="Dano manual" style="background:rgba(122,24,40,.12);border:1px solid var(--crimson);color:var(--crimson-lt);padding:2px 7px;font-size:.58rem;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.05em">-Dano</button>
+      const ficha=cbFichasCache[entry.id];
+      if(ficha&&ficha.vida){
+        const hA=Number(ficha.vida.atual??10),hM=Number(ficha.vida.max||10)||1;
+        const pct=cbHpPct(hA,hM);
+        const sA=Number((ficha.sanidade||{}).atual??100),sM=Number((ficha.sanidade||{}).max||100)||1;
+        const sP=cbHpPct(sA,sM),sC=sP>60?'#4a8860':sP>30?'#8a7020':'#7a1828';
+        hpBlock=`<div style="margin-top:5px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <span style="font-size:.58rem;color:var(--ink-dim);font-family:'Cinzel',serif;min-width:28px">VIDA</span>
+            <span style="font-size:.68rem;color:var(--ink-2);white-space:nowrap;font-family:'Cinzel',serif;min-width:52px">${hA}/${hM}</span>
+            <div style="flex:1;height:5px;background:var(--bg);border:1px solid var(--border)"><div style="height:100%;width:${pct}%;background:${cbHpColor(pct)};transition:width .4s"></div></div>
+            <button data-action="quickheal" data-idx="${i}" style="background:rgba(80,160,96,.12);border:1px solid #50a060;color:#50a060;padding:2px 6px;font-size:.52rem;cursor:pointer;font-family:'Cinzel',serif;white-space:nowrap">+Cura</button>
+            <button data-action="quickdmg"  data-idx="${i}" style="background:rgba(122,24,40,.1);border:1px solid var(--crimson);color:var(--crimson-lt);padding:2px 6px;font-size:.52rem;cursor:pointer;font-family:'Cinzel',serif;white-space:nowrap">-Dano</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:.58rem;color:var(--ink-dim);font-family:'Cinzel',serif;min-width:28px">SAN</span>
+            <span style="font-size:.68rem;color:var(--ink-2);white-space:nowrap;font-family:'Cinzel',serif;min-width:52px">${sA}/${sM}</span>
+            <div style="flex:1;height:3px;background:var(--bg);border:1px solid var(--border)"><div style="height:100%;width:${sP}%;background:${sC};transition:width .4s"></div></div>
+          </div>
         </div>`;
       } else {
-        hpBlock = `<div style="margin-top:5px;font-size:.64rem;color:var(--ink-dim);font-style:italic">⧖ carregando…</div>`;
+        hpBlock=`<div style="margin-top:5px;font-size:.64rem;color:var(--ink-dim);font-style:italic">⧖ carregando…</div>`;
       }
-    } else if(isCustom || isBoss){
-      const hpA = entry.hpAtual ?? 0;
-      const hpM = entry.hpMax ?? 10;
-      const pct = cbHpPct(hpA, hpM||1);
-      hpBlock = `<div style="margin-top:5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-        <input type="number" class="cb-custom-hp" data-field="hpAtual" data-idx="${i}" value="${hpA}" placeholder="HP" style="width:48px;background:var(--bg);border:1px solid var(--border);color:var(--crimson-lt);padding:3px 5px;font-size:.72rem;text-align:center;font-family:'Cinzel',serif;outline:none">
-        <span style="color:var(--ink-dim);font-size:.72rem">/</span>
-        <input type="number" class="cb-custom-hp" data-field="hpMax" data-idx="${i}" value="${hpM}" placeholder="Máx" style="width:48px;background:var(--bg);border:1px solid var(--border);color:var(--ink-2);padding:3px 5px;font-size:.72rem;text-align:center;font-family:'Cinzel',serif;outline:none">
-        ${hpM?`<div style="flex:1;height:5px;background:var(--bg);border:1px solid var(--border);min-width:40px"><div style="height:100%;width:${pct}%;background:${cbHpColor(pct)};transition:width .4s"></div></div>`:''}
-        <input type="number" class="cb-quick-delta" data-idx="${i}" placeholder="±" title="Dano/cura rápida (negativo = dano)" style="width:44px;background:var(--bg);border:1px solid var(--border);color:var(--ink);padding:3px 5px;font-size:.72rem;text-align:center;font-family:'Cinzel',serif;outline:none">
-        <button data-action="applydelta" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);color:var(--ink);padding:3px 8px;font-size:.58rem;cursor:pointer;font-family:'Cinzel',serif">✓</button>
+    } else if(isCustom||isBoss){
+      const hA=entry.hpAtual??0, hM=entry.hpMax??10, pct=cbHpPct(hA,hM||1);
+      hpBlock=`<div style="margin-top:5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+        <input type="number" class="cb-custom-hp" data-field="hpAtual" data-idx="${i}" value="${hA}" placeholder="HP" style="width:48px;background:var(--bg);border:1px solid var(--border);color:var(--crimson-lt);padding:3px 5px;font-size:.7rem;text-align:center;font-family:'Cinzel',serif;outline:none">
+        <span style="color:var(--ink-dim)">/</span>
+        <input type="number" class="cb-custom-hp" data-field="hpMax" data-idx="${i}" value="${hM}" placeholder="Máx" style="width:48px;background:var(--bg);border:1px solid var(--border);color:var(--ink-2);padding:3px 5px;font-size:.7rem;text-align:center;font-family:'Cinzel',serif;outline:none">
+        ${hM?`<div style="flex:1;height:5px;background:var(--bg);border:1px solid var(--border);min-width:40px"><div style="height:100%;width:${pct}%;background:${cbHpColor(pct)};transition:width .4s"></div></div>`:''}
+        <input type="number" class="cb-quick-delta" data-idx="${i}" placeholder="±" title="Dano/cura (negativo=dano)" style="width:40px;background:var(--bg);border:1px solid var(--border);color:var(--ink);padding:3px 4px;font-size:.7rem;text-align:center;font-family:'Cinzel',serif;outline:none">
+        <button data-action="applydelta" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);color:var(--ink);padding:3px 7px;font-size:.58rem;cursor:pointer;font-family:'Cinzel',serif">✓</button>
       </div>`;
     }
 
-    // ── Condições ─────────────────────────────────────────────
-    const condBlock = `<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">
-      ${conds.map(c=>`<span class="cb-cond-tag" data-entry-id="${esc(entry.id)}" data-cond="${esc(c)}" style="font-size:.5rem;font-family:'Cinzel',serif;letter-spacing:.1em;padding:1px 6px;border:1px solid #6090d0;color:#6090d0;cursor:pointer;background:rgba(96,144,208,.1)" title="Clique para remover">${esc(c)} ✕</span>`).join('')}
-      <button class="cb-add-cond" data-entry-id="${esc(entry.id)}" style="font-size:.48rem;font-family:'Cinzel',serif;letter-spacing:.1em;padding:1px 6px;border:1px dashed var(--border);color:var(--ink-dim);cursor:pointer;background:transparent">+ condição</button>
+    const condBlock=`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
+      ${conds.map(cond=>`<span class="cb-cond-tag" data-entry-id="${esc(entry.id)}" data-cond="${esc(cond)}" style="font-size:.5rem;font-family:'Cinzel',serif;letter-spacing:.1em;padding:1px 6px;border:1px solid #6090d0;color:#6090d0;cursor:pointer;background:rgba(96,144,208,.1)" title="Remover">${esc(cond)} ✕</span>`).join('')}
+      <button class="cb-add-cond" data-entry-id="${esc(entry.id)}" style="font-size:.48rem;font-family:'Cinzel',serif;letter-spacing:.08em;padding:1px 6px;border:1px dashed var(--border);color:var(--ink-dim);cursor:pointer;background:transparent">+ condição</button>
     </div>`;
 
-    // ── Sanidade (jogadores) ───────────────────────────────────
-    let sanBlock = '';
-    if(entry.tipo==='jogador'){
-      const ficha = cbFichasCache[entry.id];
-      if(ficha && ficha.sanidade){
-        const sA=Number(ficha.sanidade.atual??100), sM=Number(ficha.sanidade.max||100)||1;
-        const sP=cbHpPct(sA,sM);
-        const sColor = sP>60?'#4a8860':sP>30?'#8a7020':'#7a1828';
-        sanBlock = `<div style="margin-top:3px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:.58rem;color:var(--ink-dim);font-family:'Cinzel',serif;min-width:60px">SAN ${sA}/${sM}</span>
-          <div style="flex:1;height:3px;background:var(--bg);border:1px solid var(--border);min-width:60px"><div style="height:100%;width:${sP}%;background:${sColor};transition:width .4s"></div></div>
-        </div>`;
-      }
-    }
-
-    const bgColor = isTurn ? 'var(--surface2)' : 'var(--bg2)';
-    const bdrColor = isTurn ? 'var(--gold)' : 'var(--border)';
-    const leftBdr = isEnemy ? ';border-left:3px solid var(--crimson)' : (isTurn ? ';border-left:3px solid var(--gold)':'');
-
-    return `<div class="cb-row" data-idx="${i}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${bgColor};border:1px solid ${bdrColor}${leftBdr};transition:background .25s,border-color .25s;position:relative">
+    return `<div class="cb-row" data-idx="${i}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${isTurn?'var(--surface2)':'var(--bg2)'};border:1px solid ${isTurn?'var(--gold)':'var(--border)'};${isEnemy?'border-left:3px solid var(--crimson)':isTurn?'border-left:3px solid var(--gold)':''};transition:background .2s;position:relative">
       ${isTurn?`<div style="position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);box-shadow:0 0 8px var(--gold)"></div>`:''}
       <div style="display:flex;flex-direction:column;gap:2px;padding-top:2px">
-        <button class="cb-mv" data-dir="up" data-idx="${i}" title="Mover para cima" style="background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.7rem;line-height:1;padding:2px">▲</button>
-        <button class="cb-mv" data-dir="down" data-idx="${i}" title="Mover para baixo" style="background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.7rem;line-height:1;padding:2px">▼</button>
+        <button class="cb-mv" data-dir="up" data-idx="${i}" style="background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.7rem;line-height:1;padding:2px">▲</button>
+        <button class="cb-mv" data-dir="down" data-idx="${i}" style="background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.7rem;line-height:1;padding:2px">▼</button>
       </div>
       <input type="number" class="cb-init-val" data-idx="${i}" value="${entry.iniciativa??''}" placeholder="—" style="width:48px;background:var(--bg);border:1px solid var(--border);color:${isEnemy?'var(--crimson-lt)':'var(--gold-lt)'};padding:6px 4px;font-family:'Cinzel',serif;text-align:center;outline:none;margin-top:2px">
       <div style="flex:1;min-width:0">
         <div style="font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.06em;color:${isEnemy?'var(--crimson-lt)':'var(--ink)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(entry.nome||'?')}</div>
         <div style="font-size:.6rem;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.12em;font-family:'Cinzel',serif">${entry.tipo==='jogador'?'Escritor':entry.tipo==='boss'?'Criatura':'Personalizado'}</div>
-        ${hpBlock}
-        ${sanBlock}
-        ${condBlock}
+        ${hpBlock}${condBlock}
       </div>
-      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;margin-top:2px">
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;margin-top:2px">
         <button class="btn-sm btn ${isTurn?'primary':''}" data-action="turn" data-idx="${i}" style="padding:5px 10px">${isTurn?'Na vez ✓':'É a vez'}</button>
-        ${(isEnemy)?`<button class="btn-sm btn danger" data-action="attack" data-idx="${i}" style="padding:5px 10px;font-size:.62rem">⚔ Atacar</button>`:''}
-        <button data-action="remove" data-idx="${i}" title="Remover" style="background:none;border:none;color:var(--crimson-lt);cursor:pointer;font-size:.9rem;padding:3px 5px;opacity:.6">✕</button>
+        ${isEnemy?`<button class="btn-sm btn danger" data-action="attack" data-idx="${i}" style="padding:5px 10px;font-size:.6rem">⚔ Atacar</button>`:''}
+        <button data-action="remove" data-idx="${i}" style="background:none;border:none;color:var(--crimson-lt);cursor:pointer;font-size:.9rem;padding:3px 5px;opacity:.6">✕</button>
       </div>
     </div>`;
   }).join('')}</div>`;
 
-  // Sort btn
-  document.getElementById('cb-sort-init')?.addEventListener('click', cbSortByInit);
-
-  // Condições: remover tag
-  wrap.querySelectorAll('.cb-cond-tag').forEach(tag=>{
-    tag.addEventListener('click', ()=>cbToggleCondition(tag.dataset.entryId, tag.dataset.cond));
-  });
-
-  // Condições: adicionar
-  wrap.querySelectorAll('.cb-add-cond').forEach(btn=>{
-    btn.addEventListener('click', ()=>cbOpenConditionPicker(btn.dataset.entryId));
-  });
-}
-
-function cbOpenConditionPicker(entryId){
-  const current = cbGetConditions(entryId);
-  const ov = document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;z-index:700;background:rgba(6,4,7,.8);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px';
-  ov.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);padding:22px;max-width:340px;width:100%">
-    <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold-lt);margin-bottom:14px">Condições — ${esc(cbEntryNome(entryId))}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px">
-      ${CONDICOES.map(c=>{
-        const active=current.includes(c);
-        return `<button class="cb-cond-pick" data-cond="${esc(c)}" style="font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 10px;border:1px solid ${active?'#6090d0':'var(--border)'};color:${active?'#6090d0':'var(--ink-dim)'};background:${active?'rgba(96,144,208,.12)':'transparent'};cursor:pointer;transition:all .2s">${esc(c)}</button>`;
-      }).join('')}
-    </div>
-    <div style="text-align:right"><button class="btn btn-sm" id="cb-cond-close">Fechar</button></div>
-  </div>`;
-  document.body.appendChild(ov);
-  ov.querySelectorAll('.cb-cond-pick').forEach(btn=>{
-    btn.addEventListener('click',()=>{ cbToggleCondition(entryId,btn.dataset.cond); ov.remove(); });
-  });
-  ov.querySelector('#cb-cond-close').addEventListener('click',()=>ov.remove());
-  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  document.getElementById('cb-sort-init')?.addEventListener('click',cbSortByInit);
+  wrap.querySelectorAll('.cb-cond-tag').forEach(t=>t.addEventListener('click',()=>cbToggleCondition(t.dataset.entryId,t.dataset.cond)));
+  wrap.querySelectorAll('.cb-add-cond').forEach(b=>b.addEventListener('click',()=>cbOpenConditionPicker(b.dataset.entryId)));
 }
 
 function cbAttachListListeners(){
@@ -754,45 +705,44 @@ function cbAttachListListeners(){
       const idx = Number(actionBtn.dataset.idx);
       const action = actionBtn.dataset.action;
       if(action==='remove'){
-        const entry = cbState.iniciativa[idx];
+        const entry=cbState.iniciativa[idx];
         cbAddLog(`${entry.nome||'?'} removido da iniciativa`,'system');
-        if(cbState.turnoAtual === entry.id) cbState.turnoAtual = null;
+        if(cbState.turnoAtual===entry.id) cbState.turnoAtual=null;
         cbState.iniciativa.splice(idx,1);
         cbRenderList(); cbMarkDirty();
       } else if(action==='turn'){
-        const entry = cbState.iniciativa[idx];
-        cbState.turnoAtual = entry.id;
+        const entry=cbState.iniciativa[idx];
+        cbState.turnoAtual=entry.id;
         cbAddLog(`Turno de ${entry.nome||'?'}`,'turn');
         cbRenderList(); cbMarkDirty();
       } else if(action==='attack'){
         cbOpenAttack(idx);
       } else if(action==='quickheal'){
-        const entry = cbState.iniciativa[idx];
-        const amount = parseInt(prompt(`Curar quanto para ${entry.nome}? (ex: 8)`,'') || '0');
-        if(amount>0) cbQuickHeal(entry.id, amount);
+        const entry=cbState.iniciativa[idx];
+        const amount=parseInt(prompt(`Curar quanto para ${entry.nome}?`,''))||0;
+        if(amount>0) cbQuickHeal(entry.id,amount);
       } else if(action==='quickdmg'){
-        const entry = cbState.iniciativa[idx];
-        const amount = parseInt(prompt(`Dano para ${entry.nome}? (ex: 12)`,'') || '0');
+        const entry=cbState.iniciativa[idx];
+        const amount=parseInt(prompt(`Dano para ${entry.nome}?`,''))||0;
         if(amount>0){
-          const ficha = cbFichasCache[entry.id];
+          const ficha=cbFichasCache[entry.id];
           if(ficha&&ficha.vida){
-            const novo = Math.max(0, Number(ficha.vida.atual||0)-amount);
-            ficha.vida.atual = novo;
+            const novo=Math.max(0,Number(ficha.vida.atual||0)-amount);
+            ficha.vida.atual=novo;
             fetch(`/api/ficha?id=${encodeURIComponent(entry.id)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ficha)})
-              .then(()=>{ cbAddLog(`${entry.nome} sofreu ${amount} de dano (${novo}/${ficha.vida.max})`,'damage'); cbRenderList(); });
+              .then(()=>{cbAddLog(`${entry.nome} sofreu ${amount} de dano (${novo}/${ficha.vida.max})`,'damage');cbRenderList();});
           }
         }
       } else if(action==='applydelta'){
-        const entry = cbState.iniciativa[idx];
-        const deltaInput = wrap.querySelector(`.cb-quick-delta[data-idx="${idx}"]`);
-        const delta = parseInt(deltaInput?.value || '0');
-        if(!delta || !Number.isFinite(delta)) return;
-        const hpA = Number(entry.hpAtual||0);
-        const hpM = Number(entry.hpMax||10);
-        const novo = Math.max(0, Math.min(hpM, hpA + delta));
-        cbState.iniciativa[idx].hpAtual = novo;
-        if(delta<0) cbAddLog(`${entry.nome} sofreu ${Math.abs(delta)} de dano (${novo}/${hpM})`,'damage');
-        else        cbAddLog(`${entry.nome} recuperou ${delta} Vida (${novo}/${hpM})`,'heal');
+        const entry=cbState.iniciativa[idx];
+        const deltaInput=wrap.querySelector(`.cb-quick-delta[data-idx="${idx}"]`);
+        const delta=parseInt(deltaInput?.value||'0');
+        if(!delta||!Number.isFinite(delta)) return;
+        const hA=Number(entry.hpAtual||0),hM=Number(entry.hpMax||10);
+        const novo=Math.max(0,Math.min(hM,hA+delta));
+        cbState.iniciativa[idx].hpAtual=novo;
+        if(delta<0)cbAddLog(`${entry.nome} sofreu ${Math.abs(delta)} de dano (${novo}/${hM})`,'damage');
+        else cbAddLog(`${entry.nome} recuperou ${delta} Vida (${novo}/${hM})`,'heal');
         cbRenderList(); cbMarkDirty();
       }
     }
@@ -1152,9 +1102,9 @@ async function cbApplyDamage(targetIds, dano, acaoNome, atacanteNome){
   const sucesso = results.filter(r=>r.ok);
   const falha   = results.filter(r=>!r.ok);
   if(sucesso.length>0){
-    const nomes = sucesso.map(r=>`${r.nome} (${r.novoHp}/${r.hpMax})`).join(', ');
+    const nomes=sucesso.map(r=>`${r.nome} (${r.novoHp}/${r.hpMax})`).join(', ');
     toast(`${atacanteNome} usou ${acaoNome}: ${dano} de dano em ${nomes}.`);
-    sucesso.forEach(r=>cbAddLog(`${atacanteNome} → ${acaoNome}: ${dano} de dano em ${r.nome} (${r.novoHp}/${r.hpMax})`,'damage'));
+    sucesso.forEach(r=>cbAddLog(`${atacanteNome} → ${acaoNome}: ${dano} dano em ${r.nome} (${r.novoHp}/${r.hpMax})`,'damage'));
   }
   if(falha.length>0){
     toast(`Falha ao aplicar dano em ${falha.length} alvo(s).`, true);
@@ -1169,44 +1119,49 @@ function initCombateTab(){
   document.getElementById('cb-add-custom').addEventListener('click', cbOpenAddCustom);
 
   document.getElementById('cb-start-combat').addEventListener('click', ()=>{
-    cbState.ativo = true;
-    cbState.rodada = 1;
-    cbLog = [];
+    cbState.ativo=true; cbState.rodada=1; cbLog=[];
     cbAddLog('⚔ Combate iniciado!','round');
     cbRenderStatus(); cbSave();
   });
   document.getElementById('cb-end-combat').addEventListener('click', ()=>{
     if(!confirm('Encerrar o combate? Os jogadores deixarão de ver a iniciativa.')) return;
     cbAddLog('Combate encerrado pelo Mestre','system');
-    cbState.ativo = false; cbState.turnoAtual = null;
+    cbState.ativo=false; cbState.turnoAtual=null;
     cbRenderStatus(); cbRenderList(); cbSave();
   });
   document.getElementById('cb-next-round').addEventListener('click', ()=>{
-    cbState.rodada = (Number(cbState.rodada)||1) + 1;
+    cbState.rodada=(Number(cbState.rodada)||1)+1;
     cbAddLog(`⟳ Rodada ${cbState.rodada} iniciada`,'round');
     cbRenderStatus(); cbMarkDirty(); cbSave();
   });
   document.getElementById('cb-round-input').addEventListener('change', e=>{
-    const v = parseInt(e.target.value,10);
-    cbState.rodada = Number.isFinite(v) && v>0 ? v : 1;
+    const v=parseInt(e.target.value,10);
+    cbState.rodada=Number.isFinite(v)&&v>0?v:1;
     cbMarkDirty();
   });
-  document.getElementById('cb-save-combat').addEventListener('click', ()=>cbSave());
+  document.getElementById('cb-save-combat').addEventListener('click',()=>cbSave());
 
   cbAttachListListeners();
   cbLoad();
 
+  // Bestiário — filtros
+  ['bs-filter-nome','bs-filter-tipo','bs-filter-cr'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input',bsRenderList);
+    document.getElementById(id)?.addEventListener('change',bsRenderList);
+  });
+  document.getElementById('bs-filter-clear')?.addEventListener('click',()=>{
+    document.getElementById('bs-filter-nome').value='';
+    document.getElementById('bs-filter-tipo').value='';
+    document.getElementById('bs-filter-cr').value='';
+    bsRenderList();
+  });
+
   // Log manual
-  const logInput = document.getElementById('cb-log-manual');
-  const logSend  = document.getElementById('cb-log-manual-send');
-  const sendManual = ()=>{
-    const v = logInput?.value.trim();
-    if(!v) return;
-    cbAddLog(v,'manual');
-    logInput.value='';
-  };
-  logSend?.addEventListener('click', sendManual);
-  logInput?.addEventListener('keydown', e=>{ if(e.key==='Enter') sendManual(); });
+  const logInput=document.getElementById('cb-log-manual');
+  const logSend=document.getElementById('cb-log-manual-send');
+  const sendManual=()=>{ const v=logInput?.value.trim(); if(!v)return; cbAddLog(v,'manual'); logInput.value=''; };
+  logSend?.addEventListener('click',sendManual);
+  logInput?.addEventListener('keydown',e=>{ if(e.key==='Enter') sendManual(); });
   document.getElementById('cb-log-clear')?.addEventListener('click',()=>{ cbLog=[]; cbRenderLog(); });
 }
 </script>
@@ -1247,15 +1202,35 @@ async function bsLoadList(){
   bsRenderList();
 }
 
+function crColor(cr){const n=parseFloat(cr);if(isNaN(n))return'var(--ink-dim)';if(n<=2)return'#4a9060';if(n<=5)return'#8a8020';if(n<=10)return'#a05020';if(n<=15)return'#8a1828';return'var(--crimson-lt)';}
+function bsBossCard(b){
+  const pct=Math.max(0,Math.min(100,((Number(b.hpAtual)||0)/(Math.max(1,Number(b.hpMax)||1)))*100));
+  return `<div class="box bs-card" data-id="${esc(b.id)}" style="cursor:pointer;transition:all .25s">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+      <div style="font-family:'Cinzel',serif;font-size:.92rem;color:var(--crimson-lt);letter-spacing:.04em">${esc(b.nome||'(sem nome)')}</div>
+      <button class="bs-del" data-id="${esc(b.id)}" style="background:none;border:none;color:var(--crimson-lt);opacity:.6;cursor:pointer;font-size:.9rem;flex-shrink:0">🗑</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      ${b.tipo?`<span style="font-size:.56rem;font-family:'Cinzel',serif;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);border:1px solid var(--border);padding:1px 6px">${esc(b.tipo)}</span>`:''}
+      ${b.cr?`<span style="font-size:.6rem;font-family:'Cinzel',serif;font-weight:700;color:${crColor(b.cr)};border:1px solid ${crColor(b.cr)};padding:1px 6px">CR ${esc(String(b.cr))}</span>`:''}
+    </div>
+    <div style="display:flex;gap:8px;font-size:.78rem;color:var(--ink-2)"><span>HP ${b.hpAtual}/${b.hpMax}</span><span>·</span><span>CA ${b.ca}</span></div>
+    <div style="height:5px;background:var(--bg2);border:1px solid var(--border);margin-top:8px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--crimson),var(--crimson-lt))"></div></div>
+    <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
+      ${b.visibilidade?.nome?'<span style="font-size:.58rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:1px 5px">nome ✓</span>':''}
+      ${b.visibilidade?.hp?'<span style="font-size:.58rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:1px 5px">hp ✓</span>':''}
+      ${b.visibilidade?.imagem?'<span style="font-size:.58rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:1px 5px">img ✓</span>':''}
+    </div>
+  </div>`;
+}
 function bsPopulateFilters(){
-  const tipoSel=document.getElementById('bs-filter-tipo');
-  const crSel=document.getElementById('bs-filter-cr');
-  if(!tipoSel||!crSel) return;
-  const tipoAtual=tipoSel.value, crAtual=crSel.value;
+  const ts=document.getElementById('bs-filter-tipo'), cs=document.getElementById('bs-filter-cr');
+  if(!ts||!cs) return;
+  const tv=ts.value, cv=cs.value;
   const tipos=[...new Set(bsList.map(b=>(b.tipo||'').trim()).filter(Boolean))].sort();
-  tipoSel.innerHTML='<option value="">Tipo: Todos</option>'+tipos.map(t=>`<option value="${esc(t)}"${tipoAtual===t?' selected':''}>${esc(t)}</option>`).join('');
+  ts.innerHTML='<option value="">Tipo: Todos</option>'+tipos.map(t=>`<option value="${esc(t)}"${tv===t?' selected':''}>${esc(t)}</option>`).join('');
   const crs=[...new Set(bsList.map(b=>(b.cr||'').trim()).filter(Boolean))].sort((a,b)=>{const na=parseFloat(a),nb=parseFloat(b);return isNaN(na)||isNaN(nb)?a.localeCompare(b):na-nb;});
-  crSel.innerHTML='<option value="">CR: Todos</option>'+crs.map(c=>`<option value="${esc(c)}"${crAtual===c?' selected':''}>${esc(c)}</option>`).join('');
+  cs.innerHTML='<option value="">CR: Todos</option>'+crs.map(r=>`<option value="${esc(r)}"${cv===r?' selected':''}>${esc(r)}</option>`).join('');
 }
 function bsGetFiltered(){
   const nome=(document.getElementById('bs-filter-nome')?.value||'').toLowerCase().trim();
@@ -1268,27 +1243,6 @@ function bsGetFiltered(){
     return true;
   });
 }
-function crColor(cr){const n=parseFloat(cr);if(isNaN(n))return'var(--ink-dim)';if(n<=2)return'#4a9060';if(n<=5)return'#8a8020';if(n<=10)return'#a05020';if(n<=15)return'#8a1828';return'var(--crimson-lt)';}
-function bsBossCard(b){
-  const pct=Math.max(0,Math.min(100,((Number(b.hpAtual)||0)/(Math.max(1,Number(b.hpMax)||1)))*100));
-  return `<div class="box bs-card" data-id="${esc(b.id)}" style="cursor:pointer;transition:all .25s;position:relative">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
-      <div style="font-family:'Cinzel',serif;font-size:.92rem;color:var(--crimson-lt);letter-spacing:.04em">${esc(b.nome||'(sem nome)')}</div>
-      <button class="bs-del" data-id="${esc(b.id)}" style="background:none;border:none;color:var(--crimson-lt);opacity:.6;cursor:pointer;font-size:.9rem;flex-shrink:0">🗑</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-      ${b.tipo?`<span style="font-size:.58rem;font-family:'Cinzel',serif;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);border:1px solid var(--border);padding:1px 6px">${esc(b.tipo)}</span>`:''}
-      ${b.cr?`<span style="font-size:.62rem;font-family:'Cinzel',serif;font-weight:700;color:${crColor(b.cr)};border:1px solid ${crColor(b.cr)};padding:1px 6px">CR ${esc(String(b.cr))}</span>`:''}
-    </div>
-    <div style="display:flex;gap:8px;font-size:.78rem;color:var(--ink-2)"><span>HP ${b.hpAtual}/${b.hpMax}</span><span>·</span><span>CA ${b.ca}</span></div>
-    <div style="height:5px;background:var(--bg2);border:1px solid var(--border);margin-top:8px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--crimson),var(--crimson-lt))"></div></div>
-    <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
-      ${b.visibilidade?.nome?'<span style="font-size:.58rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:1px 5px">nome ✓</span>':''}
-      ${b.visibilidade?.hp?'<span style="font-size:.58rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:1px 5px">hp ✓</span>':''}
-      ${b.visibilidade?.imagem?'<span style="font-size:.58rem;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:1px 5px">img ✓</span>':''}
-    </div>
-  </div>`;
-}
 function bsRenderList(){
   const wrap = document.getElementById('bs-list-wrap');
   if(bsList.length===0){
@@ -1296,9 +1250,9 @@ function bsRenderList(){
     return;
   }
   bsPopulateFilters();
-  const lista = bsGetFiltered();
+  const lista=bsGetFiltered();
   if(lista.length===0){
-    wrap.innerHTML='<div style="text-align:center;padding:28px;color:var(--ink-dim);font-size:.8rem">Nenhuma criatura corresponde aos filtros.</div>';
+    wrap.innerHTML='<div style="text-align:center;padding:28px;color:var(--ink-dim);font-size:.8rem;font-style:italic">Nenhuma criatura corresponde aos filtros.</div>';
     return;
   }
   const filtroTipo=(document.getElementById('bs-filter-tipo')?.value||'').trim();
@@ -1315,20 +1269,13 @@ function bsRenderList(){
     html=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">${lista.map(b=>bsBossCard(b)).join('')}</div>`;
   }
   wrap.innerHTML=html;
-
   wrap.querySelectorAll('.bs-card').forEach(card=>{
     card.addEventListener('mouseenter',()=>{card.style.borderColor='var(--crimson)';});
     card.addEventListener('mouseleave',()=>{card.style.borderColor='var(--border)';});
-    card.addEventListener('click', e=>{
-      if(e.target.closest('.bs-del')) return;
-      bsOpenEditor(card.dataset.id);
-    });
+    card.addEventListener('click', e=>{ if(e.target.closest('.bs-del')) return; bsOpenEditor(card.dataset.id); });
   });
   wrap.querySelectorAll('.bs-del').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      e.stopPropagation();
-      bsDelete(btn.dataset.id);
-    });
+    btn.addEventListener('click', e=>{ e.stopPropagation(); bsDelete(btn.dataset.id); });
   });
 }
 
@@ -1674,16 +1621,6 @@ async function bsSaveEditor(){
 
 function initBossesTab(){
   document.getElementById('bs-new').addEventListener('click', ()=>bsOpenEditor(null));
-  ['bs-filter-nome','bs-filter-tipo','bs-filter-cr'].forEach(id=>{
-    document.getElementById(id)?.addEventListener('input',bsRenderList);
-    document.getElementById(id)?.addEventListener('change',bsRenderList);
-  });
-  document.getElementById('bs-filter-clear')?.addEventListener('click',()=>{
-    document.getElementById('bs-filter-nome').value='';
-    document.getElementById('bs-filter-tipo').value='';
-    document.getElementById('bs-filter-cr').value='';
-    bsRenderList();
-  });
   bsLoadList();
 }
 </script>
