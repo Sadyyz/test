@@ -72,15 +72,16 @@ body::before{
    ══════════════════════════════════════════════════════ */
 #bs-arena{
   display:none;position:fixed;inset:0;z-index:10;
-  background:var(--bg);overflow:hidden;
+  background:transparent;overflow:hidden;
 }
 #bs-arena.show{display:flex;flex-direction:column}
 
 /* ── Arena Background ── */
 #bs-arena-bg{
   position:absolute;inset:0;z-index:0;
+  background:var(--bg);
   background-size:cover;background-position:center;background-repeat:no-repeat;
-  transition:opacity .8s ease, background .8s ease;
+  transition:opacity .8s ease, background-image .8s ease;
 }
 #bs-arena-bg-dim{
   position:absolute;inset:0;z-index:1;
@@ -860,8 +861,8 @@ async function applyArenaBg(dim=0.4){
     const bgEl  = document.getElementById('bs-arena-bg');
     const dimEl = document.getElementById('bs-arena-bg-dim');
     if(!bg){
-      bgEl.style.background='';
       bgEl.style.backgroundImage='';
+      bgEl.style.background='var(--bg)';
       dimEl.style.background='rgba(0,0,0,0)';
       return;
     }
