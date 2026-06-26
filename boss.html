@@ -414,7 +414,7 @@ const params=new URLSearchParams(location.search);
 const BOSS_ID=params.get('id');
 const IS_NEW=params.get('novo')==='1';
 
-function mod(val){const m=Math.floor((Number(val||10)-10)/2);return(m>=0?'+':'')+m}
+function mod(val){const v=Number(val||5);return(v>=0?'+':'')+v}
 
 function setSyncStatus(txt,color){
   const el=document.getElementById('sync-status');
@@ -425,7 +425,7 @@ function setSyncStatus(txt,color){
 let boss={
   id:'',nome:'Nova Criatura',tipo:'',cr:'',
   hpMax:10,hpAtual:10,ca:10,
-  atributos:{forca:10,destreza:10,constituicao:10,inteligencia:10,sabedoria:10,carisma:10},
+  atributos:{razao:5,vigor:5,vontade:5,expressao:5},
   acoes:[],habilidades:[],notasMestre:'',
   visibilidade:{imagem:false,nome:false,hp:false}
 };
@@ -447,9 +447,8 @@ function renderBoss(){
 function buildHTML(){
   const b=boss;
   const attrs=[
-    {key:'forca',label:'FOR'},{key:'destreza',label:'DES'},
-    {key:'constituicao',label:'CON'},{key:'inteligencia',label:'INT'},
-    {key:'sabedoria',label:'SAB'},{key:'carisma',label:'CAR'}
+    {key:'razao',label:'RAZ'},{key:'vigor',label:'VIG'},
+    {key:'vontade',label:'VON'},{key:'expressao',label:'EXP'}
   ];
 
   const visTags=[
@@ -520,7 +519,7 @@ function buildHTML(){
       ${attrs.map(a=>`
         <div class="stat-cell">
           <span class="stat-name">${a.label}</span>
-          <input class="stat-val" data-attr="${a.key}" type="number" value="${b.atributos[a.key]||10}" min="1" max="30">
+          <input class="stat-val" data-attr="${a.key}" type="number" value="${b.atributos[a.key]??5}" min="1" max="10">
           <span class="stat-mod" id="mod-${a.key}">${mod(b.atributos[a.key])}</span>
         </div>`).join('')}
     </div>
@@ -587,7 +586,7 @@ function bindEvents(){
   document.querySelectorAll('.stat-val').forEach(inp=>{
     inp.addEventListener('input',()=>{
       const key=inp.dataset.attr;
-      boss.atributos[key]=Number(inp.value)||10;
+      boss.atributos[key]=Number(inp.value)||5;
       const m=document.getElementById('mod-'+key);
       if(m)m.textContent=mod(inp.value);
       markDirty();

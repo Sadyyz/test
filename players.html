@@ -883,6 +883,12 @@ async function pollCombat(){
     const r=await fetch('/api/combat');
     if(!r.ok)return;
     const data=await r.json();
+    // Atualiza fundo da arena SEMPRE que o timestamp mudar, independente do hash
+    if(data.arenaBgUpdatedAt && data.arenaBgUpdatedAt !== lastArenaBgUpdatedAt){
+      lastArenaBgUpdatedAt = data.arenaBgUpdatedAt;
+      applyArenaBg(data.arenaBgDim ?? 0.4);
+    }
+
     const h=JSON.stringify(data);
     if(h!==lastCombatHash){
       lastCombatHash=h;
@@ -906,10 +912,6 @@ async function pollCombat(){
         // Campo foi limpo (mestre encerrou o combate) — reseta estado local
         _contoEncerradoIniciado = null;
         lastContoEncerrado      = null;
-      }
-      if(data.arenaBgUpdatedAt && data.arenaBgUpdatedAt !== lastArenaBgUpdatedAt){
-        lastArenaBgUpdatedAt = data.arenaBgUpdatedAt;
-        applyArenaBg(data.arenaBgDim ?? 0.4);
       }
       if(data.bossUpdatedAt && data.bossUpdatedAt !== lastBossUpdatedAt){
         lastBossUpdatedAt=data.bossUpdatedAt;
@@ -1181,8 +1183,19 @@ async function init(){
     }
   }catch{}
 
+  // Lê o combat state inicial pra pegar arenaBgDim correto
+  try{
+    const r = await fetch('/api/combat');
+    if(r.ok){
+      const data = await r.json();
+      if(data.arenaBgUpdatedAt){
+        lastArenaBgUpdatedAt = data.arenaBgUpdatedAt;
+        await applyArenaBg(data.arenaBgDim ?? 0.4);
+      }
+    }
+  }catch{}
+
   await Promise.allSettled([pollCombat(),pollPlayers()]);
-  applyArenaBg(0.4);
   setInterval(pollCombat,4000);
   setInterval(pollPlayers,4000);
 }
