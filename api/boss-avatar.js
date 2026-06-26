@@ -3,28 +3,7 @@
 // POST   /api/boss-avatar?id=boss-vane   -> salva a imagem (body = { avatar: "data:image/..." })
 // DELETE /api/boss-avatar?id=boss-vane   -> remove a imagem
 
-import { Redis } from '@upstash/redis';
-
-const REDIS_URL =
-  process.env.KV_REST_API_URL ||
-  process.env.UPSTASH_REDIS_REST_URL ||
-  process.env.REDIS_URL;
-
-const REDIS_TOKEN =
-  process.env.KV_REST_API_TOKEN ||
-  process.env.UPSTASH_REDIS_REST_TOKEN;
-
-let redis = null;
-let initError = null;
-try {
-  if (!REDIS_URL || !REDIS_TOKEN) {
-    initError = 'Variáveis de ambiente do Redis não encontradas.';
-  } else {
-    redis = new Redis({ url: REDIS_URL, token: REDIS_TOKEN });
-  }
-} catch (err) {
-  initError = String(err);
-}
+import { redis, initError } from './_redis.js';
 
 // Limite maior que o avatar de jogador: arte de boss costuma ser mais pesada
 const MAX_SIZE = 800 * 1024;

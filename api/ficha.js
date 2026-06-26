@@ -2,7 +2,6 @@
 // GET  /api/ficha?id=mikhail   -> retorna os dados salvos da ficha
 // POST /api/ficha?id=mikhail   -> salva os dados (body = JSON da ficha)
 
-import { Redis } from '@upstash/redis';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -16,28 +15,7 @@ function loadStaticFicha(id) {
   }
 }
 
-// A Vercel pode injetar as credenciais com nomes diferentes dependendo de
-// como a integração foi conectada (KV_* é o nome legado, UPSTASH_* é o atual).
-const REDIS_URL =
-  process.env.KV_REST_API_URL ||
-  process.env.UPSTASH_REDIS_REST_URL ||
-  process.env.REDIS_URL;
-
-const REDIS_TOKEN =
-  process.env.KV_REST_API_TOKEN ||
-  process.env.UPSTASH_REDIS_REST_TOKEN;
-
-let redis = null;
-let initError = null;
-try {
-  if (!REDIS_URL || !REDIS_TOKEN) {
-    initError = 'Variáveis de ambiente do Redis não encontradas. Verifique em Settings > Environment Variables se existe KV_REST_API_URL/KV_REST_API_TOKEN ou UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN, e se o banco está conectado a este projeto.';
-  } else {
-    redis = new Redis({ url: REDIS_URL, token: REDIS_TOKEN });
-  }
-} catch (err) {
-  initError = String(err);
-}
+import { redis, initError } from './_redis.js';
 
 // Limite de 512KB por ficha (JSON serializado). Protege o Redis de payloads gigantes
 // com centenas de magias, itens ou relacionamentos.

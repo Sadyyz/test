@@ -4,28 +4,7 @@
 // DELETE /api/boss?id=boss-vane   -> remove um boss (e seu avatar)
 // GET    /api/boss                -> lista todos os bosses cadastrados
 
-import { Redis } from '@upstash/redis';
-
-const REDIS_URL =
-  process.env.KV_REST_API_URL ||
-  process.env.UPSTASH_REDIS_REST_URL ||
-  process.env.REDIS_URL;
-
-const REDIS_TOKEN =
-  process.env.KV_REST_API_TOKEN ||
-  process.env.UPSTASH_REDIS_REST_TOKEN;
-
-let redis = null;
-let initError = null;
-try {
-  if (!REDIS_URL || !REDIS_TOKEN) {
-    initError = 'Variáveis de ambiente do Redis não encontradas. Verifique em Settings > Environment Variables se existe KV_REST_API_URL/KV_REST_API_TOKEN ou UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN, e se o banco está conectado a este projeto.';
-  } else {
-    redis = new Redis({ url: REDIS_URL, token: REDIS_TOKEN });
-  }
-} catch (err) {
-  initError = String(err);
-}
+import { redis, initError } from './_redis.js';
 
 // Índice com a lista de ids de bosses cadastrados, pra podermos listar todos
 // sem precisar de SCAN (Upstash REST não garante SCAN consistente em todos os planos).
@@ -115,7 +94,7 @@ export default async function handler(req, res) {
         hpAtual: Number.isFinite(body.hpAtual) ? body.hpAtual : (existente?.hpAtual ?? body.hpMax ?? existente?.hpMax ?? 10),
         ca: Number.isFinite(body.ca) ? body.ca : (existente?.ca ?? 10),
         atributos: body.atributos ?? existente?.atributos ?? {
-          forca: 10, destreza: 10, constituicao: 10, inteligencia: 10, sabedoria: 10, carisma: 10
+          razao: 5, vigor: 5, vontade: 5, expressao: 5
         },
         acoes: Array.isArray(body.acoes) ? body.acoes : (existente?.acoes ?? []),
         habilidades: Array.isArray(body.habilidades) ? body.habilidades : (existente?.habilidades ?? []),

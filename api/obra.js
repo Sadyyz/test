@@ -4,17 +4,8 @@
 // Permite ao Mestre ativar/desativar a Obra Inacabada de um personagem
 // sem sobrescrever a ficha inteira.
 
-import { Redis } from '@upstash/redis';
 
-const REDIS_URL   = process.env.KV_REST_API_URL   || process.env.UPSTASH_REDIS_REST_URL   || process.env.REDIS_URL;
-const REDIS_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-
-let redis = null;
-let initError = null;
-try {
-  if (!REDIS_URL || !REDIS_TOKEN) initError = 'Redis não configurado.';
-  else redis = new Redis({ url: REDIS_URL, token: REDIS_TOKEN });
-} catch (err) { initError = String(err); }
+import { redis, initError } from './_redis.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
