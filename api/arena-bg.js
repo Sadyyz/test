@@ -30,10 +30,12 @@ export default async function handler(req, res) {
         await redis.del(KEY);
         return res.status(200).json({ ok: true });
       }
-      if (typeof bg !== 'string' || !bg.startsWith('data:image/')) {
-        return res.status(400).json({ error: 'Campo "bg" deve ser uma data URL de imagem ou null' });
+      const isImage = typeof bg === 'string' && bg.startsWith('data:image/');
+      const isColor  = typeof bg === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(bg);
+      if (!isImage && !isColor) {
+        return res.status(400).json({ error: 'Campo "bg" deve ser uma data URL de imagem, uma cor hex ou null' });
       }
-      if (bg.length > MAX_SIZE) {
+      if (isImage && bg.length > MAX_SIZE) {
         return res.status(413).json({ error: `Imagem muito grande. Máximo: ${MAX_SIZE / 1024}KB` });
       }
       await redis.set(KEY, bg);

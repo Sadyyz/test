@@ -61,6 +61,15 @@ export default async function handler(req, res) {
     try {
       const data = await redis.get(key);
       if (!data) return res.status(404).json({ error: 'Boss não encontrado' });
+
+      // Migração automática: converte atributos D&D -> homebrew
+      const attrs = data.atributos || {};
+      const isDnD = 'forca' in attrs || 'destreza' in attrs || 'constituicao' in attrs;
+      if (isDnD) {
+        data.atributos = { razao: 5, vigor: 5, vontade: 5, expressao: 5 };
+        await redis.set(key, data); // salva migrado
+      }
+
       return res.status(200).json(data);
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao buscar boss', details: String(err) });
