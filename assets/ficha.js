@@ -130,7 +130,7 @@ const PERICIAS_DEF = {
   'Ident. de Corrupção':       { attr: 'expressao' },
 };
 
-const GENEROS = ['Drama', 'Investigação', 'Romance', 'Suspense', 'Aventura', 'Fantasia'];
+const GENEROS = ['Drama', 'Investigação', 'Romance', 'Terror', 'Aventura', 'Fantasia'];
 
 // Bônus de perícias e debuffs de combate por gênero
 const GENERO_RULES = {
@@ -155,12 +155,12 @@ const GENERO_RULES = {
     desc_bonus: 'Leitores de emoção decifram narrativas com mais intuição.',
     desc_debuff: 'Relutam em ferir — -1d4 no dano causado em combate.',
   },
-  'Suspense': {
-    cor: '#507050',
-    bonus_pericias: ['Furtividade', 'Resist. ao Paranormal'],
-    debuff_combate: 'Penalidade de -2 em testes de Vigor',
-    desc_bonus: 'Vivem no fio da navalha — furtividade e controle sob pressão.',
-    desc_debuff: 'Preferem evitar o confronto direto — -2 em testes de Vigor.',
+  'Terror': {
+    cor: '#6a1a2a',
+    bonus_pericias: ['Resist. ao Paranormal', 'Ocultismo'],
+    debuff_combate: 'Penalidade de -2 em testes de Expressão',
+    desc_bonus: 'Forjados pelo medo — resistem ao paranormal e compreendem o oculto instintivamente.',
+    desc_debuff: 'O horror corrói a comunicação — -2 em Expressão ao interagir sob terror.',
   },
   'Aventura': {
     cor: '#806030',
