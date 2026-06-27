@@ -132,6 +132,15 @@ body::before{
   letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim);
 }
 .empty-icon{font-size:2.2rem;display:block;margin-bottom:14px;opacity:.35}
+
+  /* ── Animação de entrada de combatente ── */
+  @keyframes cb-slide-in{
+    from{opacity:0;transform:translateX(-24px) scale(.97)}
+    to  {opacity:1;transform:translateX(0)     scale(1)  }
+  }
+  .cb-row-new{
+    animation:cb-slide-in .38s cubic-bezier(.22,1,.36,1) both;
+  }
 .loading-state{text-align:center;padding:60px 0;font-family:'Cinzel',serif;letter-spacing:.3em;color:var(--ink-dim);animation:blink 1.6s ease-in-out infinite}
 
 /* ── Toast ───────────────────────────────────────────────────────────── */
@@ -489,6 +498,22 @@ let cbState = { ativo:false, sessao:null, rodada:1, turnoAtual:null, iniciativa:
 let cbLog   = [];
 let cbConditions = {};
 const CONDICOES = ['Atordoado','Assustado','Paralisado','Cego','Surdo','Envenenado','Sangrando','Concentrado','Invisível','Maldito'];
+
+const COND_META = {
+  'Atordoado':   { icon: '💫', cor: '#c8a030', bg: 'rgba(200,160,48,.15)'  },
+  'Assustado':   { icon: '😱', cor: '#9060c0', bg: 'rgba(144,96,192,.15)' },
+  'Paralisado':  { icon: '🧊', cor: '#50b0d0', bg: 'rgba(80,176,208,.15)' },
+  'Cego':        { icon: '🌑', cor: '#888888', bg: 'rgba(136,136,136,.15)' },
+  'Surdo':       { icon: '🔇', cor: '#888888', bg: 'rgba(136,136,136,.15)' },
+  'Envenenado':  { icon: '☠️',  cor: '#70b040', bg: 'rgba(112,176,64,.15)'  },
+  'Sangrando':   { icon: '🩸', cor: '#c02030', bg: 'rgba(192,32,48,.15)'   },
+  'Concentrado': { icon: '🎯', cor: '#d0a030', bg: 'rgba(208,160,48,.15)'  },
+  'Invisível':   { icon: '👻', cor: '#a0a0c0', bg: 'rgba(160,160,192,.15)' },
+  'Maldito':     { icon: '🌀', cor: '#a030c0', bg: 'rgba(160,48,192,.15)'  },
+};
+
+// IDs já animados (evita re-animar no cbRenderList por update de HP etc.)
+const _cbAnimated = new Set();
 let cbDirty = false;
 let cbManifestCache = null;
 let cbBossesCache = null;
@@ -655,12 +680,22 @@ function cbRenderList(){
       </div>`;
     }
 
-    const condBlock=`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
-      ${conds.map(cond=>`<span class="cb-cond-tag" data-entry-id="${esc(entry.id)}" data-cond="${esc(cond)}" style="font-size:.5rem;font-family:'Cinzel',serif;letter-spacing:.1em;padding:1px 6px;border:1px solid #6090d0;color:#6090d0;cursor:pointer;background:rgba(96,144,208,.1)" title="Remover">${esc(cond)} ✕</span>`).join('')}
-      <button class="cb-add-cond" data-entry-id="${esc(entry.id)}" style="font-size:.48rem;font-family:'Cinzel',serif;letter-spacing:.08em;padding:1px 6px;border:1px dashed var(--border);color:var(--ink-dim);cursor:pointer;background:transparent">+ condição</button>
+    const condBlock=`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+      ${conds.map(cond=>{
+        const m=COND_META[cond]||{icon:'•',cor:'#6090d0',bg:'rgba(96,144,208,.12)'};
+        return`<span class="cb-cond-tag" data-entry-id="${esc(entry.id)}" data-cond="${esc(cond)}"
+          title="${esc(cond)} — clique para remover"
+          style="display:inline-flex;align-items:center;gap:3px;font-size:.52rem;font-family:'Cinzel',serif;letter-spacing:.08em;padding:2px 7px 2px 5px;border:1px solid ${m.cor};color:${m.cor};cursor:pointer;background:${m.bg};border-radius:2px;transition:opacity .15s"
+          onmouseover="this.style.opacity='.6'" onmouseout="this.style.opacity='1'">
+          <span style="font-size:.75rem;line-height:1">${m.icon}</span>${esc(cond)}<span style="opacity:.5;margin-left:2px">✕</span>
+        </span>`;
+      }).join('')}
+      <button class="cb-add-cond" data-entry-id="${esc(entry.id)}" style="font-size:.46rem;font-family:'Cinzel',serif;letter-spacing:.08em;padding:2px 7px;border:1px dashed var(--border);color:var(--ink-dim);cursor:pointer;background:transparent;border-radius:2px">＋ condição</button>
     </div>`;
 
-    return `<div class="cb-row" data-idx="${i}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${isTurn?'var(--surface2)':'var(--bg2)'};border:1px solid ${isTurn?'var(--gold)':'var(--border)'};${isEnemy?'border-left:3px solid var(--crimson)':isTurn?'border-left:3px solid var(--gold)':''};transition:background .2s;position:relative">
+    const isNew = !_cbAnimated.has(entry.id);
+    if(isNew) _cbAnimated.add(entry.id);
+    return `<div class="cb-row${isNew?' cb-row-new':''}" data-idx="${i}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${isTurn?'var(--surface2)':'var(--bg2)'};border:1px solid ${isTurn?'var(--gold)':'var(--border)'};${isEnemy?'border-left:3px solid var(--crimson)':isTurn?'border-left:3px solid var(--gold)':''};transition:background .2s;position:relative;animation-delay:${i*.06}s">
       ${isTurn?`<div style="position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);box-shadow:0 0 8px var(--gold)"></div>`:''}
       <div style="display:flex;flex-direction:column;gap:2px;padding-top:2px">
         <button class="cb-mv" data-dir="up" data-idx="${i}" style="background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.7rem;line-height:1;padding:2px">▲</button>
@@ -708,6 +743,7 @@ function cbAttachListListeners(){
         const entry=cbState.iniciativa[idx];
         cbAddLog(`${entry.nome||'?'} removido da iniciativa`,'system');
         if(cbState.turnoAtual===entry.id) cbState.turnoAtual=null;
+        _cbAnimated.delete(entry.id); // ao remover, permite reentrada com animação
         cbState.iniciativa.splice(idx,1);
         cbRenderList(); cbMarkDirty();
       } else if(action==='turn'){
